@@ -6,6 +6,7 @@ import { AuthService } from './auth.service';
 import { OtpCode } from './otp-code.entity';
 import { UsersModule } from '../users/users.module';
 import { JwtAuthGuard } from './jwt-auth.guard';
+import { RolesGuard } from './roles.guard';
 import { JWT_SECRET } from './constants';
 
 @Module({
@@ -18,7 +19,7 @@ import { JWT_SECRET } from './constants';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtAuthGuard],
-  exports: [JwtModule, JwtAuthGuard],
+  providers: [AuthService, JwtAuthGuard, RolesGuard],
+  exports: [JwtModule, JwtAuthGuard, RolesGuard],
 })
 export class AuthModule {}

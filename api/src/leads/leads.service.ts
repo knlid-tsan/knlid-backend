@@ -20,6 +20,9 @@ import {
   TERMINAL_STATUSES,
 } from './enums/lead-status.enum';
 import { UsersService } from '../users/users.service';
+import { RewardsService } from '../rewards/rewards.service';
+import { DisputesService } from '../disputes/disputes.service';
+import { OpenDisputeDto } from '../disputes/dto/open-dispute.dto';
 
 // Переходы статусов, которые может выполнить только исполнитель через PATCH /status
 const PROGRESS_TRANSITIONS: Partial<Record<LeadStatus, LeadStatus[]>> = {
@@ -46,6 +49,8 @@ export class LeadsService {
     @InjectRepository(LeadStatusHistory)
     private historyRepository: Repository<LeadStatusHistory>,
     private usersService: UsersService,
+    private rewardsService: RewardsService,
+    private disputesService: DisputesService,
     private dataSource: DataSource,
   ) {}
 
@@ -191,6 +196,12 @@ export class LeadsService {
   async updateStatus(leadId: string, dto: UpdateLeadStatusDto, userId: string) {
     const lead = await this.getLeadOrFail(leadId);
 
+    if (lead.status === LeadStatus.DISPUTE) {
+      throw new BadRequestException(
+        'Лид находится в споре, изменения заблокированы до решения модератора',
+      );
+    }
+
     const isAuthor = lead.author_id === userId;
     const isExecutor = lead.executor_id === userId;
 
@@ -201,6 +212,12 @@ export class LeadsService {
     const from = lead.status;
     const to = dto.status;
 
+    if (to === LeadStatus.DISPUTE) {
+      throw new BadRequestException(
+        'Для открытия спора используйте POST /leads/:id/dispute',
+      );
+    }
+
     if (to === LeadStatus.CANCELLED) {
       if (!ACTIVE_STATUSES.includes(from)) {
         throw new BadRequestException(
@@ -210,18 +227,16 @@ export class LeadsService {
       if (!isAuthor) {
         throw new ForbiddenException('Отменить лид может только автор');
       }
-    } else if (to === LeadStatus.DISPUTE) {
-      if (!ACTIVE_STATUSES.includes(from)) {
-        throw new BadRequestException(
-          `Нельзя открыть спор для лида в статусе "${from}"`,
-        );
-      }
-      // и автор, и исполнитель уже проверены выше
     } else if (PROGRESS_TRANSITIONS[from]?.includes(to)) {
       if (!isExecutor) {
         throw new ForbiddenException(
           'Этот переход может выполнить только исполнитель',
         );
+      }
+
+      if (to === LeadStatus.CLOSED_SUCCESS) {
+        const tariff = await this.rewardsService.getTariff(lead.type);
+        this.rewardsService.validateDealAmountForTariff(tariff, dto.deal_amount);
       }
     } else {
       throw new BadRequestException(
@@ -235,6 +250,22 @@ export class LeadsService {
     }
     await this.leadsRepository.save(lead);
     await this.recordHistory(lead.id, from, to, userId, dto.comment);
+
+    if (to === LeadStatus.CLOSED_SUCCESS) {
+      await this.rewardsService.createForLead(lead, dto.deal_amount);
+    }
+
+    return this.serializeLead(lead, userId);
+  }
+
+  async openDispute(leadId: string, dto: OpenDisputeDto, userId: string) {
+    const lead = await this.getLeadOrFail(leadId);
+
+    if (lead.author_id !== userId && lead.executor_id !== userId) {
+      throw new ForbiddenException('Нет доступа к этому лиду');
+    }
+
+    await this.disputesService.openForLead(lead, dto.reason, userId);
 
     return this.serializeLead(lead, userId);
   }

@@ -21,6 +21,13 @@ export enum UserStatus {
   BLOCKED = 'blocked',           // Заблокирован
 }
 
+// Роли пользователя — управляют доступом к административным и модераторским разделам
+export enum UserRole {
+  USER = 'user',
+  MODERATOR = 'moderator',
+  ADMIN = 'admin',
+}
+
 @Entity('users') // создаст таблицу "users" в базе данных
 export class User {
   @PrimaryGeneratedColumn('uuid') // уникальный ID, генерируется сам
@@ -40,6 +47,9 @@ export class User {
 
   @Column({ type: 'enum', enum: UserStatus, default: UserStatus.NEW })
   status: UserStatus;
+
+  @Column({ type: 'enum', enum: UserRole, default: UserRole.USER })
+  role: UserRole;
 
   @Column({ nullable: true }) // nullable — поле может быть пустым
   identity_doc_url: string;

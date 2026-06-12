@@ -10,6 +10,12 @@ import { LeadsModule } from './leads/leads.module';
 import { Lead } from './leads/entities/lead.entity';
 import { Client } from './leads/entities/client.entity';
 import { LeadStatusHistory } from './leads/entities/lead-status-history.entity';
+import { RewardsModule } from './rewards/rewards.module';
+import { RewardTariff } from './rewards/entities/reward-tariff.entity';
+import { Reward } from './rewards/entities/reward.entity';
+import { DisputesModule } from './disputes/disputes.module';
+import { Dispute } from './disputes/entities/dispute.entity';
+import { AdminModule } from './admin/admin.module';
 @Module({
   imports: [
     TypeOrmModule.forRoot({
@@ -19,12 +25,24 @@ import { LeadStatusHistory } from './leads/entities/lead-status-history.entity';
       username: 'evgenykobiliastsky',
       password: '',
       database: 'knlid_dev',
-      entities: [User, OtpCode, Lead, Client, LeadStatusHistory],
+      entities: [
+        User,
+        OtpCode,
+        Lead,
+        Client,
+        LeadStatusHistory,
+        RewardTariff,
+        Reward,
+        Dispute,
+      ],
       synchronize: true,
     }),
     UsersModule,
     AuthModule,
     LeadsModule,
+    RewardsModule,
+    DisputesModule,
+    AdminModule,
   ],
   controllers: [AppController],
   providers: [AppService],

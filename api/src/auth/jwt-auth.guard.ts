@@ -6,10 +6,12 @@ import {
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { Request } from 'express';
+import { UserRole } from '../users/user.entity';
 
 export interface AuthenticatedUser {
   sub: string;
   phone: string;
+  role: UserRole;
 }
 
 @Injectable()

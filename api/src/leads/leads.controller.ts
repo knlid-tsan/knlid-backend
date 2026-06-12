@@ -15,6 +15,7 @@ import { CreateLeadDto } from './dto/create-lead.dto';
 import { AssignLeadDto } from './dto/assign-lead.dto';
 import { DeclineLeadDto } from './dto/decline-lead.dto';
 import { UpdateLeadStatusDto } from './dto/update-lead-status.dto';
+import { OpenDisputeDto } from '../disputes/dto/open-dispute.dto';
 
 interface AuthenticatedRequest extends Request {
   user: AuthenticatedUser;
@@ -75,5 +76,14 @@ export class LeadsController {
     @Req() req: AuthenticatedRequest,
   ) {
     return this.leadsService.updateStatus(id, dto, req.user.sub);
+  }
+
+  @Post(':id/dispute')
+  openDispute(
+    @Param('id') id: string,
+    @Body() dto: OpenDisputeDto,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.leadsService.openDispute(id, dto, req.user.sub);
   }
 }
