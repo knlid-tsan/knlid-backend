@@ -21,6 +21,8 @@ import { AuditLog } from './audit/audit-log.entity';
 import { NotificationsModule } from './notifications/notifications.module';
 import { Notification } from './notifications/notification.entity';
 import { VerificationModule } from './verification/verification.module';
+import { CitiesModule } from './cities/cities.module';
+import { City } from './cities/city.entity';
 
 @Module({
   imports: [
@@ -42,6 +44,7 @@ import { VerificationModule } from './verification/verification.module';
         Dispute,
         AuditLog,
         Notification,
+        City,
       ],
       synchronize: true,
     }),
@@ -56,6 +59,7 @@ import { VerificationModule } from './verification/verification.module';
     DisputesModule,
     AdminModule,
     VerificationModule,
+    CitiesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

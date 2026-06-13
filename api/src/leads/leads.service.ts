@@ -6,7 +6,7 @@ import {
   ConflictException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, Repository } from 'typeorm';
+import { DataSource, In, Repository } from 'typeorm';
 import { Lead } from './entities/lead.entity';
 import { Client } from './entities/client.entity';
 import { LeadStatusHistory } from './entities/lead-status-history.entity';
@@ -19,6 +19,7 @@ import {
   ACTIVE_STATUSES,
   TERMINAL_STATUSES,
 } from './enums/lead-status.enum';
+import { LeadType } from './enums/lead-type.enum';
 import { UsersService } from '../users/users.service';
 import { UserRole, UserStatus } from '../users/user.entity';
 import { RewardsService } from '../rewards/rewards.service';
@@ -322,7 +323,7 @@ export class LeadsService {
       }
 
       if (to === LeadStatus.CLOSED_SUCCESS) {
-        const tariff = await this.rewardsService.getTariff(lead.type);
+        const tariff = await this.rewardsService.getTariffForLead(lead);
         this.rewardsService.validateCommissionAmount(tariff, dto.commission_amount);
       }
     } else {
@@ -617,6 +618,12 @@ export class LeadsService {
       reward: reward ?? null,
       dispute: dispute ?? null,
     };
+  }
+
+  hasActiveLeadsOfType(type: LeadType): Promise<boolean> {
+    return this.leadsRepository
+      .findOne({ where: { type, status: In(ACTIVE_STATUSES as LeadStatus[]) } })
+      .then((lead) => lead !== null);
   }
 
   private serializeLead(lead: Lead, userId: string) {

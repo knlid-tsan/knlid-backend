@@ -5,7 +5,7 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, Repository } from 'typeorm';
+import { In, IsNull, Repository } from 'typeorm';
 import { Dispute } from './entities/dispute.entity';
 import { DisputeStatus } from './enums/dispute-status.enum';
 import { DisputeOutcome } from './enums/dispute-outcome.enum';
@@ -326,7 +326,7 @@ export class DisputesService {
     } else if (outcomeStatus === LeadStatus.CLOSED_SUCCESS) {
       // Вознаграждение ещё не создавалось — создаём сейчас.
       // Для percent-тарифа commission_amount обязателен.
-      const tariff = await this.tariffsRepository.findOneBy({ lead_type: lead.type });
+      const tariff = await this.findTariffForLead(lead);
       if (
         tariff?.method === RewardMethod.PERCENT &&
         (dto.commission_amount === undefined || dto.commission_amount === null)
@@ -364,8 +364,20 @@ export class DisputesService {
     return { dispute, lead, reward };
   }
 
+  // City-specific tariff first, then base (city IS NULL) — mirrors RewardsService.getTariffForLead
+  private async findTariffForLead(lead: Lead): Promise<RewardTariff | null> {
+    const cityTariff = await this.tariffsRepository.findOneBy({
+      lead_type: lead.type,
+      city: lead.city,
+    });
+    if (cityTariff) return cityTariff;
+    return this.tariffsRepository.findOne({
+      where: { lead_type: lead.type, city: IsNull() },
+    });
+  }
+
   private async createRewardForLead(lead: Lead, commissionAmount?: number): Promise<Reward> {
-    const tariff = await this.tariffsRepository.findOneBy({ lead_type: lead.type });
+    const tariff = await this.findTariffForLead(lead);
 
     let method: RewardMethod | null = null;
     let value: string | null = null;

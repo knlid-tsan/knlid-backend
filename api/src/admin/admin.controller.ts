@@ -3,6 +3,8 @@ import {
   Get,
   Put,
   Post,
+  Patch,
+  Delete,
   Body,
   Param,
   Query,
@@ -20,10 +22,12 @@ import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
 import { User, UserRole } from '../users/user.entity';
 import { BootstrapAdminDto } from './dto/bootstrap-admin.dto';
-import { UpsertTariffDto } from '../rewards/dto/upsert-tariff.dto';
+import { UpsertTariffV2Dto } from './dto/upsert-tariff-v2.dto';
 import { RewardsService } from '../rewards/rewards.service';
 import { LeadsService } from '../leads/leads.service';
-import { LeadType } from '../leads/enums/lead-type.enum';
+import { CitiesService } from '../cities/cities.service';
+import { CreateCityDto } from '../cities/dto/create-city.dto';
+import { ToggleCityDto } from '../cities/dto/toggle-city.dto';
 import { AdminLeadsQueryDto } from './dto/admin-leads-query.dto';
 import { BOOTSTRAP_ADMIN_SECRET } from './constants';
 
@@ -38,6 +42,7 @@ export class AdminController {
     private usersRepository: Repository<User>,
     private rewardsService: RewardsService,
     private leadsService: LeadsService,
+    private citiesService: CitiesService,
   ) {}
 
   // POST /admin/bootstrap-admin — назначить первого админа по секретному ключу
@@ -58,27 +63,57 @@ export class AdminController {
     return { id: user.id, phone: user.phone, role: user.role };
   }
 
+  // ─── Тарифы ───────────────────────────────────────────────────────────────
+
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN)
   @Get('tariffs')
   getTariffs() {
-    return this.rewardsService.listTariffs();
+    return this.rewardsService.listTariffsGrouped();
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN)
-  @Put('tariffs/:lead_type')
-  upsertTariff(
-    @Param('lead_type') leadType: string,
-    @Body() dto: UpsertTariffDto,
-    @Req() req: AuthenticatedRequest,
-  ) {
-    if (!Object.values(LeadType).includes(leadType as LeadType)) {
-      throw new BadRequestException(`Неизвестный тип лида "${leadType}"`);
+  @Put('tariffs')
+  upsertTariff(@Body() dto: UpsertTariffV2Dto, @Req() req: AuthenticatedRequest) {
+    return this.rewardsService.upsertTariff(dto, req.user.sub);
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @Delete('tariffs/:id')
+  async deleteTariff(@Param('id') id: string) {
+    const tariff = await this.rewardsService.getTariffById(id);
+
+    if (tariff.city === null) {
+      const hasActive = await this.leadsService.hasActiveLeadsOfType(tariff.lead_type);
+      if (hasActive) {
+        throw new BadRequestException(
+          `Нельзя удалить базовый тариф "${tariff.lead_type}": есть активные лиды этого типа. Сначала закройте или переведите их.`,
+        );
+      }
     }
 
-    return this.rewardsService.upsertTariff(leadType as LeadType, dto, req.user.sub);
+    return this.rewardsService.deleteTariff(id);
   }
+
+  // ─── Города ───────────────────────────────────────────────────────────────
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @Post('cities')
+  createCity(@Body() dto: CreateCityDto) {
+    return this.citiesService.create(dto);
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @Patch('cities/:id')
+  toggleCity(@Param('id') id: string, @Body() dto: ToggleCityDto) {
+    return this.citiesService.toggle(id, dto);
+  }
+
+  // ─── Лиды ─────────────────────────────────────────────────────────────────
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.MODERATOR, UserRole.ADMIN)

@@ -5,12 +5,11 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { IsNull, Repository } from 'typeorm';
 import { Reward } from './entities/reward.entity';
 import { RewardTariff } from './entities/reward-tariff.entity';
 import { RewardMethod } from './enums/reward-method.enum';
 import { RewardStatus } from './enums/reward-status.enum';
-import { UpsertTariffDto } from './dto/upsert-tariff.dto';
 import { MarkPaidDto } from './dto/mark-paid.dto';
 import { DisputeRewardDto } from './dto/dispute-reward.dto';
 import { Lead } from '../leads/entities/lead.entity';
@@ -19,6 +18,7 @@ import { DisputesService } from '../disputes/disputes.service';
 import { AuditService } from '../audit/audit.service';
 import { AuditAction } from '../audit/audit-action.enum';
 import { NotificationsService } from '../notifications/notifications.service';
+import { UpsertTariffV2Dto } from '../admin/dto/upsert-tariff-v2.dto';
 
 @Injectable()
 export class RewardsService {
@@ -32,19 +32,49 @@ export class RewardsService {
     private notificationsService: NotificationsService,
   ) {}
 
-  async listTariffs(): Promise<RewardTariff[]> {
-    return this.tariffsRepository.find();
+  // Finds the most specific tariff: city-specific first, then base (city IS NULL).
+  async getTariffForLead(lead: Lead): Promise<RewardTariff | null> {
+    const cityTariff = await this.tariffsRepository.findOneBy({
+      lead_type: lead.type,
+      city: lead.city,
+    });
+    if (cityTariff) return cityTariff;
+
+    return this.tariffsRepository.findOne({
+      where: { lead_type: lead.type, city: IsNull() },
+    });
   }
 
-  async upsertTariff(
-    leadType: LeadType,
-    dto: UpsertTariffDto,
-    adminId: string,
-  ): Promise<RewardTariff> {
-    let tariff = await this.tariffsRepository.findOneBy({ lead_type: leadType });
+  async listTariffsGrouped(): Promise<{ base: RewardTariff[]; overrides: RewardTariff[] }> {
+    const all = await this.tariffsRepository.find({
+      order: { lead_type: 'ASC', city: 'ASC' },
+    });
+    return {
+      base: all.filter((t) => t.city === null),
+      overrides: all.filter((t) => t.city !== null),
+    };
+  }
+
+  async getTariffById(id: string): Promise<RewardTariff> {
+    const tariff = await this.tariffsRepository.findOneBy({ id });
+    if (!tariff) throw new NotFoundException('Тариф не найден');
+    return tariff;
+  }
+
+  async upsertTariff(dto: UpsertTariffV2Dto, adminId: string): Promise<RewardTariff> {
+    const city = dto.city ?? null;
+    let tariff: RewardTariff | null;
+
+    if (city !== null) {
+      tariff = await this.tariffsRepository.findOneBy({ lead_type: dto.lead_type, city });
+    } else {
+      tariff = await this.tariffsRepository.findOne({
+        where: { lead_type: dto.lead_type, city: IsNull() },
+      });
+    }
 
     if (!tariff) {
-      tariff = this.tariffsRepository.create({ lead_type: leadType });
+      tariff = this.tariffsRepository.create({ lead_type: dto.lead_type, city });
     }
 
     tariff.method = dto.method;
@@ -54,8 +84,17 @@ export class RewardsService {
     return this.tariffsRepository.save(tariff);
   }
 
-  async getTariff(leadType: LeadType): Promise<RewardTariff | null> {
-    return this.tariffsRepository.findOneBy({ lead_type: leadType });
+  async deleteTariff(id: string): Promise<{ deleted: boolean }> {
+    const tariff = await this.getTariffById(id);
+
+    if (tariff.city === null) {
+      throw new BadRequestException(
+        `Нельзя удалить базовый тариф "${tariff.lead_type}". Сначала переназначьте или закройте активные лиды этого типа.`,
+      );
+    }
+
+    await this.tariffsRepository.remove(tariff);
+    return { deleted: true };
   }
 
   getForLead(leadId: string): Promise<Reward | null> {
@@ -75,7 +114,7 @@ export class RewardsService {
   }
 
   async createForLead(lead: Lead, commissionAmount?: number): Promise<Reward> {
-    const tariff = await this.getTariff(lead.type);
+    const tariff = await this.getTariffForLead(lead);
 
     let method: RewardMethod | null = null;
     let value: string | null = null;
@@ -88,7 +127,6 @@ export class RewardsService {
       value = tariff.value;
 
       if (tariff.method === RewardMethod.PERCENT) {
-        // reward автора = комиссия исполнителя × процент тарифа
         amount = (commissionAmount! * Number(tariff.value)) / 100;
         commissionToStore = commissionAmount!;
       } else {
@@ -119,7 +157,6 @@ export class RewardsService {
       metadata: { lead_id: lead.id, amount: reward.amount, status },
     });
 
-    // Уведомляем обе стороны о создании вознаграждения
     await this.notificationsService.send(
       lead.author_id,
       'Вознаграждение создано',

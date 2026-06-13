@@ -5,9 +5,10 @@ import { User } from '../users/user.entity';
 import { AuthModule } from '../auth/auth.module';
 import { RewardsModule } from '../rewards/rewards.module';
 import { LeadsModule } from '../leads/leads.module';
+import { CitiesModule } from '../cities/cities.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([User]), AuthModule, RewardsModule, LeadsModule],
+  imports: [TypeOrmModule.forFeature([User]), AuthModule, RewardsModule, LeadsModule, CitiesModule],
   controllers: [AdminController],
 })
 export class AdminModule {}
