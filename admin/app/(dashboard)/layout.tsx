@@ -8,7 +8,7 @@ import { getToken, clearToken, decodeToken } from '@/lib/auth';
 const NAV_ITEMS = [
   { href: '/verifications', label: 'Верификация' },
   { href: '/leads', label: 'Лиды' },
-  { href: null, label: 'Споры' },
+  { href: '/disputes', label: 'Споры' },
   { href: null, label: 'Пользователи' },
   { href: null, label: 'Тарифы' },
 ];

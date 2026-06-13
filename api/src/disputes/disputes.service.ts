@@ -5,7 +5,7 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { Dispute } from './entities/dispute.entity';
 import { DisputeStatus } from './enums/dispute-status.enum';
 import { DisputeOutcome } from './enums/dispute-outcome.enum';
@@ -131,10 +131,44 @@ export class DisputesService {
     return this.openForLead(lead, reason, userId);
   }
 
-  async list(status?: DisputeStatus): Promise<Dispute[]> {
-    return this.disputesRepository.find({
+  async list(status?: DisputeStatus) {
+    const disputes = await this.disputesRepository.find({
       where: status ? { status } : {},
       order: { created_at: 'DESC' },
+    });
+
+    const leadIds = [...new Set(disputes.map((d) => d.lead_id))];
+    const leads =
+      leadIds.length > 0
+        ? await this.leadsRepository.findBy({ id: In(leadIds) })
+        : [];
+    const leadMap = new Map(leads.map((l) => [l.id, l]));
+
+    const userIds = [...new Set(disputes.map((d) => d.opened_by))];
+    const users =
+      userIds.length > 0
+        ? await this.usersRepository.findBy({ id: In(userIds) })
+        : [];
+    const userMap = new Map(users.map((u) => [u.id, u]));
+
+    return disputes.map((d) => {
+      const lead = leadMap.get(d.lead_id);
+      const opener = userMap.get(d.opened_by);
+      return {
+        ...d,
+        lead: lead
+          ? { id: lead.id, type: lead.type, city: lead.city, status: lead.status }
+          : null,
+        opened_by_user: opener
+          ? { id: d.opened_by, full_name: opener.full_name }
+          : null,
+        opened_by_role:
+          lead?.author_id === d.opened_by
+            ? 'author'
+            : lead?.executor_id === d.opened_by
+              ? 'executor'
+              : null,
+      };
     });
   }
 
@@ -159,7 +193,81 @@ export class DisputesService {
 
     const reward = await this.rewardsRepository.findOneBy({ lead_id: dispute.lead_id });
 
-    return { dispute, lead, history, reward };
+    const userIds = [
+      ...new Set([
+        dispute.opened_by,
+        ...(dispute.resolved_by ? [dispute.resolved_by] : []),
+        ...(lead
+          ? [
+              lead.author_id,
+              ...(lead.executor_id ? [lead.executor_id] : []),
+            ]
+          : []),
+        ...history.map((h) => h.changed_by),
+      ]),
+    ];
+    const users =
+      userIds.length > 0
+        ? await this.usersRepository.findBy({ id: In(userIds) })
+        : [];
+    const userMap = new Map(users.map((u) => [u.id, u]));
+
+    const pick = (id: string) => {
+      const u = userMap.get(id);
+      return u ? { id, full_name: u.full_name, phone: u.phone } : null;
+    };
+
+    return {
+      dispute: {
+        ...dispute,
+        opened_by_user: pick(dispute.opened_by),
+        opened_by_role:
+          lead?.author_id === dispute.opened_by
+            ? 'author'
+            : lead?.executor_id === dispute.opened_by
+              ? 'executor'
+              : null,
+        resolved_by_user: dispute.resolved_by ? pick(dispute.resolved_by) : null,
+      },
+      lead: lead
+        ? {
+            ...lead,
+            author: lead.author_id
+              ? (() => {
+                  const u = userMap.get(lead.author_id);
+                  return u
+                    ? {
+                        id: lead.author_id,
+                        full_name: u.full_name,
+                        phone: u.phone,
+                        specialization: u.specialization,
+                        city: u.city,
+                      }
+                    : null;
+                })()
+              : null,
+            executor: lead.executor_id
+              ? (() => {
+                  const u = userMap.get(lead.executor_id);
+                  return u
+                    ? {
+                        id: lead.executor_id,
+                        full_name: u.full_name,
+                        phone: u.phone,
+                        specialization: u.specialization,
+                        city: u.city,
+                      }
+                    : null;
+                })()
+              : null,
+          }
+        : null,
+      history: history.map((h) => ({
+        ...h,
+        changed_by_user: pick(h.changed_by),
+      })),
+      reward,
+    };
   }
 
   async resolve(
