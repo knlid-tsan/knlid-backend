@@ -19,4 +19,7 @@ export enum AuditAction {
   DOCUMENT_UPLOADED = 'document_uploaded',
   VERIFICATION_APPROVED = 'verification_approved',
   VERIFICATION_REJECTED = 'verification_rejected',
+
+  TARIFF_UPSERT = 'tariff_upsert',
+  TARIFF_DELETE = 'tariff_delete',
 }

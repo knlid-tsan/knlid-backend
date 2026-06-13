@@ -62,7 +62,7 @@ export class RewardsService {
   }
 
   async upsertTariff(dto: UpsertTariffV2Dto, adminId: string): Promise<RewardTariff> {
-    const city = dto.city ?? null;
+    const city = dto.city?.trim() || null;
     let tariff: RewardTariff | null;
 
     if (city !== null) {
@@ -81,10 +81,20 @@ export class RewardsService {
     tariff.value = String(dto.value);
     tariff.updated_by = adminId;
 
-    return this.tariffsRepository.save(tariff);
+    const saved = await this.tariffsRepository.save(tariff);
+
+    await this.auditService.log({
+      entityType: 'reward_tariff',
+      entityId: saved.id,
+      action: AuditAction.TARIFF_UPSERT,
+      actorId: adminId,
+      metadata: { lead_type: dto.lead_type, city, method: dto.method, value: dto.value },
+    });
+
+    return saved;
   }
 
-  async deleteTariff(id: string): Promise<{ deleted: boolean }> {
+  async deleteTariff(id: string, adminId: string): Promise<{ deleted: boolean }> {
     const tariff = await this.getTariffById(id);
 
     if (tariff.city === null) {
@@ -93,7 +103,17 @@ export class RewardsService {
       );
     }
 
+    const { lead_type, city } = tariff;
     await this.tariffsRepository.remove(tariff);
+
+    await this.auditService.log({
+      entityType: 'reward_tariff',
+      entityId: id,
+      action: AuditAction.TARIFF_DELETE,
+      actorId: adminId,
+      metadata: { lead_type, city },
+    });
+
     return { deleted: true };
   }
 

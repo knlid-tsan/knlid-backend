@@ -82,7 +82,7 @@ export class AdminController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN)
   @Delete('tariffs/:id')
-  async deleteTariff(@Param('id') id: string) {
+  async deleteTariff(@Param('id') id: string, @Req() req: AuthenticatedRequest) {
     const tariff = await this.rewardsService.getTariffById(id);
 
     if (tariff.city === null) {
@@ -94,7 +94,7 @@ export class AdminController {
       }
     }
 
-    return this.rewardsService.deleteTariff(id);
+    return this.rewardsService.deleteTariff(id, req.user.sub);
   }
 
   // ─── Города ───────────────────────────────────────────────────────────────
