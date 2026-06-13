@@ -5,19 +5,26 @@ import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { getToken, clearToken, decodeToken } from '@/lib/auth';
 
-const NAV_ITEMS = [
+interface NavItem {
+  href: string | null;
+  label: string;
+  adminOnly?: boolean;
+}
+
+const NAV_ITEMS: NavItem[] = [
   { href: '/verifications', label: 'Верификация' },
   { href: '/leads', label: 'Лиды' },
   { href: '/disputes', label: 'Споры' },
   { href: null, label: 'Пользователи' },
-  { href: null, label: 'Тарифы' },
+  { href: '/tariffs', label: 'Тарифы', adminOnly: true },
 ];
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const [phone, setPhone] = useState('');
-  const [role, setRole] = useState('');
+  const [roleLabel, setRoleLabel] = useState('');
+  const [rawRole, setRawRole] = useState('');
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
@@ -33,7 +40,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       return;
     }
     setPhone(payload.phone);
-    setRole(payload.role === 'admin' ? 'Администратор' : 'Модератор');
+    setRawRole(payload.role);
+    setRoleLabel(payload.role === 'admin' ? 'Администратор' : 'Модератор');
     setReady(true);
   }, [router]);
 
@@ -59,7 +67,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </div>
         <nav className="flex-1 py-3">
           {NAV_ITEMS.map((item) => {
+            if (item.adminOnly && rawRole !== 'admin') return null;
+
             const isCurrent = item.href !== null && pathname.startsWith(item.href);
+
             if (item.href === null) {
               return (
                 <span
@@ -70,6 +81,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 </span>
               );
             }
+
             return (
               <Link
                 key={item.label}
@@ -91,7 +103,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <header className="bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-end flex-shrink-0 gap-4">
           <div className="text-right">
             <p className="text-sm font-medium text-gray-900">{phone}</p>
-            <p className="text-xs text-gray-400">{role}</p>
+            <p className="text-xs text-gray-400">{roleLabel}</p>
           </div>
           <button
             onClick={handleLogout}
