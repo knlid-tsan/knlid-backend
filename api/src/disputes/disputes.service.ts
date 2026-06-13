@@ -324,7 +324,18 @@ export class DisputesService {
         await this.rewardsRepository.save(reward);
       }
     } else if (outcomeStatus === LeadStatus.CLOSED_SUCCESS) {
-      reward = await this.createRewardForLead(lead, dto.deal_amount);
+      // Вознаграждение ещё не создавалось — создаём сейчас.
+      // Для percent-тарифа commission_amount обязателен.
+      const tariff = await this.tariffsRepository.findOneBy({ lead_type: lead.type });
+      if (
+        tariff?.method === RewardMethod.PERCENT &&
+        (dto.commission_amount === undefined || dto.commission_amount === null)
+      ) {
+        throw new BadRequestException(
+          'Для процентного тарифа необходимо указать commission_amount (комиссию исполнителя)',
+        );
+      }
+      reward = await this.createRewardForLead(lead, dto.commission_amount);
     }
 
     await this.auditService.log({
@@ -353,22 +364,24 @@ export class DisputesService {
     return { dispute, lead, reward };
   }
 
-  private async createRewardForLead(lead: Lead, dealAmount?: number): Promise<Reward> {
+  private async createRewardForLead(lead: Lead, commissionAmount?: number): Promise<Reward> {
     const tariff = await this.tariffsRepository.findOneBy({ lead_type: lead.type });
 
     let method: RewardMethod | null = null;
     let value: string | null = null;
     let amount: number | null = null;
-    let dealAmountToStore: number | null = dealAmount ?? null;
+    let commissionToStore: number | null = commissionAmount ?? null;
 
     if (tariff) {
       method = tariff.method;
       value = tariff.value;
 
       if (tariff.method === RewardMethod.PERCENT) {
-        if (dealAmount != null) {
-          amount = (dealAmount * Number(tariff.value)) / 100;
-          dealAmountToStore = dealAmount;
+        // reward автора = комиссия исполнителя × процент тарифа
+        // commissionAmount гарантированно не null — валидация в resolve()
+        if (commissionAmount != null) {
+          amount = (commissionAmount * Number(tariff.value)) / 100;
+          commissionToStore = commissionAmount;
         }
       } else {
         amount = Number(tariff.value);
@@ -382,7 +395,7 @@ export class DisputesService {
         executor_id: lead.executor_id!,
         method,
         value,
-        deal_amount: dealAmountToStore !== null ? String(dealAmountToStore) : null,
+        commission_amount: commissionToStore !== null ? String(commissionToStore) : null,
         amount: amount !== null ? String(amount) : null,
         status: amount !== null ? RewardStatus.AWAITING_PAYMENT : RewardStatus.PENDING,
       }),

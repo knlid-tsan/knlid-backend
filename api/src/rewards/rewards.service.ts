@@ -62,30 +62,35 @@ export class RewardsService {
     return this.rewardsRepository.findOneBy({ lead_id: leadId });
   }
 
-  validateDealAmountForTariff(tariff: RewardTariff | null, dealAmount?: number): void {
-    if (tariff?.method === RewardMethod.PERCENT && (dealAmount === undefined || dealAmount === null)) {
+  // commissionAmount — комиссия исполнителя по сделке; обязательна для percent-тарифа
+  validateCommissionAmount(tariff: RewardTariff | null, commissionAmount?: number): void {
+    if (
+      tariff?.method === RewardMethod.PERCENT &&
+      (commissionAmount === undefined || commissionAmount === null)
+    ) {
       throw new BadRequestException(
-        'Для процентного тарифа необходимо указать deal_amount',
+        'Для процентного тарифа необходимо указать commission_amount (комиссию исполнителя)',
       );
     }
   }
 
-  async createForLead(lead: Lead, dealAmount?: number): Promise<Reward> {
+  async createForLead(lead: Lead, commissionAmount?: number): Promise<Reward> {
     const tariff = await this.getTariff(lead.type);
 
     let method: RewardMethod | null = null;
     let value: string | null = null;
     let amount: number | null = null;
     let status = RewardStatus.PENDING;
-    let dealAmountToStore = dealAmount ?? null;
+    let commissionToStore = commissionAmount ?? null;
 
     if (tariff) {
       method = tariff.method;
       value = tariff.value;
 
       if (tariff.method === RewardMethod.PERCENT) {
-        amount = (dealAmount! * Number(tariff.value)) / 100;
-        dealAmountToStore = dealAmount!;
+        // reward автора = комиссия исполнителя × процент тарифа
+        amount = (commissionAmount! * Number(tariff.value)) / 100;
+        commissionToStore = commissionAmount!;
       } else {
         amount = Number(tariff.value);
       }
@@ -100,7 +105,7 @@ export class RewardsService {
         executor_id: lead.executor_id!,
         method,
         value,
-        deal_amount: dealAmountToStore !== null ? String(dealAmountToStore) : null,
+        commission_amount: commissionToStore !== null ? String(commissionToStore) : null,
         amount: amount !== null ? String(amount) : null,
         status,
       }),

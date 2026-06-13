@@ -17,7 +17,7 @@ interface Reward {
   id: string;
   method: string | null;
   value: string | null;
-  deal_amount: string | null;
+  commission_amount: string | null;
   amount: string | null;
   status: string;
   created_at: string;
@@ -274,10 +274,10 @@ export default function LeadDetailClient({ id }: { id: string }) {
               label="Метод"
               value={lead.reward.method ? (REWARD_METHOD_LABELS[lead.reward.method] ?? lead.reward.method) : '—'}
             />
-            {lead.reward.deal_amount && (
+            {lead.reward.commission_amount && (
               <Field
-                label="Сумма сделки"
-                value={`${Number(lead.reward.deal_amount).toLocaleString('ru-RU')} ₽`}
+                label="Комиссия специалиста"
+                value={`${Number(lead.reward.commission_amount).toLocaleString('ru-RU')} ₸`}
               />
             )}
             {lead.reward.amount && (

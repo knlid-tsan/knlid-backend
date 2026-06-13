@@ -9,9 +9,10 @@ export class UpdateLeadStatusDto {
   @IsString()
   comment?: string;
 
-  // обязателен при переводе в closed_success, если для типа лида настроен процентный тариф
+  // Комиссия исполнителя по сделке (₸). Обязательна при closed_success для percent-тарифа.
+  // Вознаграждение автора = commission_amount × tariff.value / 100
   @IsOptional()
   @IsNumber()
   @IsPositive()
-  deal_amount?: number;
+  commission_amount?: number;
 }

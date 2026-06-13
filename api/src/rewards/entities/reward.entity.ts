@@ -27,8 +27,10 @@ export class Reward {
   @Column({ type: 'decimal', precision: 12, scale: 2, nullable: true })
   value: string | null;
 
-  @Column({ type: 'decimal', precision: 12, scale: 2, nullable: true })
-  deal_amount: string | null;
+  // Комиссия исполнителя по сделке — основа для расчёта percent-вознаграждения автора.
+  // В БД колонка называется deal_amount (обратная совместимость).
+  @Column({ name: 'deal_amount', type: 'decimal', precision: 12, scale: 2, nullable: true })
+  commission_amount: string | null;
 
   @Column({ type: 'decimal', precision: 12, scale: 2, nullable: true })
   amount: string | null;

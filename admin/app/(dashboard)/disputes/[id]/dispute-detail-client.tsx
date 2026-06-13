@@ -47,7 +47,7 @@ interface DisputeDetail {
     id: string;
     method: string | null;
     value: string | null;
-    deal_amount: string | null;
+    commission_amount: string | null;
     amount: string | null;
     status: string;
     paid_at: string | null;
@@ -126,7 +126,7 @@ export default function DisputeDetailClient({ id }: { id: string }) {
   // Resolve form state
   const [outcome, setOutcome] = useState<'closed_success' | 'cancelled' | null>(null);
   const [comment, setComment] = useState('');
-  const [dealAmount, setDealAmount] = useState('');
+  const [commissionAmount, setCommissionAmount] = useState('');
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [resolveLoading, setResolveLoading] = useState(false);
   const [resolveError, setResolveError] = useState('');
@@ -148,12 +148,12 @@ export default function DisputeDetailClient({ id }: { id: string }) {
     setResolveError('');
     try {
       const body: Record<string, unknown> = { outcome, resolution_comment: comment };
-      if (dealAmount) body.deal_amount = Number(dealAmount);
+      if (commissionAmount) body.commission_amount = Number(commissionAmount);
       await api.post(`/moderation/disputes/${id}/resolve`, body);
       setConfirmOpen(false);
       setOutcome(null);
       setComment('');
-      setDealAmount('');
+      setCommissionAmount('');
       load(); // refresh
     } catch (err) {
       setResolveError(err instanceof ApiError ? err.message : 'Ошибка при принятии решения');
@@ -302,8 +302,8 @@ export default function DisputeDetailClient({ id }: { id: string }) {
         <Section title="Вознаграждение">
           <div className="grid grid-cols-2 gap-x-8 gap-y-3 sm:grid-cols-3">
             <Field label="Метод" value={reward.method ? (REWARD_METHOD_LABELS[reward.method] ?? reward.method) : '—'} />
-            {reward.deal_amount && (
-              <Field label="Сумма сделки" value={`${Number(reward.deal_amount).toLocaleString('ru-RU')} ₽`} />
+            {reward.commission_amount && (
+              <Field label="Комиссия специалиста" value={`${Number(reward.commission_amount).toLocaleString('ru-RU')} ₸`} />
             )}
             {reward.amount && (
               <Field label="Вознаграждение" value={`${Number(reward.amount).toLocaleString('ru-RU')} ₽`} />
@@ -421,21 +421,24 @@ export default function DisputeDetailClient({ id }: { id: string }) {
               {outcome === 'closed_success' && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Сумма сделки, ₽{' '}
-                    <span className="text-gray-400 font-normal text-xs">(необязательно, для процентного тарифа)</span>
+                    Комиссия специалиста (заработок исполнителя по сделке), ₸{' '}
+                    <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="number"
-                    value={dealAmount}
-                    onChange={(e) => setDealAmount(e.target.value)}
-                    placeholder="0"
-                    className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-48"
+                    value={commissionAmount}
+                    onChange={(e) => setCommissionAmount(e.target.value)}
+                    placeholder="Введите сумму в тенге"
+                    className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-64"
                   />
+                  <p className="text-xs text-gray-400 mt-1">
+                    Вознаграждение автору рассчитывается от этой суммы
+                  </p>
                 </div>
               )}
               <button
                 onClick={() => setConfirmOpen(true)}
-                disabled={!comment.trim()}
+                disabled={!comment.trim() || (outcome === 'closed_success' && !commissionAmount)}
                 className={`px-5 py-2.5 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
                   outcome === 'closed_success'
                     ? 'bg-green-600 text-white hover:bg-green-700'

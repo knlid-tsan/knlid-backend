@@ -323,7 +323,7 @@ export class LeadsService {
 
       if (to === LeadStatus.CLOSED_SUCCESS) {
         const tariff = await this.rewardsService.getTariff(lead.type);
-        this.rewardsService.validateDealAmountForTariff(tariff, dto.deal_amount);
+        this.rewardsService.validateCommissionAmount(tariff, dto.commission_amount);
       }
     } else {
       throw new BadRequestException(
@@ -344,7 +344,7 @@ export class LeadsService {
       action: AuditAction.LEAD_STATUS_CHANGED,
       actorId: userId,
       ip: ip ?? null,
-      metadata: { from, to, deal_amount: dto.deal_amount ?? null },
+      metadata: { from, to, commission_amount: dto.commission_amount ?? null },
     });
 
     // Уведомляем другую сторону о смене статуса
@@ -359,7 +359,7 @@ export class LeadsService {
     }
 
     if (to === LeadStatus.CLOSED_SUCCESS) {
-      await this.rewardsService.createForLead(lead, dto.deal_amount);
+      await this.rewardsService.createForLead(lead, dto.commission_amount);
     }
 
     return this.serializeLead(lead, userId);

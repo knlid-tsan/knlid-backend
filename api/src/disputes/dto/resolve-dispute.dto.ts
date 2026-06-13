@@ -9,9 +9,9 @@ export class ResolveDisputeDto {
   @IsString()
   resolution_comment?: string;
 
-  // нужен, если до спора лид ни разу не закрывался и для типа лида настроен процентный тариф
+  // Комиссия исполнителя по сделке (₸). Обязательна для percent-тарифа при outcome closed_success.
   @IsOptional()
   @IsNumber()
   @IsPositive()
-  deal_amount?: number;
+  commission_amount?: number;
 }
