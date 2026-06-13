@@ -16,6 +16,12 @@ import { Reward } from './rewards/entities/reward.entity';
 import { DisputesModule } from './disputes/disputes.module';
 import { Dispute } from './disputes/entities/dispute.entity';
 import { AdminModule } from './admin/admin.module';
+import { AuditModule } from './audit/audit.module';
+import { AuditLog } from './audit/audit-log.entity';
+import { NotificationsModule } from './notifications/notifications.module';
+import { Notification } from './notifications/notification.entity';
+import { VerificationModule } from './verification/verification.module';
+
 @Module({
   imports: [
     TypeOrmModule.forRoot({
@@ -34,15 +40,22 @@ import { AdminModule } from './admin/admin.module';
         RewardTariff,
         Reward,
         Dispute,
+        AuditLog,
+        Notification,
       ],
       synchronize: true,
     }),
+    // Глобальные модули регистрируем первыми
+    AuditModule,
+    NotificationsModule,
+    // Остальные модули
     UsersModule,
     AuthModule,
     LeadsModule,
     RewardsModule,
     DisputesModule,
     AdminModule,
+    VerificationModule,
   ],
   controllers: [AppController],
   providers: [AppService],

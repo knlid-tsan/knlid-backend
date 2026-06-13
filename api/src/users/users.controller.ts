@@ -1,24 +1,34 @@
-import { Controller, Get, Post, Body, Param } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Req, UseGuards } from '@nestjs/common';
+import { Request } from 'express';
 import { UsersService } from './users.service';
 import { User } from './user.entity';
+import { JwtAuthGuard, AuthenticatedUser } from '../auth/jwt-auth.guard';
 
-@Controller('users') // все адреса начинаются с /users
+interface AuthenticatedRequest extends Request {
+  user: AuthenticatedUser;
+}
+
+@Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
-  // POST /users — создать пользователя
+  // GET /users/me — профиль текущего пользователя с причиной отклонения верификации
+  @UseGuards(JwtAuthGuard)
+  @Get('me')
+  async getMe(@Req() req: AuthenticatedRequest) {
+    return this.usersService.findOne(req.user.sub);
+  }
+
   @Post()
   create(@Body() data: Partial<User>): Promise<User> {
     return this.usersService.create(data);
   }
 
-  // GET /users — список всех
   @Get()
   findAll(): Promise<User[]> {
     return this.usersService.findAll();
   }
 
-  // GET /users/abc-123 — один пользователь по ID
   @Get(':id')
   findOne(@Param('id') id: string): Promise<User | null> {
     return this.usersService.findOne(id);

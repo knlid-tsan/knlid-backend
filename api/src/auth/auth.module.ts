@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { JwtModule } from '@nestjs/jwt';
 import { AuthController } from './auth.controller';
@@ -12,7 +12,7 @@ import { JWT_SECRET } from './constants';
 @Module({
   imports: [
     TypeOrmModule.forFeature([OtpCode]),
-    UsersModule,
+    forwardRef(() => UsersModule),
     JwtModule.register({
       secret: JWT_SECRET,
       signOptions: { expiresIn: '7d' },

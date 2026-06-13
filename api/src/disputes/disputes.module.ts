@@ -7,11 +7,12 @@ import { Lead } from '../leads/entities/lead.entity';
 import { LeadStatusHistory } from '../leads/entities/lead-status-history.entity';
 import { Reward } from '../rewards/entities/reward.entity';
 import { RewardTariff } from '../rewards/entities/reward-tariff.entity';
+import { User } from '../users/user.entity';
 import { AuthModule } from '../auth/auth.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Dispute, Lead, LeadStatusHistory, Reward, RewardTariff]),
+    TypeOrmModule.forFeature([Dispute, Lead, LeadStatusHistory, Reward, RewardTariff, User]),
     AuthModule,
   ],
   controllers: [ModerationController],

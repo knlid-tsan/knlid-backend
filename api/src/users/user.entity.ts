@@ -54,6 +54,18 @@ export class User {
   @Column({ nullable: true }) // nullable — поле может быть пустым
   identity_doc_url: string;
 
+  // Причина последнего отклонения верификации — видна пользователю в GET /users/me
+  @Column({ type: 'text', nullable: true })
+  verification_rejection_reason: string | null;
+
+  // Количество загрузок документа (сбрасывается после approve)
+  @Column({ default: 0 })
+  verification_attempts: number;
+
+  // После 3-го отклонения повторная загрузка блокируется до этого момента
+  @Column({ type: 'timestamp', nullable: true })
+  verification_blocked_until: Date | null;
+
   @Column({ type: 'decimal', precision: 2, scale: 1, default: 0 })
   rating: number;
 

@@ -13,13 +13,17 @@ import { ResolveDisputeDto } from './dto/resolve-dispute.dto';
 import { Lead } from '../leads/entities/lead.entity';
 import { LeadStatusHistory } from '../leads/entities/lead-status-history.entity';
 import { LeadStatus } from '../leads/enums/lead-status.enum';
-
-// Статусы, для которых спор открыть нельзя — лид уже окончательно закрыт без возможности пересмотра
-const NON_DISPUTABLE_STATUSES = [LeadStatus.CANCELLED, LeadStatus.ARCHIVED];
 import { Reward } from '../rewards/entities/reward.entity';
 import { RewardTariff } from '../rewards/entities/reward-tariff.entity';
 import { RewardMethod } from '../rewards/enums/reward-method.enum';
 import { RewardStatus } from '../rewards/enums/reward-status.enum';
+import { AuditService } from '../audit/audit.service';
+import { AuditAction } from '../audit/audit-action.enum';
+import { NotificationsService } from '../notifications/notifications.service';
+import { User, UserRole } from '../users/user.entity';
+
+// Статусы, для которых спор открыть нельзя — лид уже окончательно закрыт без возможности пересмотра
+const NON_DISPUTABLE_STATUSES = [LeadStatus.CANCELLED, LeadStatus.ARCHIVED];
 
 @Injectable()
 export class DisputesService {
@@ -34,10 +38,12 @@ export class DisputesService {
     private rewardsRepository: Repository<Reward>,
     @InjectRepository(RewardTariff)
     private tariffsRepository: Repository<RewardTariff>,
+    @InjectRepository(User)
+    private usersRepository: Repository<User>,
+    private auditService: AuditService,
+    private notificationsService: NotificationsService,
   ) {}
 
-  // Открывает спор по лиду: создаёт Dispute, переводит лид в статус dispute
-  // и помечает связанное вознаграждение (если есть) как disputed.
   async openForLead(lead: Lead, reason: string, userId: string): Promise<Dispute> {
     if (lead.status === LeadStatus.DISPUTE) {
       throw new BadRequestException('Спор по этому лиду уже открыт');
@@ -69,7 +75,7 @@ export class DisputesService {
       await this.rewardsRepository.save(reward);
     }
 
-    return this.disputesRepository.save(
+    const dispute = await this.disputesRepository.save(
       this.disputesRepository.create({
         lead_id: lead.id,
         opened_by: userId,
@@ -77,9 +83,37 @@ export class DisputesService {
         status: DisputeStatus.OPEN,
       }),
     );
+
+    // Уведомляем вторую сторону лида о споре
+    const otherPartyId =
+      lead.author_id === userId ? lead.executor_id : lead.author_id;
+    if (otherPartyId) {
+      await this.notificationsService.send(
+        otherPartyId,
+        'Открыт спор',
+        `По лиду открыт спор. Причина: ${reason}`,
+        { lead_id: lead.id, dispute_id: dispute.id, action: 'dispute_opened' },
+      );
+    }
+
+    // Уведомляем всех модераторов
+    const moderators = await this.usersRepository.find({
+      where: [{ role: UserRole.MODERATOR }, { role: UserRole.ADMIN }],
+    });
+    for (const mod of moderators) {
+      if (mod.id !== userId) {
+        await this.notificationsService.send(
+          mod.id,
+          'Новый спор',
+          `Открыт спор по лиду. Причина: ${reason}`,
+          { lead_id: lead.id, dispute_id: dispute.id, action: 'dispute_opened' },
+        );
+      }
+    }
+
+    return dispute;
   }
 
-  // Открывает спор по вознаграждению — проверяет права через Reward, дальше делегирует в openForLead.
   async openForReward(reward: Reward, reason: string, userId: string): Promise<Dispute> {
     if (reward.author_id !== userId && reward.executor_id !== userId) {
       throw new ForbiddenException('Нет доступа к этому вознаграждению');
@@ -122,7 +156,12 @@ export class DisputesService {
     return { dispute, lead, history, reward };
   }
 
-  async resolve(disputeId: string, dto: ResolveDisputeDto, moderatorId: string) {
+  async resolve(
+    disputeId: string,
+    dto: ResolveDisputeDto,
+    moderatorId: string,
+    ip?: string,
+  ) {
     const dispute = await this.getDisputeOrFail(disputeId);
 
     if (dispute.status !== DisputeStatus.OPEN) {
@@ -171,8 +210,30 @@ export class DisputesService {
         await this.rewardsRepository.save(reward);
       }
     } else if (outcomeStatus === LeadStatus.CLOSED_SUCCESS) {
-      // Спор был открыт до того, как лид впервые дошёл до closed_success — создаём Reward сейчас.
       reward = await this.createRewardForLead(lead, dto.deal_amount);
+    }
+
+    await this.auditService.log({
+      entityType: 'dispute',
+      entityId: disputeId,
+      action: AuditAction.DISPUTE_RESOLVED,
+      actorId: moderatorId,
+      ip: ip ?? null,
+      metadata: {
+        outcome: dto.outcome,
+        lead_id: lead.id,
+        resolution_comment: dto.resolution_comment ?? null,
+      },
+    });
+
+    // Уведомляем обе стороны лида о решении
+    for (const userId of [lead.author_id, lead.executor_id].filter(Boolean)) {
+      await this.notificationsService.send(
+        userId!,
+        'Спор решён',
+        `Решение: "${outcomeStatus}". ${dto.resolution_comment ?? ''}`,
+        { dispute_id: disputeId, lead_id: lead.id, outcome: dto.outcome, action: 'dispute_resolved' },
+      );
     }
 
     return { dispute, lead, reward };

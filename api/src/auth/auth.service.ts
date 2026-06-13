@@ -12,6 +12,8 @@ import { JwtService } from '@nestjs/jwt';
 import { OtpCode } from './otp-code.entity';
 import { UsersService } from '../users/users.service';
 import { VerifyOtpDto } from './dto/verify-otp.dto';
+import { AuditService } from '../audit/audit.service';
+import { AuditAction } from '../audit/audit-action.enum';
 
 const OTP_TTL_MINUTES = 5;
 const OTP_REQUEST_LIMIT = 3;
@@ -26,6 +28,7 @@ export class AuthService {
     private otpCodesRepository: Repository<OtpCode>,
     private usersService: UsersService,
     private jwtService: JwtService,
+    private auditService: AuditService,
   ) {}
 
   async requestOtp(phone: string): Promise<{ message: string }> {
@@ -69,6 +72,7 @@ export class AuthService {
     }
 
     let user = await this.usersService.findByPhone(dto.phone);
+    let isNewUser = false;
 
     if (!user) {
       if (!dto.full_name || !dto.specialization || !dto.city) {
@@ -83,9 +87,20 @@ export class AuthService {
         specialization: dto.specialization,
         city: dto.city,
       });
+      isNewUser = true;
     }
 
     await this.otpCodesRepository.delete({ phone: dto.phone });
+
+    if (isNewUser) {
+      await this.auditService.log({
+        entityType: 'user',
+        entityId: user.id,
+        action: AuditAction.USER_REGISTERED,
+        actorId: user.id,
+        metadata: { phone: user.phone, specialization: user.specialization },
+      });
+    }
 
     const access_token = await this.jwtService.signAsync({
       sub: user.id,

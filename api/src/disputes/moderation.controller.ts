@@ -43,6 +43,6 @@ export class ModerationController {
     @Body() dto: ResolveDisputeDto,
     @Req() req: AuthenticatedRequest,
   ) {
-    return this.disputesService.resolve(id, dto, req.user.sub);
+    return this.disputesService.resolve(id, dto, req.user.sub, req.ip);
   }
 }

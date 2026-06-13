@@ -6,7 +6,7 @@ import {
   ConflictException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, Repository, Not, In } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 import { Lead } from './entities/lead.entity';
 import { Client } from './entities/client.entity';
 import { LeadStatusHistory } from './entities/lead-status-history.entity';
@@ -20,9 +20,13 @@ import {
   TERMINAL_STATUSES,
 } from './enums/lead-status.enum';
 import { UsersService } from '../users/users.service';
+import { UserRole, UserStatus } from '../users/user.entity';
 import { RewardsService } from '../rewards/rewards.service';
 import { DisputesService } from '../disputes/disputes.service';
 import { OpenDisputeDto } from '../disputes/dto/open-dispute.dto';
+import { AuditService } from '../audit/audit.service';
+import { AuditAction } from '../audit/audit-action.enum';
+import { NotificationsService } from '../notifications/notifications.service';
 
 // Переходы статусов, которые может выполнить только исполнитель через PATCH /status
 const PROGRESS_TRANSITIONS: Partial<Record<LeadStatus, LeadStatus[]>> = {
@@ -41,6 +45,9 @@ const HIDE_PHONE_STATUSES: LeadStatus[] = [
   LeadStatus.PENDING_ACCEPTANCE,
 ];
 
+// Роли, освобождённые от проверки статуса верификации
+const PRIVILEGED_ROLES: UserRole[] = [UserRole.ADMIN, UserRole.MODERATOR];
+
 @Injectable()
 export class LeadsService {
   constructor(
@@ -52,13 +59,22 @@ export class LeadsService {
     private rewardsService: RewardsService,
     private disputesService: DisputesService,
     private dataSource: DataSource,
+    private auditService: AuditService,
+    private notificationsService: NotificationsService,
   ) {}
 
-  async create(dto: CreateLeadDto, authorId: string) {
-    const duplicate = await this.findActiveDuplicate(
-      dto.type,
-      dto.client.phone,
-    );
+  async create(dto: CreateLeadDto, authorId: string, authorRole: UserRole, ip?: string) {
+    // Блок 1: только верифицированные пользователи могут создавать лиды
+    if (!PRIVILEGED_ROLES.includes(authorRole)) {
+      const author = await this.usersService.findOne(authorId);
+      if (!author || author.status !== UserStatus.ACTIVE) {
+        throw new ForbiddenException(
+          'Только верифицированные пользователи могут создавать лиды',
+        );
+      }
+    }
+
+    const duplicate = await this.findActiveDuplicate(dto.type, dto.client.phone);
 
     if (duplicate && !dto.force) {
       throw new ConflictException({
@@ -110,10 +126,19 @@ export class LeadsService {
       return lead;
     });
 
+    await this.auditService.log({
+      entityType: 'lead',
+      entityId: lead.id,
+      action: AuditAction.LEAD_CREATED,
+      actorId: authorId,
+      ip: ip ?? null,
+      metadata: { type: lead.type, city: lead.city },
+    });
+
     return this.serializeLead(lead, authorId);
   }
 
-  async assign(leadId: string, dto: AssignLeadDto, userId: string) {
+  async assign(leadId: string, dto: AssignLeadDto, userId: string, ip?: string) {
     const lead = await this.getLeadOrFail(leadId);
 
     if (lead.author_id !== userId) {
@@ -137,16 +162,42 @@ export class LeadsService {
       throw new BadRequestException('Указанный исполнитель не найден');
     }
 
+    // Только верифицированные пользователи могут быть исполнителями
+    if (
+      !PRIVILEGED_ROLES.includes(executor.role) &&
+      executor.status !== UserStatus.ACTIVE
+    ) {
+      throw new ForbiddenException(
+        'Исполнитель должен пройти верификацию для принятия лидов',
+      );
+    }
+
     const from = lead.status;
     lead.executor_id = dto.executor_id;
     lead.status = LeadStatus.PENDING_ACCEPTANCE;
     await this.leadsRepository.save(lead);
     await this.recordHistory(lead.id, from, lead.status, userId);
 
+    await this.auditService.log({
+      entityType: 'lead',
+      entityId: leadId,
+      action: AuditAction.LEAD_ASSIGNED,
+      actorId: userId,
+      ip: ip ?? null,
+      metadata: { executor_id: dto.executor_id },
+    });
+
+    await this.notificationsService.send(
+      dto.executor_id,
+      'Вам назначен лид',
+      `Лид типа "${lead.type}" ожидает вашего подтверждения.`,
+      { lead_id: lead.id, action: 'lead_assigned' },
+    );
+
     return this.serializeLead(lead, userId);
   }
 
-  async accept(leadId: string, userId: string) {
+  async accept(leadId: string, userId: string, ip?: string) {
     const lead = await this.getLeadOrFail(leadId);
 
     if (lead.executor_id !== userId) {
@@ -166,10 +217,25 @@ export class LeadsService {
     await this.leadsRepository.save(lead);
     await this.recordHistory(lead.id, from, lead.status, userId);
 
+    await this.auditService.log({
+      entityType: 'lead',
+      entityId: leadId,
+      action: AuditAction.LEAD_ACCEPTED,
+      actorId: userId,
+      ip: ip ?? null,
+    });
+
+    await this.notificationsService.send(
+      lead.author_id,
+      'Лид принят',
+      `Исполнитель принял ваш лид типа "${lead.type}".`,
+      { lead_id: lead.id, action: 'lead_accepted' },
+    );
+
     return this.serializeLead(lead, userId);
   }
 
-  async decline(leadId: string, dto: DeclineLeadDto, userId: string) {
+  async decline(leadId: string, dto: DeclineLeadDto, userId: string, ip?: string) {
     const lead = await this.getLeadOrFail(leadId);
 
     if (lead.executor_id !== userId) {
@@ -190,10 +256,31 @@ export class LeadsService {
     await this.leadsRepository.save(lead);
     await this.recordHistory(lead.id, from, lead.status, userId, dto.reason);
 
+    await this.auditService.log({
+      entityType: 'lead',
+      entityId: leadId,
+      action: AuditAction.LEAD_DECLINED,
+      actorId: userId,
+      ip: ip ?? null,
+      metadata: { reason: dto.reason },
+    });
+
+    await this.notificationsService.send(
+      lead.author_id,
+      'Лид отклонён',
+      `Исполнитель отклонил ваш лид. Причина: ${dto.reason}`,
+      { lead_id: lead.id, action: 'lead_declined' },
+    );
+
     return this.serializeLead(lead, userId);
   }
 
-  async updateStatus(leadId: string, dto: UpdateLeadStatusDto, userId: string) {
+  async updateStatus(
+    leadId: string,
+    dto: UpdateLeadStatusDto,
+    userId: string,
+    ip?: string,
+  ) {
     const lead = await this.getLeadOrFail(leadId);
 
     if (lead.status === LeadStatus.DISPUTE) {
@@ -251,6 +338,26 @@ export class LeadsService {
     await this.leadsRepository.save(lead);
     await this.recordHistory(lead.id, from, to, userId, dto.comment);
 
+    await this.auditService.log({
+      entityType: 'lead',
+      entityId: leadId,
+      action: AuditAction.LEAD_STATUS_CHANGED,
+      actorId: userId,
+      ip: ip ?? null,
+      metadata: { from, to, deal_amount: dto.deal_amount ?? null },
+    });
+
+    // Уведомляем другую сторону о смене статуса
+    const notifyUserId = isAuthor ? lead.executor_id : lead.author_id;
+    if (notifyUserId) {
+      await this.notificationsService.send(
+        notifyUserId,
+        'Статус лида изменён',
+        `Статус лида изменён: "${from}" → "${to}".`,
+        { lead_id: lead.id, from, to, action: 'lead_status_changed' },
+      );
+    }
+
     if (to === LeadStatus.CLOSED_SUCCESS) {
       await this.rewardsService.createForLead(lead, dto.deal_amount);
     }
@@ -258,7 +365,7 @@ export class LeadsService {
     return this.serializeLead(lead, userId);
   }
 
-  async openDispute(leadId: string, dto: OpenDisputeDto, userId: string) {
+  async openDispute(leadId: string, dto: OpenDisputeDto, userId: string, ip?: string) {
     const lead = await this.getLeadOrFail(leadId);
 
     if (lead.author_id !== userId && lead.executor_id !== userId) {
@@ -266,6 +373,15 @@ export class LeadsService {
     }
 
     await this.disputesService.openForLead(lead, dto.reason, userId);
+
+    await this.auditService.log({
+      entityType: 'lead',
+      entityId: leadId,
+      action: AuditAction.DISPUTE_OPENED,
+      actorId: userId,
+      ip: ip ?? null,
+      metadata: { reason: dto.reason },
+    });
 
     return this.serializeLead(lead, userId);
   }
@@ -288,7 +404,7 @@ export class LeadsService {
     return leads.map((lead) => this.serializeLead(lead, userId));
   }
 
-  async findOne(leadId: string, userId: string) {
+  async findOne(leadId: string, userId: string, userRole: UserRole, ip?: string) {
     const lead = await this.getLeadOrFail(leadId);
 
     if (lead.author_id !== userId && lead.executor_id !== userId) {
@@ -299,6 +415,22 @@ export class LeadsService {
       where: { lead_id: leadId },
       order: { created_at: 'ASC' },
     });
+
+    // VIEW_CLIENT_PHONE — фиксируем когда исполнитель впервые видит телефон клиента
+    const isExecutor = lead.executor_id === userId;
+    const phoneVisible =
+      isExecutor && !HIDE_PHONE_STATUSES.includes(lead.status);
+
+    if (phoneVisible) {
+      await this.auditService.log({
+        entityType: 'lead',
+        entityId: leadId,
+        action: AuditAction.VIEW_CLIENT_PHONE,
+        actorId: userId,
+        ip: ip ?? null,
+        metadata: { lead_status: lead.status },
+      });
+    }
 
     return { ...this.serializeLead(lead, userId), history };
   }

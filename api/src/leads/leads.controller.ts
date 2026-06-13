@@ -28,7 +28,7 @@ export class LeadsController {
 
   @Post()
   create(@Body() dto: CreateLeadDto, @Req() req: AuthenticatedRequest) {
-    return this.leadsService.create(dto, req.user.sub);
+    return this.leadsService.create(dto, req.user.sub, req.user.role, req.ip);
   }
 
   @Get('my-created')
@@ -43,7 +43,7 @@ export class LeadsController {
 
   @Get(':id')
   findOne(@Param('id') id: string, @Req() req: AuthenticatedRequest) {
-    return this.leadsService.findOne(id, req.user.sub);
+    return this.leadsService.findOne(id, req.user.sub, req.user.role, req.ip);
   }
 
   @Post(':id/assign')
@@ -52,12 +52,12 @@ export class LeadsController {
     @Body() dto: AssignLeadDto,
     @Req() req: AuthenticatedRequest,
   ) {
-    return this.leadsService.assign(id, dto, req.user.sub);
+    return this.leadsService.assign(id, dto, req.user.sub, req.ip);
   }
 
   @Post(':id/accept')
   accept(@Param('id') id: string, @Req() req: AuthenticatedRequest) {
-    return this.leadsService.accept(id, req.user.sub);
+    return this.leadsService.accept(id, req.user.sub, req.ip);
   }
 
   @Post(':id/decline')
@@ -66,7 +66,7 @@ export class LeadsController {
     @Body() dto: DeclineLeadDto,
     @Req() req: AuthenticatedRequest,
   ) {
-    return this.leadsService.decline(id, dto, req.user.sub);
+    return this.leadsService.decline(id, dto, req.user.sub, req.ip);
   }
 
   @Patch(':id/status')
@@ -75,7 +75,7 @@ export class LeadsController {
     @Body() dto: UpdateLeadStatusDto,
     @Req() req: AuthenticatedRequest,
   ) {
-    return this.leadsService.updateStatus(id, dto, req.user.sub);
+    return this.leadsService.updateStatus(id, dto, req.user.sub, req.ip);
   }
 
   @Post(':id/dispute')
@@ -84,6 +84,6 @@ export class LeadsController {
     @Body() dto: OpenDisputeDto,
     @Req() req: AuthenticatedRequest,
   ) {
-    return this.leadsService.openDispute(id, dto, req.user.sub);
+    return this.leadsService.openDispute(id, dto, req.user.sub, req.ip);
   }
 }

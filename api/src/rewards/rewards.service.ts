@@ -16,6 +16,9 @@ import { DisputeRewardDto } from './dto/dispute-reward.dto';
 import { Lead } from '../leads/entities/lead.entity';
 import { LeadType } from '../leads/enums/lead-type.enum';
 import { DisputesService } from '../disputes/disputes.service';
+import { AuditService } from '../audit/audit.service';
+import { AuditAction } from '../audit/audit-action.enum';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class RewardsService {
@@ -25,6 +28,8 @@ export class RewardsService {
     @InjectRepository(RewardTariff)
     private tariffsRepository: Repository<RewardTariff>,
     private disputesService: DisputesService,
+    private auditService: AuditService,
+    private notificationsService: NotificationsService,
   ) {}
 
   async listTariffs(): Promise<RewardTariff[]> {
@@ -53,8 +58,6 @@ export class RewardsService {
     return this.tariffsRepository.findOneBy({ lead_type: leadType });
   }
 
-  // Бросает 400, если для процентного тарифа не передан deal_amount.
-  // Вызывается ДО смены статуса лида, чтобы не закрыть лид при некорректном запросе.
   validateDealAmountForTariff(tariff: RewardTariff | null, dealAmount?: number): void {
     if (tariff?.method === RewardMethod.PERCENT && (dealAmount === undefined || dealAmount === null)) {
       throw new BadRequestException(
@@ -63,7 +66,6 @@ export class RewardsService {
     }
   }
 
-  // Создаёт Reward при переводе лида в closed_success.
   async createForLead(lead: Lead, dealAmount?: number): Promise<Reward> {
     const tariff = await this.getTariff(lead.type);
 
@@ -87,7 +89,7 @@ export class RewardsService {
       status = RewardStatus.AWAITING_PAYMENT;
     }
 
-    return this.rewardsRepository.save(
+    const reward = await this.rewardsRepository.save(
       this.rewardsRepository.create({
         lead_id: lead.id,
         author_id: lead.author_id,
@@ -99,6 +101,33 @@ export class RewardsService {
         status,
       }),
     );
+
+    await this.auditService.log({
+      entityType: 'reward',
+      entityId: reward.id,
+      action: AuditAction.REWARD_CREATED,
+      actorId: lead.author_id,
+      metadata: { lead_id: lead.id, amount: reward.amount, status },
+    });
+
+    // Уведомляем обе стороны о создании вознаграждения
+    await this.notificationsService.send(
+      lead.author_id,
+      'Вознаграждение создано',
+      `По лиду создано вознаграждение${amount !== null ? ` на сумму ${amount}` : ' (требует ручного расчёта)'}.`,
+      { reward_id: reward.id, lead_id: lead.id, action: 'reward_created' },
+    );
+
+    if (lead.executor_id) {
+      await this.notificationsService.send(
+        lead.executor_id,
+        'Вознаграждение создано',
+        `По лиду создано вознаграждение${amount !== null ? ` на сумму ${amount}` : ' (требует ручного расчёта)'}.`,
+        { reward_id: reward.id, lead_id: lead.id, action: 'reward_created' },
+      );
+    }
+
+    return reward;
   }
 
   async findByLeadId(leadId: string): Promise<Reward | null> {
@@ -131,12 +160,38 @@ export class RewardsService {
     reward.proof_url = dto.proof_url;
     reward.paid_at = new Date();
 
-    return this.rewardsRepository.save(reward);
+    await this.rewardsRepository.save(reward);
+
+    await this.auditService.log({
+      entityType: 'reward',
+      entityId: rewardId,
+      action: AuditAction.REWARD_PAID,
+      actorId: userId,
+      metadata: { proof_url: dto.proof_url },
+    });
+
+    await this.notificationsService.send(
+      reward.author_id,
+      'Вознаграждение оплачено',
+      `Исполнитель подтвердил получение вознаграждения.`,
+      { reward_id: rewardId, action: 'reward_paid' },
+    );
+
+    return reward;
   }
 
   async dispute(rewardId: string, dto: DisputeRewardDto, userId: string) {
     const reward = await this.getRewardOrFail(rewardId);
     await this.disputesService.openForReward(reward, dto.reason, userId);
+
+    await this.auditService.log({
+      entityType: 'reward',
+      entityId: rewardId,
+      action: AuditAction.REWARD_DISPUTED,
+      actorId: userId,
+      metadata: { reason: dto.reason },
+    });
+
     return this.getRewardOrFail(rewardId);
   }
 
