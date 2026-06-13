@@ -479,6 +479,146 @@ export class LeadsService {
     );
   }
 
+  async adminFindAll(
+    filters: { status?: string; type?: string; city?: string },
+    page: number,
+    limit: number,
+  ) {
+    const qb = this.leadsRepository
+      .createQueryBuilder('lead')
+      .orderBy('lead.created_at', 'DESC');
+
+    if (filters.status) {
+      qb.andWhere('lead.status = :status', { status: filters.status });
+    }
+    if (filters.type) {
+      qb.andWhere('lead.type = :type', { type: filters.type });
+    }
+    if (filters.city) {
+      qb.andWhere('lead.city ILIKE :city', { city: `%${filters.city}%` });
+    }
+
+    const [leads, total] = await qb
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getManyAndCount();
+
+    const userIds = [
+      ...new Set([
+        ...leads.map((l) => l.author_id),
+        ...leads.filter((l) => l.executor_id).map((l) => l.executor_id!),
+      ]),
+    ];
+    const users = await this.usersService.findByIds(userIds);
+    const userMap = new Map(users.map((u) => [u.id, u]));
+
+    const data = leads.map((lead) => ({
+      id: lead.id,
+      type: lead.type,
+      status: lead.status,
+      city: lead.city,
+      created_at: lead.created_at,
+      closed_at: lead.closed_at,
+      reward_amount: lead.reward_amount,
+      reward_paid: lead.reward_paid,
+      author: userMap.has(lead.author_id)
+        ? {
+            id: lead.author_id,
+            full_name: userMap.get(lead.author_id)!.full_name,
+            phone: userMap.get(lead.author_id)!.phone,
+          }
+        : null,
+      executor:
+        lead.executor_id && userMap.has(lead.executor_id)
+          ? {
+              id: lead.executor_id,
+              full_name: userMap.get(lead.executor_id)!.full_name,
+              phone: userMap.get(lead.executor_id)!.phone,
+            }
+          : null,
+    }));
+
+    return { data, total, page, limit };
+  }
+
+  async adminFindOne(leadId: string) {
+    const lead = await this.leadsRepository.findOne({
+      where: { id: leadId },
+      relations: { client: true },
+    });
+    if (!lead) {
+      throw new NotFoundException('Лид не найден');
+    }
+
+    const history = await this.historyRepository.find({
+      where: { lead_id: leadId },
+      order: { created_at: 'ASC' },
+    });
+
+    const userIds = [
+      ...new Set([
+        lead.author_id,
+        ...(lead.executor_id ? [lead.executor_id] : []),
+        ...history.map((h) => h.changed_by),
+      ]),
+    ];
+    const users = await this.usersService.findByIds(userIds);
+    const userMap = new Map(users.map((u) => [u.id, u]));
+
+    const historyWithUser = history.map((h) => ({
+      id: h.id,
+      from_status: h.from_status,
+      to_status: h.to_status,
+      created_at: h.created_at,
+      comment: h.comment,
+      changed_by_user: userMap.has(h.changed_by)
+        ? { id: h.changed_by, full_name: userMap.get(h.changed_by)!.full_name }
+        : null,
+    }));
+
+    const reward = await this.rewardsService.getForLead(lead.id);
+    const dispute = await this.disputesService.getOpenForLead(lead.id);
+
+    const authorUser = userMap.get(lead.author_id);
+    const executorUser = lead.executor_id ? userMap.get(lead.executor_id) : undefined;
+
+    return {
+      id: lead.id,
+      type: lead.type,
+      status: lead.status,
+      city: lead.city,
+      description: lead.description,
+      created_at: lead.created_at,
+      closed_at: lead.closed_at,
+      reward_amount: lead.reward_amount,
+      reward_paid: lead.reward_paid,
+      is_duplicate: lead.is_duplicate,
+      duplicate_of_id: lead.duplicate_of_id,
+      client: lead.client,
+      author: authorUser
+        ? {
+            id: authorUser.id,
+            full_name: authorUser.full_name,
+            phone: authorUser.phone,
+            specialization: authorUser.specialization,
+            city: authorUser.city,
+          }
+        : null,
+      executor: executorUser
+        ? {
+            id: executorUser.id,
+            full_name: executorUser.full_name,
+            phone: executorUser.phone,
+            specialization: executorUser.specialization,
+            city: executorUser.city,
+          }
+        : null,
+      history: historyWithUser,
+      reward: reward ?? null,
+      dispute: dispute ?? null,
+    };
+  }
+
   private serializeLead(lead: Lead, userId: string) {
     const isAuthor = lead.author_id === userId;
     const isExecutor = lead.executor_id === userId;

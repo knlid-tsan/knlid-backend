@@ -5,6 +5,7 @@ import {
   Post,
   Body,
   Param,
+  Query,
   Req,
   UseGuards,
   UnauthorizedException,
@@ -21,7 +22,9 @@ import { User, UserRole } from '../users/user.entity';
 import { BootstrapAdminDto } from './dto/bootstrap-admin.dto';
 import { UpsertTariffDto } from '../rewards/dto/upsert-tariff.dto';
 import { RewardsService } from '../rewards/rewards.service';
+import { LeadsService } from '../leads/leads.service';
 import { LeadType } from '../leads/enums/lead-type.enum';
+import { AdminLeadsQueryDto } from './dto/admin-leads-query.dto';
 import { BOOTSTRAP_ADMIN_SECRET } from './constants';
 
 interface AuthenticatedRequest extends Request {
@@ -34,6 +37,7 @@ export class AdminController {
     @InjectRepository(User)
     private usersRepository: Repository<User>,
     private rewardsService: RewardsService,
+    private leadsService: LeadsService,
   ) {}
 
   // POST /admin/bootstrap-admin — назначить первого админа по секретному ключу
@@ -74,5 +78,23 @@ export class AdminController {
     }
 
     return this.rewardsService.upsertTariff(leadType as LeadType, dto, req.user.sub);
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.MODERATOR, UserRole.ADMIN)
+  @Get('leads')
+  adminLeads(@Query() query: AdminLeadsQueryDto) {
+    return this.leadsService.adminFindAll(
+      { status: query.status, type: query.type, city: query.city },
+      query.page ?? 1,
+      query.limit ?? 20,
+    );
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.MODERATOR, UserRole.ADMIN)
+  @Get('leads/:id')
+  adminLead(@Param('id') id: string) {
+    return this.leadsService.adminFindOne(id);
   }
 }

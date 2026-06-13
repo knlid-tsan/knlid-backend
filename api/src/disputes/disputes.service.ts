@@ -138,6 +138,12 @@ export class DisputesService {
     });
   }
 
+  getOpenForLead(leadId: string): Promise<Dispute | null> {
+    return this.disputesRepository.findOne({
+      where: { lead_id: leadId, status: DisputeStatus.OPEN },
+    });
+  }
+
   async getDetail(disputeId: string) {
     const dispute = await this.getDisputeOrFail(disputeId);
 

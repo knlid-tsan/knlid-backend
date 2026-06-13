@@ -20,5 +20,6 @@ import { DisputesModule } from '../disputes/disputes.module';
   ],
   controllers: [LeadsController],
   providers: [LeadsService],
+  exports: [LeadsService],
 })
 export class LeadsModule {}

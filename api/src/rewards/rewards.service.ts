@@ -58,6 +58,10 @@ export class RewardsService {
     return this.tariffsRepository.findOneBy({ lead_type: leadType });
   }
 
+  getForLead(leadId: string): Promise<Reward | null> {
+    return this.rewardsRepository.findOneBy({ lead_id: leadId });
+  }
+
   validateDealAmountForTariff(tariff: RewardTariff | null, dealAmount?: number): void {
     if (tariff?.method === RewardMethod.PERCENT && (dealAmount === undefined || dealAmount === null)) {
       throw new BadRequestException(

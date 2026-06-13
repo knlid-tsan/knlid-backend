@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { User } from './user.entity';
 
 @Injectable()
@@ -29,5 +29,10 @@ export class UsersService {
   // Найти по номеру телефона (пригодится для входа)
   findByPhone(phone: string): Promise<User | null> {
     return this.usersRepository.findOneBy({ phone });
+  }
+
+  findByIds(ids: string[]): Promise<User[]> {
+    if (ids.length === 0) return Promise.resolve([]);
+    return this.usersRepository.findBy({ id: In(ids) });
   }
 }
