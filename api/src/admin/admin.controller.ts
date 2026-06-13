@@ -16,20 +16,24 @@ import {
 } from '@nestjs/common';
 import { Request } from 'express';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 import { JwtAuthGuard, AuthenticatedUser } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
-import { User, UserRole } from '../users/user.entity';
+import { User, UserRole, UserStatus } from '../users/user.entity';
 import { BootstrapAdminDto } from './dto/bootstrap-admin.dto';
 import { UpsertTariffV2Dto } from './dto/upsert-tariff-v2.dto';
 import { RewardsService } from '../rewards/rewards.service';
 import { LeadsService } from '../leads/leads.service';
 import { CitiesService } from '../cities/cities.service';
+import { AuditService } from '../audit/audit.service';
+import { AuditAction } from '../audit/audit-action.enum';
 import { CreateCityDto } from '../cities/dto/create-city.dto';
 import { ToggleCityDto } from '../cities/dto/toggle-city.dto';
 import { AdminLeadsQueryDto } from './dto/admin-leads-query.dto';
 import { AdminClientsQueryDto } from './dto/admin-clients-query.dto';
+import { AdminUsersQueryDto } from './dto/admin-users-query.dto';
+import { SetRoleDto } from './dto/set-role.dto';
 import { BOOTSTRAP_ADMIN_SECRET } from './constants';
 
 interface AuthenticatedRequest extends Request {
@@ -44,6 +48,8 @@ export class AdminController {
     private rewardsService: RewardsService,
     private leadsService: LeadsService,
     private citiesService: CitiesService,
+    private auditService: AuditService,
+    private dataSource: DataSource,
   ) {}
 
   // POST /admin/bootstrap-admin — назначить первого админа по секретному ключу
@@ -125,6 +131,166 @@ export class AdminController {
       query.page ?? 1,
       query.limit ?? 20,
     );
+  }
+
+  // ─── Пользователи ─────────────────────────────────────────────────────────
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.MODERATOR, UserRole.ADMIN)
+  @Get('users')
+  async adminUsers(@Query() query: AdminUsersQueryDto) {
+    const page = query.page ?? 1;
+    const limit = query.limit ?? 20;
+
+    const qb = this.usersRepository
+      .createQueryBuilder('user')
+      .orderBy('user.created_at', 'DESC');
+
+    if (query.status) qb.andWhere('user.status = :status', { status: query.status });
+    if (query.specialization) qb.andWhere('user.specialization = :spec', { spec: query.specialization });
+    if (query.role) qb.andWhere('user.role = :role', { role: query.role });
+    if (query.city) qb.andWhere('user.city ILIKE :city', { city: `%${query.city}%` });
+    if (query.search) {
+      qb.andWhere('(user.full_name ILIKE :search OR user.phone ILIKE :search)', {
+        search: `%${query.search}%`,
+      });
+    }
+
+    const [users, total] = await qb
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getManyAndCount();
+
+    const data = users.map(({ identity_doc_url: _, ...u }) => u);
+    return { data, total, page, limit };
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.MODERATOR, UserRole.ADMIN)
+  @Get('users/:id')
+  async adminUser(@Param('id') id: string) {
+    const user = await this.usersRepository.findOneBy({ id });
+    if (!user) throw new NotFoundException('Пользователь не найден');
+
+    const [statsRow] = await this.dataSource.query<
+      [{ leads_created: number; leads_assigned: number; leads_closed: number }]
+    >(
+      `SELECT
+        COUNT(CASE WHEN author_id = $1 THEN 1 END)::int          AS leads_created,
+        COUNT(CASE WHEN executor_id = $1::uuid THEN 1 END)::int  AS leads_assigned,
+        COUNT(CASE WHEN executor_id = $1::uuid AND status = 'closed_success' THEN 1 END)::int AS leads_closed
+      FROM leads`,
+      [id],
+    );
+
+    const recentActions = await this.auditService.findByUser(id, 20);
+
+    const { identity_doc_url: _, ...userFields } = user;
+    return {
+      ...userFields,
+      stats: {
+        leads_created: statsRow.leads_created,
+        leads_assigned: statsRow.leads_assigned,
+        leads_closed: statsRow.leads_closed,
+      },
+      recent_actions: recentActions,
+    };
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.MODERATOR, UserRole.ADMIN)
+  @Post('users/:id/block')
+  async blockUser(@Param('id') id: string, @Req() req: AuthenticatedRequest) {
+    if (id === req.user.sub) {
+      throw new BadRequestException('Нельзя заблокировать собственный аккаунт');
+    }
+    const user = await this.usersRepository.findOneBy({ id });
+    if (!user) throw new NotFoundException('Пользователь не найден');
+
+    user.status = UserStatus.BLOCKED;
+    await this.usersRepository.save(user);
+
+    await this.auditService.log({
+      entityType: 'user',
+      entityId: id,
+      action: AuditAction.USER_BLOCKED,
+      actorId: req.user.sub,
+    });
+
+    return { id, status: user.status };
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.MODERATOR, UserRole.ADMIN)
+  @Post('users/:id/unblock')
+  async unblockUser(@Param('id') id: string, @Req() req: AuthenticatedRequest) {
+    const user = await this.usersRepository.findOneBy({ id });
+    if (!user) throw new NotFoundException('Пользователь не найден');
+
+    user.status = UserStatus.ACTIVE;
+    await this.usersRepository.save(user);
+
+    await this.auditService.log({
+      entityType: 'user',
+      entityId: id,
+      action: AuditAction.USER_UNBLOCKED,
+      actorId: req.user.sub,
+    });
+
+    return { id, status: user.status };
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @Post('users/:id/role')
+  async setUserRole(
+    @Param('id') id: string,
+    @Body() dto: SetRoleDto,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    if (id === req.user.sub) {
+      throw new BadRequestException('Нельзя изменить собственную роль');
+    }
+    const user = await this.usersRepository.findOneBy({ id });
+    if (!user) throw new NotFoundException('Пользователь не найден');
+
+    const prevRole = user.role;
+    user.role = dto.role;
+    await this.usersRepository.save(user);
+
+    await this.auditService.log({
+      entityType: 'user',
+      entityId: id,
+      action: AuditAction.USER_ROLE_CHANGED,
+      actorId: req.user.sub,
+      metadata: { from: prevRole, to: dto.role },
+    });
+
+    return { id, role: user.role };
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.MODERATOR, UserRole.ADMIN)
+  @Post('users/:id/request-reverification')
+  async requestReverification(@Param('id') id: string, @Req() req: AuthenticatedRequest) {
+    const user = await this.usersRepository.findOneBy({ id });
+    if (!user) throw new NotFoundException('Пользователь не найден');
+
+    user.verification_attempts = 0;
+    user.verification_blocked_until = null;
+    if (user.status === UserStatus.ACTIVE) {
+      user.status = UserStatus.NEW;
+    }
+    await this.usersRepository.save(user);
+
+    await this.auditService.log({
+      entityType: 'user',
+      entityId: id,
+      action: AuditAction.USER_REVERIFICATION_REQUESTED,
+      actorId: req.user.sub,
+    });
+
+    return { id, status: user.status };
   }
 
   // ─── Лиды ─────────────────────────────────────────────────────────────────

@@ -22,4 +22,9 @@ export enum AuditAction {
 
   TARIFF_UPSERT = 'tariff_upsert',
   TARIFF_DELETE = 'tariff_delete',
+
+  USER_BLOCKED = 'user_blocked',
+  USER_UNBLOCKED = 'user_unblocked',
+  USER_ROLE_CHANGED = 'user_role_changed',
+  USER_REVERIFICATION_REQUESTED = 'user_reverification_requested',
 }

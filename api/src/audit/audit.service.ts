@@ -46,4 +46,12 @@ export class AuditService {
       order: { created_at: 'DESC' },
     });
   }
+
+  findByUser(userId: string, limit = 20): Promise<AuditLog[]> {
+    return this.auditLogsRepository.find({
+      where: [{ actor_id: userId }, { entity_id: userId }],
+      order: { created_at: 'DESC' },
+      take: limit,
+    });
+  }
 }
