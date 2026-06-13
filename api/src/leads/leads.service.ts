@@ -29,6 +29,16 @@ import { AuditService } from '../audit/audit.service';
 import { AuditAction } from '../audit/audit-action.enum';
 import { NotificationsService } from '../notifications/notifications.service';
 
+function maskPhone(phone: string): string {
+  const digits = phone.replace(/\D/g, '');
+  if (digits.length < 4) return phone;
+  const last2 = digits.slice(-2);
+  if (digits.startsWith('7') && digits.length === 11) {
+    return `+7 ${digits.slice(1, 4)} •••• •${last2}`;
+  }
+  return `${phone.slice(0, 3)} •••• •${last2}`;
+}
+
 // Переходы статусов, которые может выполнить только исполнитель через PATCH /status
 const PROGRESS_TRANSITIONS: Partial<Record<LeadStatus, LeadStatus[]>> = {
   [LeadStatus.IN_PROGRESS]: [
@@ -618,6 +628,69 @@ export class LeadsService {
       reward: reward ?? null,
       dispute: dispute ?? null,
     };
+  }
+
+  async adminFindClients(
+    filters: { search?: string },
+    page: number,
+    limit: number,
+  ) {
+    const searchParam = filters.search?.trim() ? `%${filters.search.trim()}%` : null;
+    const offset = (page - 1) * limit;
+
+    interface RawClientRow {
+      id: string;
+      full_name: string;
+      city: string;
+      phone: string;
+      created_at: Date;
+      total: number;
+      active: number;
+      closed_success: number;
+      cancelled: number;
+    }
+
+    const rows: RawClientRow[] = await this.dataSource.query(
+      `SELECT
+        c.id,
+        c.full_name,
+        c.city,
+        c.phone,
+        c.created_at,
+        COUNT(l.id)::int AS total,
+        SUM(CASE WHEN l.status IN ('new','pending_acceptance','in_progress','contract','deposit','dispute') THEN 1 ELSE 0 END)::int AS active,
+        SUM(CASE WHEN l.status = 'closed_success' THEN 1 ELSE 0 END)::int AS closed_success,
+        SUM(CASE WHEN l.status IN ('cancelled','archived') THEN 1 ELSE 0 END)::int AS cancelled
+      FROM clients c
+      LEFT JOIN leads l ON l.client_id = c.id
+      WHERE ($1::text IS NULL OR c.full_name ILIKE $1 OR c.city ILIKE $1)
+      GROUP BY c.id, c.full_name, c.city, c.phone, c.created_at
+      ORDER BY COUNT(l.id) DESC, c.created_at DESC
+      LIMIT $2 OFFSET $3`,
+      [searchParam, limit, offset],
+    );
+
+    const [countRow] = await this.dataSource.query<[{ total: string }]>(
+      `SELECT COUNT(DISTINCT c.id)::int AS total FROM clients c
+       WHERE ($1::text IS NULL OR c.full_name ILIKE $1 OR c.city ILIKE $1)`,
+      [searchParam],
+    );
+
+    const data = rows.map((r) => ({
+      id: r.id,
+      full_name: r.full_name,
+      city: r.city,
+      phone_masked: maskPhone(r.phone),
+      created_at: r.created_at,
+      leads: {
+        total: r.total,
+        active: r.active,
+        closed_success: r.closed_success,
+        cancelled: r.cancelled,
+      },
+    }));
+
+    return { data, total: Number(countRow.total), page, limit };
   }
 
   hasActiveLeadsOfType(type: LeadType): Promise<boolean> {

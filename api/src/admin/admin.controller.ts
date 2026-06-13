@@ -29,6 +29,7 @@ import { CitiesService } from '../cities/cities.service';
 import { CreateCityDto } from '../cities/dto/create-city.dto';
 import { ToggleCityDto } from '../cities/dto/toggle-city.dto';
 import { AdminLeadsQueryDto } from './dto/admin-leads-query.dto';
+import { AdminClientsQueryDto } from './dto/admin-clients-query.dto';
 import { BOOTSTRAP_ADMIN_SECRET } from './constants';
 
 interface AuthenticatedRequest extends Request {
@@ -111,6 +112,19 @@ export class AdminController {
   @Patch('cities/:id')
   toggleCity(@Param('id') id: string, @Body() dto: ToggleCityDto) {
     return this.citiesService.toggle(id, dto);
+  }
+
+  // ─── Клиенты ──────────────────────────────────────────────────────────────
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.MODERATOR, UserRole.ADMIN)
+  @Get('clients')
+  adminClients(@Query() query: AdminClientsQueryDto) {
+    return this.leadsService.adminFindClients(
+      { search: query.search },
+      query.page ?? 1,
+      query.limit ?? 20,
+    );
   }
 
   // ─── Лиды ─────────────────────────────────────────────────────────────────
