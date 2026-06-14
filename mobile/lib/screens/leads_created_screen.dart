@@ -91,12 +91,15 @@ class _LeadsCreatedScreenState extends State<LeadsCreatedScreen> {
         itemBuilder: (ctx, i) => LeadCard(
           lead: leads[i],
           showExecutor: true,
-          onTap: () => Navigator.push(
-            ctx,
-            MaterialPageRoute(
-              builder: (_) => LeadDetailScreen(leadId: leads[i].id),
-            ),
-          ),
+          onTap: () async {
+            await Navigator.push(
+              ctx,
+              MaterialPageRoute(
+                builder: (_) => LeadDetailScreen(leadId: leads[i].id),
+              ),
+            );
+            if (mounted) _load();
+          },
         ),
       ),
     );
