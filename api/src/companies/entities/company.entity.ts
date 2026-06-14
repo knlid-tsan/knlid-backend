@@ -4,6 +4,7 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
+  Index,
 } from 'typeorm';
 
 export enum CompanyStatus {
@@ -14,6 +15,7 @@ export enum CompanyStatus {
   BLOCKED = 'blocked',
 }
 
+@Index('UQ_companies_phone_active', ['phone'], { unique: true, where: `"status" != 'rejected'` })
 @Entity('companies')
 export class Company {
   @PrimaryGeneratedColumn('uuid')
@@ -25,7 +27,7 @@ export class Company {
   @Column({ unique: true })
   bin: string;
 
-  @Column({ unique: true })
+  @Column()
   phone: string;
 
   @Column()

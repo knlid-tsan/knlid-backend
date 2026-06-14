@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, Repository } from 'typeorm';
-import { User } from './user.entity';
+import { In, Not, Repository } from 'typeorm';
+import { User, UserStatus } from './user.entity';
 
 @Injectable()
 export class UsersService {
@@ -26,9 +26,14 @@ export class UsersService {
     return this.usersRepository.findOneBy({ id });
   }
 
-  // Найти по номеру телефона (пригодится для входа)
+  // Найти по номеру телефона (любой статус, включая archived)
   findByPhone(phone: string): Promise<User | null> {
     return this.usersRepository.findOneBy({ phone });
+  }
+
+  // Найти активного пользователя по телефону — archived не возвращает
+  findActiveByPhone(phone: string): Promise<User | null> {
+    return this.usersRepository.findOneBy({ phone, status: Not(UserStatus.ARCHIVED) });
   }
 
   findByIds(ids: string[]): Promise<User[]> {

@@ -4,6 +4,7 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
+  Index,
 } from 'typeorm';
 
 // Специализации из BRD раздел 1.4
@@ -19,6 +20,7 @@ export enum UserStatus {
   PENDING = 'pending',           // На верификации
   ACTIVE = 'active',             // Активен
   BLOCKED = 'blocked',           // Заблокирован
+  ARCHIVED = 'archived',         // Архивирован — номер считается свободным
 }
 
 // Роли пользователя — управляют доступом к административным и модераторским разделам
@@ -29,12 +31,13 @@ export enum UserRole {
   COMPANY = 'company',
 }
 
-@Entity('users') // создаст таблицу "users" в базе данных
+@Index('UQ_users_phone_active', ['phone'], { unique: true, where: `"status" != 'archived'` })
+@Entity('users')
 export class User {
   @PrimaryGeneratedColumn('uuid') // уникальный ID, генерируется сам
   id: string;
 
-  @Column({ unique: true }) // unique — два одинаковых телефона невозможны
+  @Column()
   phone: string;
 
   @Column()

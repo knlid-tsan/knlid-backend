@@ -6,7 +6,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, Repository } from 'typeorm';
+import { In, Not, Repository } from 'typeorm';
 import { Company, CompanyStatus } from './entities/company.entity';
 import { CompanyMembership, MembershipStatus } from './entities/company-membership.entity';
 import { User, UserRole, UserStatus } from '../users/user.entity';
@@ -35,7 +35,7 @@ export class CompaniesService {
     const existingBin = await this.companiesRepository.findOneBy({ bin: dto.bin });
     if (existingBin) throw new ConflictException('Компания с таким БИН уже зарегистрирована');
 
-    const existingPhone = await this.usersRepository.findOneBy({ phone: dto.phone });
+    const existingPhone = await this.usersRepository.findOneBy({ phone: dto.phone, status: Not(UserStatus.ARCHIVED) });
     if (existingPhone) throw new ConflictException('Этот номер телефона уже используется');
 
     const company = await this.companiesRepository.save(
@@ -288,6 +288,13 @@ export class CompaniesService {
     company.status = CompanyStatus.REJECTED;
     company.rejection_reason = dto.reason;
     const saved = await this.companiesRepository.save(company);
+
+    // Архивируем представителя — освобождаем его номер телефона
+    const rep = await this.usersRepository.findOneBy({ company_id: id, status: Not(UserStatus.ARCHIVED) });
+    if (rep) {
+      rep.status = UserStatus.ARCHIVED;
+      await this.usersRepository.save(rep);
+    }
 
     await this.auditService.log({
       entityType: 'company', entityId: id,

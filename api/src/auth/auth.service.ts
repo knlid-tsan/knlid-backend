@@ -71,7 +71,7 @@ export class AuthService {
       throw new UnauthorizedException('Код истёк, запросите новый');
     }
 
-    let user = await this.usersService.findByPhone(dto.phone);
+    let user = await this.usersService.findActiveByPhone(dto.phone);
     let isNewUser = false;
 
     if (!user) {
