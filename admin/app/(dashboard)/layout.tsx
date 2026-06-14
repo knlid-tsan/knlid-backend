@@ -6,12 +6,12 @@ import Link from 'next/link';
 import { getToken, clearToken, decodeToken } from '@/lib/auth';
 
 interface NavItem {
-  href: string | null;
+  href: string;
   label: string;
   adminOnly?: boolean;
 }
 
-const NAV_ITEMS: NavItem[] = [
+const ADMIN_NAV: NavItem[] = [
   { href: '/verifications', label: 'Верификация' },
   { href: '/leads', label: 'Лиды' },
   { href: '/disputes', label: 'Споры' },
@@ -19,6 +19,13 @@ const NAV_ITEMS: NavItem[] = [
   { href: '/users', label: 'Пользователи' },
   { href: '/companies', label: 'Компании' },
   { href: '/tariffs', label: 'Тарифы', adminOnly: true },
+];
+
+const COMPANY_NAV: NavItem[] = [
+  { href: '/company/applications', label: 'Заявки' },
+  { href: '/company/specialists', label: 'Мои специалисты' },
+  { href: '/company/debts', label: 'Долги' },
+  { href: '/company/profile', label: 'Профиль компании' },
 ];
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -29,6 +36,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [rawRole, setRawRole] = useState('');
   const [ready, setReady] = useState(false);
 
+  // Initial auth check
   useEffect(() => {
     const token = getToken();
     if (!token) {
@@ -43,9 +51,22 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     }
     setPhone(payload.phone);
     setRawRole(payload.role);
-    setRoleLabel(payload.role === 'admin' ? 'Администратор' : 'Модератор');
+    if (payload.role === 'admin') setRoleLabel('Администратор');
+    else if (payload.role === 'moderator') setRoleLabel('Модератор');
+    else setRoleLabel('Компания');
     setReady(true);
   }, [router]);
+
+  // Route protection: enforce role → section boundaries
+  useEffect(() => {
+    if (!rawRole) return;
+    const isCompanySection = pathname.startsWith('/company');
+    if (rawRole === 'company' && !isCompanySection) {
+      router.replace('/company/applications');
+    } else if ((rawRole === 'admin' || rawRole === 'moderator') && isCompanySection) {
+      router.replace('/verifications');
+    }
+  }, [rawRole, pathname, router]);
 
   function handleLogout() {
     clearToken();
@@ -60,33 +81,23 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     );
   }
 
+  const isCompany = rawRole === 'company';
+  const navItems = isCompany ? COMPANY_NAV : ADMIN_NAV;
+
   return (
     <div className="flex h-screen bg-gray-50">
       <aside className="w-52 bg-slate-900 flex flex-col flex-shrink-0">
         <div className="px-5 py-4 border-b border-slate-800">
           <span className="text-white font-semibold">KN.LID</span>
-          <span className="text-slate-500 text-xs ml-2">Admin</span>
+          <span className="text-slate-500 text-xs ml-2">{isCompany ? 'Кабинет' : 'Admin'}</span>
         </div>
         <nav className="flex-1 py-3">
-          {NAV_ITEMS.map((item) => {
+          {navItems.map((item) => {
             if (item.adminOnly && rawRole !== 'admin') return null;
-
-            const isCurrent = item.href !== null && pathname.startsWith(item.href);
-
-            if (item.href === null) {
-              return (
-                <span
-                  key={item.label}
-                  className="flex items-center px-5 py-2.5 text-sm text-slate-600 cursor-default"
-                >
-                  {item.label}
-                </span>
-              );
-            }
-
+            const isCurrent = pathname.startsWith(item.href);
             return (
               <Link
-                key={item.label}
+                key={item.href}
                 href={item.href}
                 className={`flex items-center px-5 py-2.5 text-sm transition-colors ${
                   isCurrent
