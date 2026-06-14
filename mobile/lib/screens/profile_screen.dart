@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import '../services/api_client.dart';
+import '../services/phone_formatter.dart';
 
 // ─── Labels ──────────────────────────────────────────────────────────────────
 
@@ -224,7 +225,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               _InfoRow('Роль', _roleLabels[role] ?? role),
             if ((user['city'] as String?)?.isNotEmpty == true)
               _InfoRow('Город', user['city'] as String),
-            _InfoRow('Телефон', user['phone'] as String? ?? ''),
+            _InfoRow('Телефон', formatPhone(user['phone'] as String?)),
           ]),
 
           // Guarantor

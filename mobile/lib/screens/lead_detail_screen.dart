@@ -355,6 +355,19 @@ class _LeadDetailScreenState extends State<LeadDetailScreen> {
     });
   }
 
+  Future<void> _onCancelByExecutor() async {
+    final reason = await _showReasonDialog(
+      'Отменить лид',
+      'Укажите причину отмены (обязательно)',
+    );
+    if (reason == null) return;
+    await _runAction(() async {
+      await _service.updateStatus(widget.leadId, 'cancelled', comment: reason);
+      await _load();
+      _showSnack('Лид отменён');
+    });
+  }
+
   Future<void> _onDispute() async {
     final reason = await _showReasonDialog(
       'Открыть спор',
@@ -535,42 +548,69 @@ class _LeadDetailScreenState extends State<LeadDetailScreen> {
       }
       if (status == 'in_progress') {
         return _ActionBar(
-          child: Row(children: [
-            _ActionBtn(
-                label: '→ Договор',
-                onTap: () => _onUpdateStatus('contract'),
-                small: true),
-            const SizedBox(width: 8),
-            _ActionBtn(
-                label: '→ Задаток',
-                onTap: () => _onUpdateStatus('deposit'),
-                small: true),
-            const SizedBox(width: 8),
-            _ActionBtn(
-                label: '✓ Закрыть',
-                onTap: _onClose,
-                filled: true,
-                small: true),
-          ]),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(children: [
+                _ActionBtn(
+                    label: '→ Договор',
+                    onTap: () => _onUpdateStatus('contract'),
+                    small: true),
+                const SizedBox(width: 8),
+                _ActionBtn(
+                    label: '→ Задаток',
+                    onTap: () => _onUpdateStatus('deposit'),
+                    small: true),
+                const SizedBox(width: 8),
+                _ActionBtn(
+                    label: '✓ Закрыть',
+                    onTap: _onClose,
+                    filled: true,
+                    small: true),
+              ]),
+              const SizedBox(height: 8),
+              _CancelBtn(onTap: _onCancelByExecutor),
+            ],
+          ),
         );
       }
       if (status == 'contract') {
         return _ActionBar(
-          child: Row(children: [
-            _ActionBtn(
-                label: '→ Задаток',
-                onTap: () => _onUpdateStatus('deposit')),
-            const SizedBox(width: 12),
-            _ActionBtn(label: '✓ Закрыть', onTap: _onClose, filled: true),
-          ]),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(children: [
+                _ActionBtn(
+                    label: '→ Задаток',
+                    onTap: () => _onUpdateStatus('deposit')),
+                const SizedBox(width: 12),
+                _ActionBtn(
+                    label: '✓ Закрыть', onTap: _onClose, filled: true),
+              ]),
+              const SizedBox(height: 8),
+              _CancelBtn(onTap: _onCancelByExecutor),
+            ],
+          ),
         );
       }
       if (status == 'deposit') {
         return _ActionBar(
-          child: Row(children: [
-            _ActionBtn(
-                label: '✓ Закрыть сделку', onTap: _onClose, filled: true),
-          ]),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(children: [
+                _ActionBtn(
+                    label: '✓ Закрыть сделку',
+                    onTap: _onClose,
+                    filled: true),
+              ]),
+              const SizedBox(height: 8),
+              _CancelBtn(onTap: _onCancelByExecutor),
+            ],
+          ),
         );
       }
     }
@@ -678,6 +718,31 @@ class _ActionBtn extends StatelessWidget {
                 color: textColor,
                 fontWeight: FontWeight.w500,
                 fontSize: fontSize)),
+      ),
+    );
+  }
+}
+
+class _CancelBtn extends StatelessWidget {
+  final VoidCallback onTap;
+  const _CancelBtn({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return OutlinedButton(
+      onPressed: onTap,
+      style: OutlinedButton.styleFrom(
+        side: const BorderSide(color: Color(0xFFDC2626)),
+        padding: const EdgeInsets.symmetric(vertical: 11),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+      child: const Text(
+        'Отменить лид',
+        style: TextStyle(
+          color: Color(0xFFDC2626),
+          fontWeight: FontWeight.w500,
+          fontSize: 14,
+        ),
       ),
     );
   }

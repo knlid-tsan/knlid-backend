@@ -45,9 +45,11 @@ class LeadsService {
     String id,
     String status, {
     double? commissionAmount,
+    String? comment,
   }) async {
     final data = <String, dynamic>{'status': status};
     if (commissionAmount != null) data['commission_amount'] = commissionAmount;
+    if (comment != null && comment.isNotEmpty) data['comment'] = comment;
     final response = await _dio.patch('/leads/$id/status', data: data);
     return Lead.fromJson(response.data as Map<String, dynamic>);
   }

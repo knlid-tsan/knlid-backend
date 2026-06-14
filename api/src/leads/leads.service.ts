@@ -382,13 +382,29 @@ export class LeadsService {
     }
 
     if (to === LeadStatus.CANCELLED) {
-      if (!ACTIVE_STATUSES.includes(from)) {
-        throw new BadRequestException(
-          `Нельзя отменить лид в статусе "${from}"`,
+      const EXECUTOR_CANCEL_FROM: LeadStatus[] = [
+        LeadStatus.IN_PROGRESS,
+        LeadStatus.CONTRACT,
+        LeadStatus.DEPOSIT,
+      ];
+      if (isAuthor) {
+        if (!ACTIVE_STATUSES.includes(from)) {
+          throw new BadRequestException(
+            `Нельзя отменить лид в статусе "${from}"`,
+          );
+        }
+      } else if (isExecutor && EXECUTOR_CANCEL_FROM.includes(from)) {
+        if (!dto.comment?.trim()) {
+          throw new BadRequestException(
+            'Укажите причину отмены',
+          );
+        }
+      } else if (isExecutor) {
+        throw new ForbiddenException(
+          'Исполнитель может отменить лид только со статусов: в работе, договор, задаток',
         );
-      }
-      if (!isAuthor) {
-        throw new ForbiddenException('Отменить лид может только автор');
+      } else {
+        throw new ForbiddenException('Нет доступа к этому лиду');
       }
     } else if (PROGRESS_TRANSITIONS[from]?.includes(to)) {
       if (!isExecutor) {
