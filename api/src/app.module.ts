@@ -57,7 +57,7 @@ import { GuarantorJobModule } from './guarantor-job/guarantor-job.module';
         CompanyMembership,
         Setting,
       ],
-      synchronize: true,
+      synchronize: false,
     }),
     // Глобальные модули регистрируем первыми
     AuditModule,
