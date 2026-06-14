@@ -22,8 +22,10 @@ import { AuditAction } from '../audit/audit-action.enum';
 import { NotificationsService } from '../notifications/notifications.service';
 import { User, UserRole } from '../users/user.entity';
 
-// Статусы, для которых спор открыть нельзя — лид уже окончательно закрыт без возможности пересмотра
-const NON_DISPUTABLE_STATUSES = [LeadStatus.CANCELLED, LeadStatus.ARCHIVED];
+// Статусы, для которых спор открыть нельзя — лид окончательно закрыт без возможности пересмотра.
+// CANCELLED намеренно не включён: автор может оспорить отменённый лид, если он был принят
+// (проверка истории делается в leadsService.openDispute до вызова openForLead).
+const NON_DISPUTABLE_STATUSES = [LeadStatus.ARCHIVED];
 
 @Injectable()
 export class DisputesService {
