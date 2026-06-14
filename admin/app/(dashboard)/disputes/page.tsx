@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { api, ApiError } from '@/lib/api';
+import { LEAD_TYPE_LABELS } from '@/lib/lead-types';
 
 interface DisputeRow {
   id: string;
@@ -14,12 +15,7 @@ interface DisputeRow {
   opened_by_role: 'author' | 'executor' | null;
 }
 
-const TYPE_LABELS: Record<string, string> = {
-  owner: 'Собственник',
-  buyer: 'Покупатель',
-  mortgage: 'Ипотека',
-  legal: 'Юрист',
-};
+const TYPE_LABELS = LEAD_TYPE_LABELS;
 
 const ROLE_LABELS: Record<string, string> = {
   author: 'Автор',

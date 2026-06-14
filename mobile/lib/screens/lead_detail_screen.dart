@@ -4,6 +4,7 @@ import 'package:dio/dio.dart';
 import '../models/lead.dart';
 import '../services/leads_service.dart';
 import '../services/api_client.dart';
+import '../services/phone_formatter.dart';
 
 String _fmt(String amount) {
   final n = double.tryParse(amount);
@@ -428,7 +429,7 @@ class _LeadDetailScreenState extends State<LeadDetailScreen> {
               children: [
                 _StatusBanner(lead: lead),
 
-                // Tariff banner — executor seeing pending lead
+                // Tariff banner — executor before acceptance
                 if (_tariff != null &&
                     _isExecutor &&
                     lead.status == 'pending_acceptance') ...[
@@ -436,27 +437,45 @@ class _LeadDetailScreenState extends State<LeadDetailScreen> {
                   _TariffBanner(tariff: _tariff!),
                 ],
 
+                // ── Author block (basic info + author name)
                 const SizedBox(height: 12),
-                _Section(title: 'Основное', rows: [
-                  _Row('Тип', leadTypeLabels[lead.type] ?? lead.type),
+                _Section(title: 'Автор', rows: [
+                  if (lead.authorName != null) _Row('Имя', lead.authorName!),
+                  _Row('Тип лида', leadTypeLabels[lead.type] ?? lead.type),
                   _Row('Город', lead.city),
                   _Row('Создан', formatLeadDate(lead.createdAt)),
                   if (lead.closedAt != null)
                     _Row('Закрыт', formatLeadDate(lead.closedAt!)),
                 ]),
-                const SizedBox(height: 12),
 
-                _DescriptionSection(text: lead.description),
-
-                if (lead.client != null) ...[
+                // ── Opposite party
+                // Author sees executor (if assigned)
+                if (_isAuthor) ...[
                   const SizedBox(height: 12),
-                  _Section(title: 'Клиент', rows: [
-                    _Row('Имя', lead.client!.fullName),
-                    _Row('Город', lead.client!.city),
-                    if (lead.client!.phone != null)
-                      _Row('Телефон', lead.client!.phone!),
+                  _Section(title: 'Исполнитель', rows: [
+                    _Row(
+                      'Имя',
+                      lead.executorName ?? 'Не назначен',
+                      dimValue: lead.executorName == null,
+                    ),
                   ]),
                 ],
+
+                // ── Client block (visible only after acceptance)
+                const SizedBox(height: 12),
+                if (lead.client != null && lead.client!.fullName != null)
+                  _Section(title: 'Клиент', rows: [
+                    _Row('Имя', lead.client!.fullName!),
+                    _Row('Город', lead.client!.city),
+                    if (lead.client!.phone != null)
+                      _Row('Телефон', formatPhone(lead.client!.phone)),
+                  ])
+                else
+                  _ClientPlaceholder(isExecutor: _isExecutor),
+
+                // ── Description (moved below client)
+                const SizedBox(height: 12),
+                _DescriptionSection(text: lead.description),
 
                 if (lead.rewardAmount != null) ...[
                   const SizedBox(height: 12),
@@ -775,10 +794,13 @@ class _Section extends StatelessWidget {
 class _Row extends StatelessWidget {
   final String label;
   final String value;
-  const _Row(this.label, this.value);
+  final bool dimValue;
+  const _Row(this.label, this.value, {this.dimValue = false});
 
   @override
   Widget build(BuildContext context) {
+    final valueColor =
+        dimValue ? const Color(0xFFCBD5E1) : const Color(0xFF1E293B);
     return Padding(
       padding: const EdgeInsets.only(bottom: 6),
       child: Row(
@@ -792,9 +814,9 @@ class _Row extends StatelessWidget {
           ),
           Expanded(
             child: Text(value,
-                style: const TextStyle(
+                style: TextStyle(
                     fontSize: 13,
-                    color: Color(0xFF1E293B),
+                    color: valueColor,
                     fontWeight: FontWeight.w500)),
           ),
         ],
@@ -828,6 +850,40 @@ class _DescriptionSection extends StatelessWidget {
                   fontSize: 14,
                   color: Color(0xFF1E293B),
                   height: 1.5)),
+        ],
+      ),
+    );
+  }
+}
+
+class _ClientPlaceholder extends StatelessWidget {
+  final bool isExecutor;
+  const _ClientPlaceholder({required this.isExecutor});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.lock_outline, size: 16, color: Color(0xFFCBD5E1)),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              isExecutor
+                  ? 'Данные клиента откроются после принятия лида'
+                  : 'Клиент',
+              style: const TextStyle(
+                fontSize: 13,
+                color: Color(0xFFCBD5E1),
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ),
         ],
       ),
     );

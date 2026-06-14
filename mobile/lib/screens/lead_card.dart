@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/lead.dart';
 
-String _formatAmount(String amount) {
+String _fmtAmount(String amount) {
   final n = double.tryParse(amount);
   if (n == null) return amount;
   return n
@@ -9,10 +9,13 @@ String _formatAmount(String amount) {
       .replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]} ');
 }
 
+String _fmtDate(DateTime dt) =>
+    '${dt.day.toString().padLeft(2, '0')}.${dt.month.toString().padLeft(2, '0')}.${dt.year}';
+
 /// Card used in both LeadsCreatedScreen and LeadsAssignedScreen.
 ///
-/// [showExecutor] true → "Переданные" mode (shows executor hint).
-/// [showExecutor] false → "Исполняю" mode.
+/// [showExecutor] true  → "Переданные" mode (author view, shows executor info).
+/// [showExecutor] false → "Исполняю"   mode (executor view, shows client name after acceptance).
 class LeadCard extends StatelessWidget {
   final Lead lead;
   final bool showExecutor;
@@ -31,6 +34,9 @@ class LeadCard extends StatelessWidget {
     final statusLabel = leadStatusLabels[lead.status] ?? lead.status;
     final typeLabel = leadTypeLabels[lead.type] ?? lead.type;
 
+    // Client name is visible only when backend returned it (not null)
+    final clientName = lead.client?.fullName;
+
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       elevation: 0,
@@ -44,6 +50,7 @@ class LeadCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Header: type label + status badge
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -77,29 +84,35 @@ class LeadCard extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 10),
+
+              // City (always shown)
               _InfoLine(Icons.location_on_outlined, lead.city),
               const SizedBox(height: 4),
-              _InfoLine(
-                  Icons.calendar_today_outlined, formatLeadDate(lead.createdAt)),
+
+              // Date (always shown, DD.MM.YYYY)
+              _InfoLine(Icons.calendar_today_outlined, _fmtDate(lead.createdAt)),
+
+              // "Переданные" (author view) — show executor
               if (showExecutor) ...[
                 const SizedBox(height: 4),
                 _InfoLine(
                   Icons.person_outline,
-                  lead.executorId != null
-                      ? 'Исполнитель назначен'
-                      : 'Исполнитель не назначен',
-                  dim: lead.executorId == null,
+                  lead.executorName ?? 'Исполнитель не назначен',
+                  dim: lead.executorName == null,
                 ),
-              ] else if (lead.client?.phone != null) ...[
-                // Executor sees client phone once status allows it
-                const SizedBox(height: 4),
-                _InfoLine(Icons.phone_outlined, lead.client!.phone!),
               ],
+
+              // "Исполняю" (executor view) — show client name after acceptance
+              if (!showExecutor && clientName != null) ...[
+                const SizedBox(height: 4),
+                _InfoLine(Icons.person_outline, clientName),
+              ],
+
               if (lead.rewardAmount != null) ...[
                 const SizedBox(height: 4),
                 _InfoLine(
                   Icons.monetization_on_outlined,
-                  '${_formatAmount(lead.rewardAmount!)} ₸',
+                  '${_fmtAmount(lead.rewardAmount!)} ₸',
                 ),
               ],
             ],

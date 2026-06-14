@@ -516,19 +516,43 @@ export class LeadsService {
   async findMyCreated(userId: string) {
     const leads = await this.leadsRepository.find({
       where: { author_id: userId },
+      relations: { client: true },
       order: { created_at: 'DESC' },
     });
 
-    return leads.map((lead) => this.serializeLead(lead, userId));
+    const executorIds = [...new Set(
+      leads.filter((l) => l.executor_id).map((l) => l.executor_id!),
+    )];
+    const users = executorIds.length
+      ? await this.usersService.findByIds(executorIds)
+      : [];
+    const userMap = new Map(users.map((u) => [u.id, u]));
+
+    return leads.map((lead) => ({
+      ...this.serializeLead(lead, userId),
+      executor_name: lead.executor_id
+        ? (userMap.get(lead.executor_id)?.full_name ?? null)
+        : null,
+    }));
   }
 
   async findMyAssigned(userId: string) {
     const leads = await this.leadsRepository.find({
       where: { executor_id: userId },
+      relations: { client: true },
       order: { created_at: 'DESC' },
     });
 
-    return leads.map((lead) => this.serializeLead(lead, userId));
+    const authorIds = [...new Set(leads.map((l) => l.author_id))];
+    const users = authorIds.length
+      ? await this.usersService.findByIds(authorIds)
+      : [];
+    const userMap = new Map(users.map((u) => [u.id, u]));
+
+    return leads.map((lead) => ({
+      ...this.serializeLead(lead, userId),
+      author_name: userMap.get(lead.author_id)?.full_name ?? null,
+    }));
   }
 
   async findOne(leadId: string, userId: string, userRole: UserRole, ip?: string) {
@@ -559,8 +583,24 @@ export class LeadsService {
       });
     }
 
-    const guarantor = await this.getGuarantorInfo(lead.executor_id);
-    return { ...this.serializeLead(lead, userId), history, guarantor };
+    const [guarantor, participants] = await Promise.all([
+      this.getGuarantorInfo(lead.executor_id),
+      this.usersService.findByIds([
+        lead.author_id,
+        ...(lead.executor_id ? [lead.executor_id] : []),
+      ]),
+    ]);
+    const participantMap = new Map(participants.map((u) => [u.id, u]));
+
+    return {
+      ...this.serializeLead(lead, userId),
+      author_name: participantMap.get(lead.author_id)?.full_name ?? null,
+      executor_name: lead.executor_id
+        ? (participantMap.get(lead.executor_id)?.full_name ?? null)
+        : null,
+      history,
+      guarantor,
+    };
   }
 
   private async findActiveDuplicate(type: Lead['type'], phone: string) {
@@ -831,6 +871,7 @@ export class LeadsService {
       client: lead.client
         ? {
             ...lead.client,
+            full_name: showPhone ? lead.client.full_name : null,
             phone: showPhone ? lead.client.phone : undefined,
           }
         : lead.client,

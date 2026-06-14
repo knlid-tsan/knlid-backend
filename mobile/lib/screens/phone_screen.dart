@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
+import '../services/phone_formatter.dart';
 import 'otp_screen.dart';
 
 class PhoneScreen extends StatefulWidget {
@@ -10,7 +11,7 @@ class PhoneScreen extends StatefulWidget {
 }
 
 class _PhoneScreenState extends State<PhoneScreen> {
-  final _phoneController = TextEditingController(text: '+7');
+  final _phoneController = TextEditingController(text: '+7 ');
   final _formKey = GlobalKey<FormState>();
   final _authService = AuthService();
 
@@ -92,10 +93,11 @@ class _PhoneScreenState extends State<PhoneScreen> {
                 TextFormField(
                   controller: _phoneController,
                   keyboardType: TextInputType.phone,
+                  inputFormatters: [PhoneMaskFormatter()],
                   style: const TextStyle(fontSize: 18, letterSpacing: 1),
                   decoration: const InputDecoration(
                     labelText: 'Номер телефона',
-                    hintText: '+7 000 000-00-00',
+                    hintText: '+7 705 000 00 00',
                     filled: true,
                     fillColor: Color(0xFFF1F5F9),
                     border: OutlineInputBorder(

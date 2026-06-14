@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { api, ApiError } from '@/lib/api';
+import { LEAD_TYPE_LABELS } from '@/lib/lead-types';
 
 interface AdminLeadRow {
   id: string;
@@ -47,12 +48,7 @@ const STATUS_COLORS: Record<string, string> = {
   archived: 'bg-gray-100 text-gray-600',
 };
 
-const TYPE_LABELS: Record<string, string> = {
-  owner: 'Собственник',
-  buyer: 'Покупатель',
-  mortgage: 'Ипотека',
-  legal: 'Юрист',
-};
+const TYPE_LABELS = LEAD_TYPE_LABELS;
 
 const ALL_STATUSES = Object.keys(STATUS_LABELS);
 const ALL_TYPES = Object.keys(TYPE_LABELS);

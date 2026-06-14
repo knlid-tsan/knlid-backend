@@ -3,10 +3,10 @@ import 'package:flutter/material.dart';
 // ─── Labels & colours ────────────────────────────────────────────────────────
 
 const leadTypeLabels = {
-  'owner': 'Собственник',
-  'buyer': 'Покупатель',
+  'owner': 'Продажа',
+  'buyer': 'Покупка',
   'mortgage': 'Ипотека',
-  'legal': 'Юрист',
+  'legal': 'Юр. услуга',
 };
 
 const leadStatusLabels = {
@@ -51,20 +51,20 @@ String formatLeadDate(DateTime dt) {
 
 class LeadClient {
   final String id;
-  final String fullName;
+  final String? fullName; // null when hidden from executor before acceptance
   final String city;
   final String? phone;
 
   const LeadClient({
     required this.id,
-    required this.fullName,
+    this.fullName,
     required this.city,
     this.phone,
   });
 
   factory LeadClient.fromJson(Map<String, dynamic> j) => LeadClient(
         id: j['id'] as String,
-        fullName: j['full_name'] as String,
+        fullName: j['full_name'] as String?,
         city: j['city'] as String,
         phone: j['phone'] as String?,
       );
@@ -126,6 +126,8 @@ class Lead {
   final String description;
   final String authorId;
   final String? executorId;
+  final String? authorName;
+  final String? executorName;
   final String? rewardAmount;
   final bool rewardPaid;
   final DateTime createdAt;
@@ -143,6 +145,8 @@ class Lead {
     required this.description,
     required this.authorId,
     this.executorId,
+    this.authorName,
+    this.executorName,
     this.rewardAmount,
     required this.rewardPaid,
     required this.createdAt,
@@ -165,6 +169,8 @@ class Lead {
       description: j['description'] as String,
       authorId: j['author_id'] as String,
       executorId: j['executor_id'] as String?,
+      authorName: j['author_name'] as String?,
+      executorName: j['executor_name'] as String?,
       rewardAmount: j['reward_amount'] as String?,
       rewardPaid: j['reward_paid'] as bool? ?? false,
       createdAt: DateTime.parse(j['created_at'] as String).toLocal(),

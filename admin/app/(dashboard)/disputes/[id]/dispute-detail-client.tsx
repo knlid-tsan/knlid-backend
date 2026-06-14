@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { api, ApiError } from '@/lib/api';
+import { LEAD_TYPE_LABELS } from '@/lib/lead-types';
 
 /* ── Types ─────────────────────────────────────────────── */
 
@@ -56,9 +57,7 @@ interface DisputeDetail {
 
 /* ── Dictionaries ───────────────────────────────────────── */
 
-const TYPE_LABELS: Record<string, string> = {
-  owner: 'Собственник', buyer: 'Покупатель', mortgage: 'Ипотека', legal: 'Юрист',
-};
+const TYPE_LABELS = LEAD_TYPE_LABELS;
 
 const STATUS_LABELS: Record<string, string> = {
   new: 'Новый', pending_acceptance: 'Ожидает принятия', in_progress: 'В работе',

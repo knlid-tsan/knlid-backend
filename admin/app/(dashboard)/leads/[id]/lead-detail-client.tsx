@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { api, ApiError } from '@/lib/api';
+import { LEAD_TYPE_LABELS } from '@/lib/lead-types';
 
 interface HistoryEntry {
   id: string;
@@ -78,12 +79,7 @@ const STATUS_COLORS: Record<string, string> = {
   archived: 'bg-gray-100 text-gray-600',
 };
 
-const TYPE_LABELS: Record<string, string> = {
-  owner: 'Собственник',
-  buyer: 'Покупатель',
-  mortgage: 'Ипотека',
-  legal: 'Юрист',
-};
+const TYPE_LABELS = LEAD_TYPE_LABELS;
 
 const SPEC_LABELS: Record<string, string> = {
   realtor: 'Риелтор',

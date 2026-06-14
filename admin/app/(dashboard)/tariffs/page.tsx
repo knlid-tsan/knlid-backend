@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { api, ApiError } from '@/lib/api';
+import { LEAD_TYPE_LABELS } from '@/lib/lead-types';
 import { getToken, decodeToken } from '@/lib/auth';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -26,12 +27,7 @@ interface City {
 const LEAD_TYPES = ['buyer', 'owner', 'mortgage', 'legal'] as const;
 type LeadType = (typeof LEAD_TYPES)[number];
 
-const TYPE_LABELS: Record<string, string> = {
-  buyer: 'Покупатель',
-  owner: 'Собственник',
-  mortgage: 'Ипотека',
-  legal: 'Юрист',
-};
+const TYPE_LABELS = LEAD_TYPE_LABELS;
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
