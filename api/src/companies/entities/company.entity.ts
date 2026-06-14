@@ -10,6 +10,7 @@ export enum CompanyStatus {
   NEW = 'new',
   PENDING = 'pending',
   ACTIVE = 'active',
+  REJECTED = 'rejected',
   BLOCKED = 'blocked',
 }
 

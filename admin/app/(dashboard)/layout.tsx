@@ -17,6 +17,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: '/disputes', label: 'Споры' },
   { href: '/clients', label: 'Клиенты' },
   { href: '/users', label: 'Пользователи' },
+  { href: '/companies', label: 'Компании' },
   { href: '/tariffs', label: 'Тарифы', adminOnly: true },
 ];
 

@@ -285,7 +285,7 @@ export class CompaniesService {
     const company = await this.companiesRepository.findOneBy({ id });
     if (!company) throw new NotFoundException('Компания не найдена');
 
-    company.status = CompanyStatus.NEW;
+    company.status = CompanyStatus.REJECTED;
     company.rejection_reason = dto.reason;
     const saved = await this.companiesRepository.save(company);
 
