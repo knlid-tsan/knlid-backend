@@ -6,7 +6,9 @@ import {
 } from 'typeorm';
 
 export enum MembershipStatus {
+  PENDING = 'pending',
   ACTIVE = 'active',
+  REJECTED = 'rejected',
   ENDED = 'ended',
 }
 
@@ -21,7 +23,7 @@ export class CompanyMembership {
   @Column({ type: 'uuid' })
   user_id: string;
 
-  @Column({ type: 'enum', enum: MembershipStatus, default: MembershipStatus.ACTIVE })
+  @Column({ type: 'enum', enum: MembershipStatus, default: MembershipStatus.PENDING })
   status: MembershipStatus;
 
   @CreateDateColumn()

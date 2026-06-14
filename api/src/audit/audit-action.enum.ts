@@ -32,4 +32,11 @@ export enum AuditAction {
   COMPANY_DOCUMENT_UPLOADED = 'company_document_uploaded',
   COMPANY_APPROVED = 'company_approved',
   COMPANY_REJECTED = 'company_rejected',
+
+  MEMBERSHIP_APPLIED = 'membership_applied',
+  MEMBERSHIP_APPROVED = 'membership_approved',
+  MEMBERSHIP_REJECTED = 'membership_rejected',
+  MEMBERSHIP_LEFT = 'membership_left',
+  MEMBERSHIP_REMOVED = 'membership_removed',
+  MEMBERSHIP_AUTO_ENDED = 'membership_auto_ended',
 }

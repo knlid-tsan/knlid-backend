@@ -1,8 +1,11 @@
+'use strict';
 import {
   Controller,
   Post,
   Get,
   Body,
+  Param,
+  Query,
   Req,
   UseGuards,
   UseInterceptors,
@@ -18,6 +21,7 @@ import { JwtAuthGuard, AuthenticatedUser } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
 import { UserRole } from '../users/user.entity';
+import { MembershipStatus } from './entities/company-membership.entity';
 import { CompaniesService } from './companies.service';
 import { RegisterCompanyDto } from './dto/register-company.dto';
 
@@ -32,24 +36,23 @@ interface AuthenticatedRequest extends Request {
 export class CompaniesController {
   constructor(private companiesService: CompaniesService) {}
 
-  // POST /companies/register — публичный, без токена
+  // ── Public ────────────────────────────────────────────────────────────────
+
   @Post('register')
   register(@Body() dto: RegisterCompanyDto) {
     return this.companiesService.register(dto);
   }
 
-  // GET /companies/me — профиль своей компании
+  // ── Company routes (me/*) — must be before :id ────────────────────────────
+
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.COMPANY)
   @Get('me')
   getMe(@Req() req: AuthenticatedRequest) {
-    if (!req.user.company_id) {
-      throw new BadRequestException('Аккаунт не привязан к компании');
-    }
+    if (!req.user.company_id) throw new BadRequestException('Аккаунт не привязан к компании');
     return this.companiesService.getMe(req.user.company_id);
   }
 
-  // POST /companies/me/document — загрузка документа юрлица
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.COMPANY)
   @Post('me/document')
@@ -71,23 +74,73 @@ export class CompaniesController {
       },
     }),
   )
-  async uploadDocument(
-    @UploadedFile() file: Express.Multer.File,
-    @Req() req: AuthenticatedRequest,
-  ) {
+  async uploadDocument(@UploadedFile() file: Express.Multer.File, @Req() req: AuthenticatedRequest) {
     if (!file) throw new BadRequestException('Файл не прикреплён');
     if (!req.user.company_id) throw new BadRequestException('Аккаунт не привязан к компании');
+    const company = await this.companiesService.uploadDocument(req.user.company_id, req.user.sub, file.path);
+    return { message: 'Документ отправлен на модерацию', status: company.status, document_url: company.document_url };
+  }
 
-    const company = await this.companiesService.uploadDocument(
-      req.user.company_id,
-      req.user.sub,
-      file.path,
-    );
+  // GET /companies/me/applications?status=pending
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.COMPANY)
+  @Get('me/applications')
+  getApplications(@Req() req: AuthenticatedRequest, @Query('status') status?: MembershipStatus) {
+    if (!req.user.company_id) throw new BadRequestException('Аккаунт не привязан к компании');
+    return this.companiesService.getApplications(req.user.company_id, status);
+  }
 
-    return {
-      message: 'Документ отправлен на модерацию',
-      status: company.status,
-      document_url: company.document_url,
-    };
+  // POST /companies/me/applications/:membershipId/approve
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.COMPANY)
+  @Post('me/applications/:membershipId/approve')
+  approveMembership(@Param('membershipId') membershipId: string, @Req() req: AuthenticatedRequest) {
+    if (!req.user.company_id) throw new BadRequestException('Аккаунт не привязан к компании');
+    return this.companiesService.approveMembership(membershipId, req.user.company_id, req.user.sub);
+  }
+
+  // POST /companies/me/applications/:membershipId/reject
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.COMPANY)
+  @Post('me/applications/:membershipId/reject')
+  rejectMembership(@Param('membershipId') membershipId: string, @Req() req: AuthenticatedRequest) {
+    if (!req.user.company_id) throw new BadRequestException('Аккаунт не привязан к компании');
+    return this.companiesService.rejectMembership(membershipId, req.user.company_id, req.user.sub);
+  }
+
+  // GET /companies/me/specialists
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.COMPANY)
+  @Get('me/specialists')
+  getSpecialists(@Req() req: AuthenticatedRequest) {
+    if (!req.user.company_id) throw new BadRequestException('Аккаунт не привязан к компании');
+    return this.companiesService.getApplications(req.user.company_id, MembershipStatus.ACTIVE);
+  }
+
+  // POST /companies/me/specialists/:membershipId/remove
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.COMPANY)
+  @Post('me/specialists/:membershipId/remove')
+  removeSpecialist(@Param('membershipId') membershipId: string, @Req() req: AuthenticatedRequest) {
+    if (!req.user.company_id) throw new BadRequestException('Аккаунт не привязан к компании');
+    return this.companiesService.removeSpecialist(membershipId, req.user.company_id, req.user.sub);
+  }
+
+  // ── Specialist routes ─────────────────────────────────────────────────────
+
+  // GET /companies — список активных компаний для выбора
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.USER)
+  @Get()
+  listActive() {
+    return this.companiesService.listActiveCompanies();
+  }
+
+  // POST /companies/:id/apply
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.USER)
+  @Post(':id/apply')
+  apply(@Param('id') companyId: string, @Req() req: AuthenticatedRequest) {
+    return this.companiesService.apply(companyId, req.user.sub);
   }
 }

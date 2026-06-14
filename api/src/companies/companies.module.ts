@@ -6,6 +6,7 @@ import { User } from '../users/user.entity';
 import { CompaniesService } from './companies.service';
 import { CompaniesController } from './companies.controller';
 import { CompaniesModerationController } from './companies-moderation.controller';
+import { MembershipsController } from './memberships.controller';
 import { AuthModule } from '../auth/auth.module';
 
 @Module({
@@ -14,7 +15,7 @@ import { AuthModule } from '../auth/auth.module';
     AuthModule,
   ],
   providers: [CompaniesService],
-  controllers: [CompaniesController, CompaniesModerationController],
+  controllers: [CompaniesController, CompaniesModerationController, MembershipsController],
   exports: [CompaniesService],
 })
 export class CompaniesModule {}
