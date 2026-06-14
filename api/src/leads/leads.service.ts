@@ -25,6 +25,7 @@ import { LeadType } from './enums/lead-type.enum';
 import { UsersService } from '../users/users.service';
 import { Specialization, UserRole, UserStatus } from '../users/user.entity';
 import { RewardsService } from '../rewards/rewards.service';
+import { RewardMethod } from '../rewards/enums/reward-method.enum';
 import { DisputesService } from '../disputes/disputes.service';
 import { OpenDisputeDto } from '../disputes/dto/open-dispute.dto';
 import { AuditService } from '../audit/audit.service';
@@ -446,8 +447,34 @@ export class LeadsService {
   async openDispute(leadId: string, dto: OpenDisputeDto, userId: string, ip?: string) {
     const lead = await this.getLeadOrFail(leadId);
 
-    if (lead.author_id !== userId && lead.executor_id !== userId) {
-      throw new ForbiddenException('Нет доступа к этому лиду');
+    // Only the author can open a dispute
+    if (lead.author_id !== userId) {
+      throw new ForbiddenException('Открыть спор может только автор лида');
+    }
+
+    const DISPUTE_ALLOWED: LeadStatus[] = [
+      LeadStatus.IN_PROGRESS,
+      LeadStatus.CONTRACT,
+      LeadStatus.DEPOSIT,
+      LeadStatus.CLOSED_SUCCESS,
+      LeadStatus.CANCELLED,
+    ];
+    if (!DISPUTE_ALLOWED.includes(lead.status)) {
+      throw new BadRequestException(
+        `Спор нельзя открыть на статусе "${lead.status}"`,
+      );
+    }
+
+    // Anti-fraud: for cancelled — only if lead was previously accepted (has in_progress in history)
+    if (lead.status === LeadStatus.CANCELLED) {
+      const wasAccepted = await this.historyRepository.findOne({
+        where: { lead_id: leadId, to_status: LeadStatus.IN_PROGRESS },
+      });
+      if (!wasAccepted) {
+        throw new ForbiddenException(
+          'Спор недоступен: лид не был принят исполнителем',
+        );
+      }
     }
 
     await this.disputesService.openForLead(lead, dto.reason, userId);
@@ -462,6 +489,28 @@ export class LeadsService {
     });
 
     return this.serializeLead(lead, userId);
+  }
+
+  async getTariff(leadId: string, userId: string) {
+    const lead = await this.getLeadOrFail(leadId);
+
+    if (lead.author_id !== userId && lead.executor_id !== userId) {
+      throw new ForbiddenException('Нет доступа к этому лиду');
+    }
+
+    const tariff = await this.rewardsService.getTariffForLead(lead);
+
+    if (!tariff) {
+      return { method: null, value: null, description: 'Тариф не установлен' };
+    }
+
+    const val = parseFloat(tariff.value);
+    const description =
+      tariff.method === RewardMethod.PERCENT
+        ? `${Math.round(val)}% от комиссии исполнителя`
+        : `${Math.round(val).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ')} ₸ фиксированно`;
+
+    return { method: tariff.method, value: tariff.value, description };
   }
 
   async findMyCreated(userId: string) {

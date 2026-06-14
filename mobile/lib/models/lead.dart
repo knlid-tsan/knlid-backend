@@ -92,6 +92,20 @@ class StatusHistoryItem {
       );
 }
 
+class LeadTariff {
+  final String? method; // 'percent' | 'fixed' | null
+  final String? value;
+  final String description;
+
+  const LeadTariff({this.method, this.value, required this.description});
+
+  factory LeadTariff.fromJson(Map<String, dynamic> j) => LeadTariff(
+        method: j['method'] as String?,
+        value: j['value'] as String?,
+        description: j['description'] as String,
+      );
+}
+
 class LeadGuarantor {
   final bool active;
   final String companyName;

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:dio/dio.dart';
 import '../models/lead.dart';
 import '../services/leads_service.dart';
+import '../services/api_client.dart';
 
 String _fmt(String amount) {
   final n = double.tryParse(amount);
@@ -9,6 +11,20 @@ String _fmt(String amount) {
       .toStringAsFixed(0)
       .replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]} ');
 }
+
+String _extractError(Object e) {
+  if (e is DioException) {
+    final data = e.response?.data;
+    if (data is Map) {
+      final msg = data['message'];
+      if (msg is String) return msg;
+    }
+    return 'Ошибка ${e.response?.statusCode ?? "сети"}';
+  }
+  return e.toString();
+}
+
+// ─── Screen ──────────────────────────────────────────────────────────────────
 
 class LeadDetailScreen extends StatefulWidget {
   final String leadId;
@@ -20,14 +36,37 @@ class LeadDetailScreen extends StatefulWidget {
 
 class _LeadDetailScreenState extends State<LeadDetailScreen> {
   final _service = LeadsService();
+
   Lead? _lead;
+  LeadTariff? _tariff;
+  String _userId = '';
   bool _loading = true;
   String? _error;
+  bool _actionLoading = false;
+
+  bool get _isExecutor =>
+      _userId.isNotEmpty && _userId == _lead?.executorId;
+  bool get _isAuthor =>
+      _userId.isNotEmpty && _userId == _lead?.authorId;
 
   @override
   void initState() {
     super.initState();
-    _load();
+    _loadAll();
+  }
+
+  // Resolves userId once, then loads lead + optional tariff.
+  Future<void> _loadAll() async {
+    if (_userId.isEmpty) {
+      final token = await ApiClient().getToken();
+      if (token != null) {
+        try {
+          final p = ApiClient().decodeTokenPayload(token);
+          _userId = p['sub'] as String? ?? '';
+        } catch (_) {}
+      }
+    }
+    await _load();
   }
 
   Future<void> _load() async {
@@ -37,13 +76,233 @@ class _LeadDetailScreenState extends State<LeadDetailScreen> {
     });
     try {
       final lead = await _service.getOne(widget.leadId);
-      setState(() => _lead = lead);
+      LeadTariff? tariff;
+      if (_userId == lead.executorId && lead.status == 'pending_acceptance') {
+        try {
+          tariff = await _service.getTariff(widget.leadId);
+        } catch (_) {}
+      }
+      if (mounted) {
+        setState(() {
+          _lead = lead;
+          _tariff = tariff;
+          _loading = false;
+        });
+      }
     } catch (e) {
-      setState(() => _error = e.toString());
-    } finally {
-      if (mounted) setState(() => _loading = false);
+      if (mounted) setState(() { _error = _extractError(e); _loading = false; });
     }
   }
+
+  // ─── Action helpers ────────────────────────────────────────────────────────
+
+  void _showSnack(String msg, {bool error = false}) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(msg),
+      backgroundColor: error ? const Color(0xFFDC2626) : const Color(0xFF22C55E),
+    ));
+  }
+
+  Future<void> _runAction(Future<void> Function() action) async {
+    setState(() => _actionLoading = true);
+    try {
+      await action();
+    } catch (e) {
+      _showSnack(_extractError(e), error: true);
+    } finally {
+      if (mounted) setState(() => _actionLoading = false);
+    }
+  }
+
+  Future<String?> _showReasonDialog(String title, String hint) {
+    final ctrl = TextEditingController();
+    return showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(title),
+        content: TextField(
+          controller: ctrl,
+          maxLines: 3,
+          autofocus: true,
+          decoration: InputDecoration(
+            hintText: hint,
+            filled: true,
+            fillColor: const Color(0xFFF1F5F9),
+            border: const OutlineInputBorder(
+              borderRadius: BorderRadius.all(Radius.circular(12)),
+              borderSide: BorderSide.none,
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Отмена'),
+          ),
+          FilledButton(
+            onPressed: () {
+              final t = ctrl.text.trim();
+              if (t.isNotEmpty) Navigator.pop(ctx, t);
+            },
+            style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFF1E293B)),
+            child: const Text('Отправить'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _onAccept() => _runAction(() async {
+        await _service.acceptLead(widget.leadId);
+        await _load();
+        _showSnack('Лид принят — телефон клиента теперь виден');
+      });
+
+  Future<void> _onDecline() async {
+    final reason =
+        await _showReasonDialog('Отклонить лид', 'Укажите причину отклонения');
+    if (reason == null) return;
+    await _runAction(() async {
+      await _service.declineLead(widget.leadId, reason);
+      if (mounted) Navigator.pop(context);
+    });
+  }
+
+  Future<void> _onUpdateStatus(String status) => _runAction(() async {
+        await _service.updateStatus(widget.leadId, status);
+        await _load();
+      });
+
+  Future<void> _onClose() async {
+    final commissionCtrl = TextEditingController();
+    final formKey = GlobalKey<FormState>();
+
+    final confirmed = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => Padding(
+        padding: EdgeInsets.only(
+          left: 24,
+          right: 24,
+          top: 24,
+          bottom: MediaQuery.of(ctx).viewInsets.bottom + 32,
+        ),
+        child: Form(
+          key: formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const Text(
+                'Закрыть лид успешно',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF1E293B),
+                ),
+              ),
+              const SizedBox(height: 20),
+              TextFormField(
+                controller: commissionCtrl,
+                autofocus: true,
+                keyboardType:
+                    const TextInputType.numberWithOptions(decimal: false),
+                decoration: const InputDecoration(
+                  labelText: 'Ваша комиссия, ₸',
+                  hintText: '0',
+                  filled: true,
+                  fillColor: Color(0xFFF1F5F9),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.all(Radius.circular(12)),
+                    borderSide: BorderSide.none,
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.all(Radius.circular(12)),
+                    borderSide:
+                        BorderSide(color: Color(0xFF1E293B), width: 1.5),
+                  ),
+                  contentPadding:
+                      EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                ),
+                validator: (v) {
+                  if (v == null || v.trim().isEmpty) {
+                    return 'Обязательное поле';
+                  }
+                  final n = double.tryParse(
+                      v.trim().replaceAll(' ', '').replaceAll(',', '.'));
+                  if (n == null || n <= 0) {
+                    return 'Введите сумму больше 0';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Вознаграждение автору рассчитается от этой суммы',
+                style: TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
+              ),
+              const SizedBox(height: 20),
+              FilledButton(
+                onPressed: () {
+                  if (formKey.currentState!.validate()) {
+                    Navigator.pop(ctx, true);
+                  }
+                },
+                style: FilledButton.styleFrom(
+                  backgroundColor: const Color(0xFF22C55E),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
+                ),
+                child: const Text(
+                  'Подтвердить закрытие',
+                  style: TextStyle(
+                      fontSize: 16, fontWeight: FontWeight.w600),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    if (confirmed != true || !mounted) return;
+
+    final raw = commissionCtrl.text.trim()
+        .replaceAll(' ', '')
+        .replaceAll(',', '.');
+    final amount = double.parse(raw);
+
+    await _runAction(() async {
+      await _service.updateStatus(
+        widget.leadId,
+        'closed_success',
+        commissionAmount: amount,
+      );
+      await _load();
+      _showSnack('Лид закрыт успешно — вознаграждение начислено');
+    });
+  }
+
+  Future<void> _onDispute() async {
+    final reason = await _showReasonDialog(
+      'Открыть спор',
+      'Опишите причину спора подробно',
+    );
+    if (reason == null) return;
+    await _runAction(() async {
+      await _service.openDispute(widget.leadId, reason);
+      await _load();
+      _showSnack('Спор открыт');
+    });
+  }
+
+  // ─── Build ────────────────────────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
@@ -58,9 +317,7 @@ class _LeadDetailScreenState extends State<LeadDetailScreen> {
               ? (leadTypeLabels[_lead!.type] ?? _lead!.type)
               : 'Лид',
           style: const TextStyle(
-            color: Color(0xFF1E293B),
-            fontWeight: FontWeight.w600,
-          ),
+              color: Color(0xFF1E293B), fontWeight: FontWeight.w600),
         ),
       ),
       body: _buildBody(),
@@ -68,9 +325,7 @@ class _LeadDetailScreenState extends State<LeadDetailScreen> {
   }
 
   Widget _buildBody() {
-    if (_loading) {
-      return const Center(child: CircularProgressIndicator());
-    }
+    if (_loading) return const Center(child: CircularProgressIndicator());
 
     if (_error != null) {
       return Center(
@@ -80,7 +335,8 @@ class _LeadDetailScreenState extends State<LeadDetailScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text(_error!,
-                  style: const TextStyle(fontSize: 13, color: Color(0xFF64748B)),
+                  style: const TextStyle(
+                      fontSize: 13, color: Color(0xFF64748B)),
                   textAlign: TextAlign.center),
               const SizedBox(height: 20),
               OutlinedButton.icon(
@@ -95,137 +351,336 @@ class _LeadDetailScreenState extends State<LeadDetailScreen> {
     }
 
     final lead = _lead!;
-    final statusColor = leadStatusColor(lead.status);
+    final actionsWidget = _buildActionsBar(lead);
 
-    return RefreshIndicator(
-      onRefresh: _load,
-      child: ListView(
-        padding: const EdgeInsets.all(16),
+    return Column(
+      children: [
+        Expanded(
+          child: RefreshIndicator(
+            onRefresh: _load,
+            child: ListView(
+              padding: const EdgeInsets.all(16),
+              children: [
+                _StatusBanner(lead: lead),
+
+                // Tariff banner — executor seeing pending lead
+                if (_tariff != null &&
+                    _isExecutor &&
+                    lead.status == 'pending_acceptance') ...[
+                  const SizedBox(height: 10),
+                  _TariffBanner(tariff: _tariff!),
+                ],
+
+                const SizedBox(height: 12),
+                _Section(title: 'Основное', rows: [
+                  _Row('Тип', leadTypeLabels[lead.type] ?? lead.type),
+                  _Row('Город', lead.city),
+                  _Row('Создан', formatLeadDate(lead.createdAt)),
+                  if (lead.closedAt != null)
+                    _Row('Закрыт', formatLeadDate(lead.closedAt!)),
+                ]),
+                const SizedBox(height: 12),
+
+                _DescriptionSection(text: lead.description),
+
+                if (lead.client != null) ...[
+                  const SizedBox(height: 12),
+                  _Section(title: 'Клиент', rows: [
+                    _Row('Имя', lead.client!.fullName),
+                    _Row('Город', lead.client!.city),
+                    if (lead.client!.phone != null)
+                      _Row('Телефон', lead.client!.phone!),
+                  ]),
+                ],
+
+                if (lead.rewardAmount != null) ...[
+                  const SizedBox(height: 12),
+                  _Section(title: 'Вознаграждение', rows: [
+                    _Row('Сумма', '${_fmt(lead.rewardAmount!)} ₸'),
+                    _Row('Оплачено', lead.rewardPaid ? 'Да' : 'Нет'),
+                  ]),
+                ],
+
+                if (lead.guarantor != null && lead.guarantor!.active) ...[
+                  const SizedBox(height: 12),
+                  _Section(title: 'Гарант', rows: [
+                    _Row('Компания', lead.guarantor!.companyName),
+                  ]),
+                ],
+
+                if (lead.history != null && lead.history!.isNotEmpty) ...[
+                  const SizedBox(height: 12),
+                  _HistorySection(history: lead.history!),
+                ],
+
+                const SizedBox(height: 32),
+              ],
+            ),
+          ),
+        ),
+        if (actionsWidget != null) actionsWidget,
+      ],
+    );
+  }
+
+  Widget? _buildActionsBar(Lead lead) {
+    if (_actionLoading) {
+      return const _ActionBar(
+        child: Center(
+          child: SizedBox(
+            height: 24,
+            width: 24,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          ),
+        ),
+      );
+    }
+
+    final status = lead.status;
+
+    if (_isExecutor) {
+      if (status == 'pending_acceptance') {
+        return _ActionBar(
+          child: Row(children: [
+            _ActionBtn(label: 'Принять', onTap: _onAccept, filled: true),
+            const SizedBox(width: 12),
+            _ActionBtn(
+                label: 'Отклонить', onTap: _onDecline, danger: true),
+          ]),
+        );
+      }
+      if (status == 'in_progress') {
+        return _ActionBar(
+          child: Row(children: [
+            _ActionBtn(
+                label: '→ Договор',
+                onTap: () => _onUpdateStatus('contract'),
+                small: true),
+            const SizedBox(width: 8),
+            _ActionBtn(
+                label: '→ Задаток',
+                onTap: () => _onUpdateStatus('deposit'),
+                small: true),
+            const SizedBox(width: 8),
+            _ActionBtn(
+                label: '✓ Закрыть',
+                onTap: _onClose,
+                filled: true,
+                small: true),
+          ]),
+        );
+      }
+      if (status == 'contract') {
+        return _ActionBar(
+          child: Row(children: [
+            _ActionBtn(
+                label: '→ Задаток',
+                onTap: () => _onUpdateStatus('deposit')),
+            const SizedBox(width: 12),
+            _ActionBtn(label: '✓ Закрыть', onTap: _onClose, filled: true),
+          ]),
+        );
+      }
+      if (status == 'deposit') {
+        return _ActionBar(
+          child: Row(children: [
+            _ActionBtn(
+                label: '✓ Закрыть сделку', onTap: _onClose, filled: true),
+          ]),
+        );
+      }
+    }
+
+    if (_isAuthor) {
+      const disputeStatuses = [
+        'in_progress',
+        'contract',
+        'deposit',
+        'closed_success',
+        'cancelled',
+      ];
+      if (disputeStatuses.contains(status)) {
+        return _ActionBar(
+          child: Row(children: [
+            _ActionBtn(
+                label: 'Открыть спор',
+                onTap: _onDispute,
+                danger: true),
+          ]),
+        );
+      }
+    }
+
+    return null;
+  }
+}
+
+// ─── Layout widgets ───────────────────────────────────────────────────────────
+
+class _ActionBar extends StatelessWidget {
+  final Widget child;
+  const _ActionBar({required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        border: Border(top: BorderSide(color: Color(0xFFE2E8F0))),
+      ),
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+      child: SafeArea(top: false, child: Padding(
+        padding: const EdgeInsets.only(bottom: 8),
+        child: child,
+      )),
+    );
+  }
+}
+
+class _ActionBtn extends StatelessWidget {
+  final String label;
+  final VoidCallback onTap;
+  final bool filled;
+  final bool danger;
+  final bool small;
+
+  const _ActionBtn({
+    required this.label,
+    required this.onTap,
+    this.filled = false,
+    this.danger = false,
+    this.small = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final vPad = small ? 10.0 : 14.0;
+    final fontSize = small ? 13.0 : 15.0;
+
+    if (filled) {
+      return Expanded(
+        child: FilledButton(
+          onPressed: onTap,
+          style: FilledButton.styleFrom(
+            backgroundColor:
+                danger ? const Color(0xFFDC2626) : const Color(0xFF1E293B),
+            padding: EdgeInsets.symmetric(vertical: vPad),
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12)),
+          ),
+          child: Text(label,
+              style: TextStyle(
+                  fontWeight: FontWeight.w600, fontSize: fontSize)),
+        ),
+      );
+    }
+
+    final borderColor =
+        danger ? const Color(0xFFDC2626) : const Color(0xFFCBD5E1);
+    final textColor =
+        danger ? const Color(0xFFDC2626) : const Color(0xFF475569);
+
+    return Expanded(
+      child: OutlinedButton(
+        onPressed: onTap,
+        style: OutlinedButton.styleFrom(
+          side: BorderSide(color: borderColor),
+          padding: EdgeInsets.symmetric(vertical: vPad),
+          shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12)),
+        ),
+        child: Text(label,
+            style: TextStyle(
+                color: textColor,
+                fontWeight: FontWeight.w500,
+                fontSize: fontSize)),
+      ),
+    );
+  }
+}
+
+// ─── Content widgets ──────────────────────────────────────────────────────────
+
+class _StatusBanner extends StatelessWidget {
+  final Lead lead;
+  const _StatusBanner({required this.lead});
+
+  @override
+  Widget build(BuildContext context) {
+    final color = leadStatusColor(lead.status);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Row(
         children: [
-          // Status banner
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-            decoration: BoxDecoration(
-              color: statusColor.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Row(
-              children: [
-                Container(
-                  width: 8,
-                  height: 8,
-                  decoration: BoxDecoration(
-                    color: statusColor,
-                    shape: BoxShape.circle,
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Text(
-                  leadStatusLabels[lead.status] ?? lead.status,
-                  style: TextStyle(
-                    fontWeight: FontWeight.w600,
-                    color: statusColor,
-                    fontSize: 14,
-                  ),
-                ),
-              ],
-            ),
+            width: 8,
+            height: 8,
+            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
           ),
-          const SizedBox(height: 16),
-
-          // Main info
-          _Section(
-            title: 'Основное',
-            children: [
-              _Row('Тип', leadTypeLabels[lead.type] ?? lead.type),
-              _Row('Город', lead.city),
-              _Row('Создан', formatLeadDate(lead.createdAt)),
-              if (lead.closedAt != null)
-                _Row('Закрыт', formatLeadDate(lead.closedAt!)),
-            ],
+          const SizedBox(width: 10),
+          Text(
+            leadStatusLabels[lead.status] ?? lead.status,
+            style: TextStyle(
+                fontWeight: FontWeight.w600, color: color, fontSize: 14),
           ),
-          const SizedBox(height: 12),
-
-          // Description
-          _Section(
-            title: 'Описание',
-            children: [
-              Padding(
-                padding: const EdgeInsets.only(top: 2),
-                child: Text(
-                  lead.description,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    color: Color(0xFF1E293B),
-                    height: 1.5,
-                  ),
-                ),
-              ),
-            ],
-          ),
-
-          // Client
-          if (lead.client != null) ...[
-            const SizedBox(height: 12),
-            _Section(
-              title: 'Клиент',
-              children: [
-                _Row('Имя', lead.client!.fullName),
-                _Row('Город', lead.client!.city),
-                if (lead.client!.phone != null)
-                  _Row('Телефон', lead.client!.phone!),
-              ],
-            ),
-          ],
-
-          // Reward
-          if (lead.rewardAmount != null) ...[
-            const SizedBox(height: 12),
-            _Section(
-              title: 'Вознаграждение',
-              children: [
-                _Row('Сумма', '${_fmt(lead.rewardAmount!)} ₸'),
-                _Row('Оплачено', lead.rewardPaid ? 'Да' : 'Нет'),
-              ],
-            ),
-          ],
-
-          // Guarantor
-          if (lead.guarantor != null && lead.guarantor!.active) ...[
-            const SizedBox(height: 12),
-            _Section(
-              title: 'Гарант',
-              children: [
-                _Row('Компания', lead.guarantor!.companyName),
-              ],
-            ),
-          ],
-
-          // History
-          if (lead.history != null && lead.history!.isNotEmpty) ...[
-            const SizedBox(height: 12),
-            _Section(
-              title: 'История статусов',
-              children: [
-                ...lead.history!.map((h) => _HistoryRow(h)),
-              ],
-            ),
-          ],
-
-          const SizedBox(height: 32),
         ],
       ),
     );
   }
 }
 
-// ─── UI helpers ───────────────────────────────────────────────────────────────
+class _TariffBanner extends StatelessWidget {
+  final LeadTariff tariff;
+  const _TariffBanner({required this.tariff});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFFBEB),
+        border: Border.all(color: const Color(0xFFFCD34D)),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(Icons.info_outline, size: 16, color: Color(0xFF92400E)),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Условия вознаграждения',
+                  style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF92400E)),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Вознаграждение автору: ${tariff.description}',
+                  style: const TextStyle(
+                      fontSize: 13, color: Color(0xFF92400E)),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
 
 class _Section extends StatelessWidget {
   final String title;
-  final List<Widget> children;
-
-  const _Section({required this.title, required this.children});
+  final List<_Row> rows;
+  const _Section({required this.title, required this.rows});
 
   @override
   Widget build(BuildContext context) {
@@ -238,17 +693,14 @@ class _Section extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
-              color: Color(0xFF94A3B8),
-              letterSpacing: 0.5,
-            ),
-          ),
+          Text(title,
+              style: const TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF94A3B8),
+                  letterSpacing: 0.5)),
           const SizedBox(height: 10),
-          ...children,
+          ...rows,
         ],
       ),
     );
@@ -258,7 +710,6 @@ class _Section extends StatelessWidget {
 class _Row extends StatelessWidget {
   final String label;
   final String value;
-
   const _Row(this.label, this.value);
 
   @override
@@ -270,20 +721,75 @@ class _Row extends StatelessWidget {
         children: [
           SizedBox(
             width: 90,
-            child: Text(
-              label,
-              style: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
-            ),
+            child: Text(label,
+                style: const TextStyle(
+                    fontSize: 13, color: Color(0xFF94A3B8))),
           ),
           Expanded(
-            child: Text(
-              value,
-              style: const TextStyle(
-                  fontSize: 13,
-                  color: Color(0xFF1E293B),
-                  fontWeight: FontWeight.w500),
-            ),
+            child: Text(value,
+                style: const TextStyle(
+                    fontSize: 13,
+                    color: Color(0xFF1E293B),
+                    fontWeight: FontWeight.w500)),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DescriptionSection extends StatelessWidget {
+  final String text;
+  const _DescriptionSection({required this.text});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+          color: Colors.white, borderRadius: BorderRadius.circular(12)),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('ОПИСАНИЕ',
+              style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF94A3B8),
+                  letterSpacing: 0.5)),
+          const SizedBox(height: 10),
+          Text(text,
+              style: const TextStyle(
+                  fontSize: 14,
+                  color: Color(0xFF1E293B),
+                  height: 1.5)),
+        ],
+      ),
+    );
+  }
+}
+
+class _HistorySection extends StatelessWidget {
+  final List<StatusHistoryItem> history;
+  const _HistorySection({required this.history});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+          color: Colors.white, borderRadius: BorderRadius.circular(12)),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('ИСТОРИЯ СТАТУСОВ',
+              style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF94A3B8),
+                  letterSpacing: 0.5)),
+          const SizedBox(height: 12),
+          ...history.map((h) => _HistoryRow(h)),
         ],
       ),
     );
@@ -296,23 +802,24 @@ class _HistoryRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final fromLabel =
-        item.fromStatus != null ? (leadStatusLabels[item.fromStatus] ?? item.fromStatus!) : '—';
-    final toLabel = leadStatusLabels[item.toStatus] ?? item.toStatus;
     final toColor = leadStatusColor(item.toStatus);
+    final fromLabel = item.fromStatus != null
+        ? (leadStatusLabels[item.fromStatus] ?? item.fromStatus!)
+        : '—';
+    final toLabel = leadStatusLabels[item.toStatus] ?? item.toStatus;
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.only(bottom: 12),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            margin: const EdgeInsets.only(top: 3),
-            width: 8,
-            height: 8,
-            decoration: BoxDecoration(
-              color: toColor,
-              shape: BoxShape.circle,
+          Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: Container(
+              width: 8,
+              height: 8,
+              decoration:
+                  BoxDecoration(color: toColor, shape: BoxShape.circle),
             ),
           ),
           const SizedBox(width: 10),
@@ -322,7 +829,8 @@ class _HistoryRow extends StatelessWidget {
               children: [
                 RichText(
                   text: TextSpan(
-                    style: const TextStyle(fontSize: 13, color: Color(0xFF1E293B)),
+                    style: const TextStyle(
+                        fontSize: 13, color: Color(0xFF1E293B)),
                     children: [
                       TextSpan(text: fromLabel),
                       const TextSpan(
@@ -331,24 +839,22 @@ class _HistoryRow extends StatelessWidget {
                       TextSpan(
                           text: toLabel,
                           style: TextStyle(
-                              color: toColor, fontWeight: FontWeight.w600)),
+                              color: toColor,
+                              fontWeight: FontWeight.w600)),
                     ],
                   ),
                 ),
                 const SizedBox(height: 2),
-                Text(
-                  formatLeadDate(item.createdAt),
-                  style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
-                ),
+                Text(formatLeadDate(item.createdAt),
+                    style: const TextStyle(
+                        fontSize: 11, color: Color(0xFF94A3B8))),
                 if (item.comment != null) ...[
                   const SizedBox(height: 2),
-                  Text(
-                    item.comment!,
-                    style: const TextStyle(
-                        fontSize: 12,
-                        color: Color(0xFF64748B),
-                        fontStyle: FontStyle.italic),
-                  ),
+                  Text(item.comment!,
+                      style: const TextStyle(
+                          fontSize: 12,
+                          color: Color(0xFF64748B),
+                          fontStyle: FontStyle.italic)),
                 ],
               ],
             ),

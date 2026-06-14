@@ -47,6 +47,12 @@ export class LeadsController {
   }
 
   @Roles(UserRole.USER, UserRole.MODERATOR, UserRole.ADMIN)
+  @Get(':id/tariff')
+  getTariff(@Param('id') id: string, @Req() req: AuthenticatedRequest) {
+    return this.leadsService.getTariff(id, req.user.sub);
+  }
+
+  @Roles(UserRole.USER, UserRole.MODERATOR, UserRole.ADMIN)
   @Get(':id')
   findOne(@Param('id') id: string, @Req() req: AuthenticatedRequest) {
     return this.leadsService.findOne(id, req.user.sub, req.user.role, req.ip);
