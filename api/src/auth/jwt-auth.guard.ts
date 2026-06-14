@@ -12,6 +12,7 @@ export interface AuthenticatedUser {
   sub: string;
   phone: string;
   role: UserRole;
+  company_id?: string;
 }
 
 @Injectable()

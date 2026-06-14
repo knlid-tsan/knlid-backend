@@ -23,6 +23,9 @@ import { Notification } from './notifications/notification.entity';
 import { VerificationModule } from './verification/verification.module';
 import { CitiesModule } from './cities/cities.module';
 import { City } from './cities/city.entity';
+import { CompaniesModule } from './companies/companies.module';
+import { Company } from './companies/entities/company.entity';
+import { CompanyMembership } from './companies/entities/company-membership.entity';
 
 @Module({
   imports: [
@@ -45,6 +48,8 @@ import { City } from './cities/city.entity';
         AuditLog,
         Notification,
         City,
+        Company,
+        CompanyMembership,
       ],
       synchronize: true,
     }),
@@ -60,6 +65,7 @@ import { City } from './cities/city.entity';
     AdminModule,
     VerificationModule,
     CitiesModule,
+    CompaniesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

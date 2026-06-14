@@ -27,4 +27,9 @@ export enum AuditAction {
   USER_UNBLOCKED = 'user_unblocked',
   USER_ROLE_CHANGED = 'user_role_changed',
   USER_REVERIFICATION_REQUESTED = 'user_reverification_requested',
+
+  COMPANY_REGISTERED = 'company_registered',
+  COMPANY_DOCUMENT_UPLOADED = 'company_document_uploaded',
+  COMPANY_APPROVED = 'company_approved',
+  COMPANY_REJECTED = 'company_rejected',
 }

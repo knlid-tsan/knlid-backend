@@ -106,6 +106,7 @@ export class AuthService {
       sub: user.id,
       phone: user.phone,
       role: user.role,
+      ...(user.company_id ? { company_id: user.company_id } : {}),
     });
 
     return { access_token };

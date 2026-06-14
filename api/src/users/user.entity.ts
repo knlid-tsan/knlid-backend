@@ -26,6 +26,7 @@ export enum UserRole {
   USER = 'user',
   MODERATOR = 'moderator',
   ADMIN = 'admin',
+  COMPANY = 'company',
 }
 
 @Entity('users') // создаст таблицу "users" в базе данных
@@ -39,8 +40,8 @@ export class User {
   @Column()
   full_name: string;
 
-  @Column({ type: 'enum', enum: Specialization })
-  specialization: Specialization;
+  @Column({ type: 'enum', enum: Specialization, nullable: true })
+  specialization: Specialization | null;
 
   @Column()
   city: string;
@@ -80,6 +81,9 @@ export class User {
 
   @Column({ default: 'ru' })
   language: string;
+
+  @Column({ type: 'uuid', nullable: true })
+  company_id: string | null;
 
   @CreateDateColumn() // дата создания — заполняется сама
   created_at: Date;
