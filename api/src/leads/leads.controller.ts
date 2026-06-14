@@ -52,7 +52,7 @@ export class LeadsController {
     @Body() dto: AssignLeadDto,
     @Req() req: AuthenticatedRequest,
   ) {
-    return this.leadsService.assign(id, dto, req.user.sub, req.ip);
+    return this.leadsService.assign(id, dto, req.user.sub, req.user.role, req.ip);
   }
 
   @Post(':id/accept')

@@ -23,7 +23,7 @@ import {
 } from './enums/lead-status.enum';
 import { LeadType } from './enums/lead-type.enum';
 import { UsersService } from '../users/users.service';
-import { UserRole, UserStatus } from '../users/user.entity';
+import { Specialization, UserRole, UserStatus } from '../users/user.entity';
 import { RewardsService } from '../rewards/rewards.service';
 import { DisputesService } from '../disputes/disputes.service';
 import { OpenDisputeDto } from '../disputes/dto/open-dispute.dto';
@@ -61,6 +61,20 @@ const HIDE_PHONE_STATUSES: LeadStatus[] = [
 
 // Роли, освобождённые от проверки статуса верификации
 const PRIVILEGED_ROLES: UserRole[] = [UserRole.ADMIN, UserRole.MODERATOR];
+
+// Карта: тип лида → требуемая специализация исполнителя (BRD 2.2.1)
+const REQUIRED_SPECIALIZATION: Record<LeadType, Specialization> = {
+  [LeadType.OWNER]: Specialization.REALTOR,
+  [LeadType.BUYER]: Specialization.REALTOR,
+  [LeadType.MORTGAGE]: Specialization.MORTGAGE_BROKER,
+  [LeadType.LEGAL]: Specialization.LAWYER,
+};
+
+const SPECIALIZATION_LABEL: Record<Specialization, string> = {
+  [Specialization.REALTOR]: 'Риелтор',
+  [Specialization.MORTGAGE_BROKER]: 'Ипотечный брокер',
+  [Specialization.LAWYER]: 'Юрист',
+};
 
 @Injectable()
 export class LeadsService {
@@ -157,13 +171,13 @@ export class LeadsService {
     return this.serializeLead(lead, authorId);
   }
 
-  async assign(leadId: string, dto: AssignLeadDto, userId: string, ip?: string) {
+  async assign(leadId: string, dto: AssignLeadDto, userId: string, userRole: UserRole, ip?: string) {
     const lead = await this.getLeadOrFail(leadId);
 
-    if (lead.author_id !== userId) {
-      throw new ForbiddenException(
-        'Только автор лида может назначить исполнителя',
-      );
+    const isModerator = PRIVILEGED_ROLES.includes(userRole);
+
+    if (!isModerator && lead.author_id !== userId) {
+      throw new ForbiddenException('Только автор лида или модератор может назначить исполнителя');
     }
 
     if (lead.status !== LeadStatus.NEW) {
@@ -181,14 +195,56 @@ export class LeadsService {
       throw new BadRequestException('Указанный исполнитель не найден');
     }
 
-    // Только верифицированные пользователи могут быть исполнителями
     if (
       !PRIVILEGED_ROLES.includes(executor.role) &&
       executor.status !== UserStatus.ACTIVE
     ) {
-      throw new ForbiddenException(
-        'Исполнитель должен пройти верификацию для принятия лидов',
-      );
+      throw new ForbiddenException('Исполнитель должен пройти верификацию для принятия лидов');
+    }
+
+    // Проверки специализации и города (BRD 2.2.1)
+    const requiredSpec = REQUIRED_SPECIALIZATION[lead.type as LeadType];
+    const specMismatch = executor.specialization !== requiredSpec;
+    const cityMismatch = executor.city?.toLowerCase() !== lead.city?.toLowerCase();
+    const overriddenRules: string[] = [];
+
+    if (isModerator) {
+      if (specMismatch) overriddenRules.push('specialization');
+      if (cityMismatch) overriddenRules.push('city');
+    } else {
+      // Автор: специализация — жёстко, обойти нельзя
+      if (specMismatch) {
+        throw new BadRequestException(
+          `Исполнитель должен быть: ${SPECIALIZATION_LABEL[requiredSpec]}`,
+        );
+      }
+      // Автор: город — с подтверждением через force
+      if (cityMismatch) {
+        if (!dto.force) {
+          throw new ConflictException({
+            message: 'Город исполнителя не совпадает с городом лида',
+            executor_city: executor.city,
+            lead_city: lead.city,
+            hint: 'Передайте force: true чтобы назначить несмотря на несовпадение города',
+          });
+        }
+        overriddenRules.push('city');
+      }
+    }
+
+    if (overriddenRules.length > 0) {
+      await this.auditService.log({
+        entityType: 'lead',
+        entityId: leadId,
+        action: AuditAction.ASSIGNMENT_OVERRIDE,
+        actorId: userId,
+        ip: ip ?? null,
+        metadata: {
+          executor_id: dto.executor_id,
+          bypassed: overriddenRules,
+          by_moderator: isModerator,
+        },
+      });
     }
 
     const from = lead.status;

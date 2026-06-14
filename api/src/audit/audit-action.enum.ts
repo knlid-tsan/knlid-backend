@@ -45,4 +45,6 @@ export enum AuditAction {
   DEBT_PAID_BY_COMPANY = 'debt_paid_by_company',
 
   SETTING_UPDATED = 'setting_updated',
+
+  ASSIGNMENT_OVERRIDE = 'assignment_override',
 }
