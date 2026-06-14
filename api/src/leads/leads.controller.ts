@@ -10,6 +10,9 @@ import {
 } from '@nestjs/common';
 import { Request } from 'express';
 import { JwtAuthGuard, AuthenticatedUser } from '../auth/jwt-auth.guard';
+import { RolesGuard } from '../auth/roles.guard';
+import { Roles } from '../auth/roles.decorator';
+import { UserRole } from '../users/user.entity';
 import { LeadsService } from './leads.service';
 import { CreateLeadDto } from './dto/create-lead.dto';
 import { AssignLeadDto } from './dto/assign-lead.dto';
@@ -21,7 +24,9 @@ interface AuthenticatedRequest extends Request {
   user: AuthenticatedUser;
 }
 
-@UseGuards(JwtAuthGuard)
+// Class-level default: USER only. Methods that also allow admin/moderator override below.
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles(UserRole.USER)
 @Controller('leads')
 export class LeadsController {
   constructor(private readonly leadsService: LeadsService) {}
@@ -41,11 +46,13 @@ export class LeadsController {
     return this.leadsService.findMyAssigned(req.user.sub);
   }
 
+  @Roles(UserRole.USER, UserRole.MODERATOR, UserRole.ADMIN)
   @Get(':id')
   findOne(@Param('id') id: string, @Req() req: AuthenticatedRequest) {
     return this.leadsService.findOne(id, req.user.sub, req.user.role, req.ip);
   }
 
+  @Roles(UserRole.USER, UserRole.MODERATOR, UserRole.ADMIN)
   @Post(':id/assign')
   assign(
     @Param('id') id: string,
@@ -69,6 +76,7 @@ export class LeadsController {
     return this.leadsService.decline(id, dto, req.user.sub, req.ip);
   }
 
+  @Roles(UserRole.USER, UserRole.MODERATOR, UserRole.ADMIN)
   @Patch(':id/status')
   updateStatus(
     @Param('id') id: string,

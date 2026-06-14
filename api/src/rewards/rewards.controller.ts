@@ -9,6 +9,9 @@ import {
 } from '@nestjs/common';
 import { Request } from 'express';
 import { JwtAuthGuard, AuthenticatedUser } from '../auth/jwt-auth.guard';
+import { RolesGuard } from '../auth/roles.guard';
+import { Roles } from '../auth/roles.decorator';
+import { UserRole } from '../users/user.entity';
 import { RewardsService } from './rewards.service';
 import { MarkPaidDto } from './dto/mark-paid.dto';
 import { DisputeRewardDto } from './dto/dispute-reward.dto';
@@ -17,7 +20,8 @@ interface AuthenticatedRequest extends Request {
   user: AuthenticatedUser;
 }
 
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles(UserRole.USER)
 @Controller('rewards')
 export class RewardsController {
   constructor(private readonly rewardsService: RewardsService) {}
