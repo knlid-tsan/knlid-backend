@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:dio/dio.dart';
 import '../models/lead.dart';
 import '../services/leads_service.dart';
@@ -10,6 +11,25 @@ String _fmt(String amount) {
   return n
       .toStringAsFixed(0)
       .replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]} ');
+}
+
+class _ThousandsFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    final digits = newValue.text.replaceAll(RegExp(r'[^\d]'), '');
+    if (digits.isEmpty) return newValue.copyWith(text: '');
+    final formatted = digits.replaceAllMapped(
+      RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+      (m) => '${m[1]} ',
+    );
+    return TextEditingValue(
+      text: formatted,
+      selection: TextSelection.collapsed(offset: formatted.length),
+    );
+  }
 }
 
 String _extractError(Object e) {
@@ -77,7 +97,7 @@ class _LeadDetailScreenState extends State<LeadDetailScreen> {
     try {
       final lead = await _service.getOne(widget.leadId);
       LeadTariff? tariff;
-      if (_userId == lead.executorId && lead.status == 'pending_acceptance') {
+      if (_userId == lead.executorId) {
         try {
           tariff = await _service.getTariff(widget.leadId);
         } catch (_) {}
@@ -176,6 +196,10 @@ class _LeadDetailScreenState extends State<LeadDetailScreen> {
       });
 
   Future<void> _onClose() async {
+    final tariff = _tariff; // already loaded for executor in _load()
+    final isPercent = tariff?.method == 'percent';
+    final isFixed = tariff?.method == 'fixed';
+
     final commissionCtrl = TextEditingController();
     final formKey = GlobalKey<FormState>();
 
@@ -207,49 +231,88 @@ class _LeadDetailScreenState extends State<LeadDetailScreen> {
                 ),
               ),
               const SizedBox(height: 20),
-              TextFormField(
-                controller: commissionCtrl,
-                autofocus: true,
-                keyboardType:
-                    const TextInputType.numberWithOptions(decimal: false),
-                decoration: const InputDecoration(
-                  labelText: 'Ваша комиссия, ₸',
-                  hintText: '0',
-                  filled: true,
-                  fillColor: Color(0xFFF1F5F9),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.all(Radius.circular(12)),
-                    borderSide: BorderSide.none,
+
+              // Fixed tariff: show info block, no input
+              if (isFixed) ...[
+                Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF0FDF4),
+                    border: Border.all(color: const Color(0xFF86EFAC)),
+                    borderRadius: BorderRadius.circular(10),
                   ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.all(Radius.circular(12)),
-                    borderSide:
-                        BorderSide(color: Color(0xFF1E293B), width: 1.5),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.check_circle_outline,
+                          size: 16, color: Color(0xFF16A34A)),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Вознаграждение автору: ${tariff!.description}',
+                          style: const TextStyle(
+                              fontSize: 13, color: Color(0xFF15803D)),
+                        ),
+                      ),
+                    ],
                   ),
-                  contentPadding:
-                      EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                 ),
-                validator: (v) {
-                  if (v == null || v.trim().isEmpty) {
-                    return 'Обязательное поле';
-                  }
-                  final n = double.tryParse(
-                      v.trim().replaceAll(' ', '').replaceAll(',', '.'));
-                  if (n == null || n <= 0) {
-                    return 'Введите сумму больше 0';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                'Вознаграждение автору рассчитается от этой суммы',
-                style: TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
-              ),
+                const SizedBox(height: 8),
+                const Text(
+                  'Сумма фиксирована — вводить комиссию не нужно',
+                  style: TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
+                ),
+              ],
+
+              // Percent tariff or no tariff: show commission field
+              if (!isFixed) ...[
+                TextFormField(
+                  controller: commissionCtrl,
+                  autofocus: true,
+                  keyboardType:
+                      const TextInputType.numberWithOptions(decimal: false),
+                  inputFormatters: [_ThousandsFormatter()],
+                  decoration: const InputDecoration(
+                    labelText: 'Ваша комиссия, ₸',
+                    hintText: '0',
+                    filled: true,
+                    fillColor: Color(0xFFF1F5F9),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.all(Radius.circular(12)),
+                      borderSide: BorderSide.none,
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.all(Radius.circular(12)),
+                      borderSide:
+                          BorderSide(color: Color(0xFF1E293B), width: 1.5),
+                    ),
+                    contentPadding:
+                        EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                  ),
+                  validator: (v) {
+                    if (v == null || v.trim().isEmpty) {
+                      return 'Обязательное поле';
+                    }
+                    final n = double.tryParse(
+                        v.trim().replaceAll(' ', '').replaceAll(',', '.'));
+                    if (n == null || n <= 0) {
+                      return 'Введите сумму больше 0';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  isPercent
+                      ? 'Вознаграждение автору рассчитается от этой суммы'
+                      : 'Укажите вашу комиссию по сделке',
+                  style: const TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
+                ),
+              ],
+
               const SizedBox(height: 20),
               FilledButton(
                 onPressed: () {
-                  if (formKey.currentState!.validate()) {
+                  if (isFixed || formKey.currentState!.validate()) {
                     Navigator.pop(ctx, true);
                   }
                 },
@@ -261,8 +324,7 @@ class _LeadDetailScreenState extends State<LeadDetailScreen> {
                 ),
                 child: const Text(
                   'Подтвердить закрытие',
-                  style: TextStyle(
-                      fontSize: 16, fontWeight: FontWeight.w600),
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                 ),
               ),
             ],
@@ -273,10 +335,13 @@ class _LeadDetailScreenState extends State<LeadDetailScreen> {
 
     if (confirmed != true || !mounted) return;
 
-    final raw = commissionCtrl.text.trim()
-        .replaceAll(' ', '')
-        .replaceAll(',', '.');
-    final amount = double.parse(raw);
+    double? amount;
+    if (!isFixed) {
+      final raw = commissionCtrl.text.trim()
+          .replaceAll(' ', '')
+          .replaceAll(',', '.');
+      amount = double.parse(raw);
+    }
 
     await _runAction(() async {
       await _service.updateStatus(
@@ -418,7 +483,7 @@ class _LeadDetailScreenState extends State<LeadDetailScreen> {
             ),
           ),
         ),
-        if (actionsWidget != null) actionsWidget,
+        ?actionsWidget,
       ],
     );
   }
