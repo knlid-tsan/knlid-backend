@@ -46,4 +46,10 @@ export class Reward {
 
   @Column({ type: 'timestamp', nullable: true })
   paid_at: Date | null;
+
+  @Column({ type: 'timestamp', nullable: true })
+  payment_due_at: Date | null;
+
+  @Column({ type: 'uuid', nullable: true })
+  guarantor_company_id: string | null;
 }

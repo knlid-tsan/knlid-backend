@@ -26,6 +26,7 @@ import { UpsertTariffV2Dto } from './dto/upsert-tariff-v2.dto';
 import { RewardsService } from '../rewards/rewards.service';
 import { LeadsService } from '../leads/leads.service';
 import { CitiesService } from '../cities/cities.service';
+import { SettingsService } from '../settings/settings.service';
 import { AuditService } from '../audit/audit.service';
 import { AuditAction } from '../audit/audit-action.enum';
 import { CreateCityDto } from '../cities/dto/create-city.dto';
@@ -34,6 +35,7 @@ import { AdminLeadsQueryDto } from './dto/admin-leads-query.dto';
 import { AdminClientsQueryDto } from './dto/admin-clients-query.dto';
 import { AdminUsersQueryDto } from './dto/admin-users-query.dto';
 import { SetRoleDto } from './dto/set-role.dto';
+import { UpdatePaymentDeadlineDto } from './dto/update-payment-deadline.dto';
 import { BOOTSTRAP_ADMIN_SECRET } from './constants';
 
 interface AuthenticatedRequest extends Request {
@@ -48,6 +50,7 @@ export class AdminController {
     private rewardsService: RewardsService,
     private leadsService: LeadsService,
     private citiesService: CitiesService,
+    private settingsService: SettingsService,
     private auditService: AuditService,
     private dataSource: DataSource,
   ) {}
@@ -291,6 +294,23 @@ export class AdminController {
     });
 
     return { id, status: user.status };
+  }
+
+  // ─── Настройки ────────────────────────────────────────────────────────────
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @Get('settings/payment-deadline')
+  async getPaymentDeadline() {
+    const days = await this.settingsService.getPaymentDeadlineDays();
+    return { key: 'payment_deadline_days', value: days };
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @Put('settings/payment-deadline')
+  async setPaymentDeadline(@Body() dto: UpdatePaymentDeadlineDto, @Req() req: AuthenticatedRequest) {
+    return this.settingsService.setPaymentDeadlineDays(dto.days, req.user.sub);
   }
 
   // ─── Лиды ─────────────────────────────────────────────────────────────────

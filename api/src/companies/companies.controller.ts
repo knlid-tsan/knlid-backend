@@ -24,6 +24,7 @@ import { UserRole } from '../users/user.entity';
 import { MembershipStatus } from './entities/company-membership.entity';
 import { CompaniesService } from './companies.service';
 import { RegisterCompanyDto } from './dto/register-company.dto';
+import { PayDebtDto } from './dto/pay-debt.dto';
 
 const ALLOWED_MIMES = ['image/jpeg', 'image/png', 'application/pdf'];
 const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024;
@@ -124,6 +125,28 @@ export class CompaniesController {
   removeSpecialist(@Param('membershipId') membershipId: string, @Req() req: AuthenticatedRequest) {
     if (!req.user.company_id) throw new BadRequestException('Аккаунт не привязан к компании');
     return this.companiesService.removeSpecialist(membershipId, req.user.company_id, req.user.sub);
+  }
+
+  // GET /companies/me/debts — список долгов к покрытию
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.COMPANY)
+  @Get('me/debts')
+  getDebts(@Req() req: AuthenticatedRequest) {
+    if (!req.user.company_id) throw new BadRequestException('Аккаунт не привязан к компании');
+    return this.companiesService.getDebts(req.user.company_id);
+  }
+
+  // POST /companies/me/debts/:rewardId/pay — покрытие долга
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.COMPANY)
+  @Post('me/debts/:rewardId/pay')
+  payDebt(
+    @Param('rewardId') rewardId: string,
+    @Body() dto: PayDebtDto,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    if (!req.user.company_id) throw new BadRequestException('Аккаунт не привязан к компании');
+    return this.companiesService.payDebt(rewardId, req.user.company_id, dto.proof_url, req.user.sub);
   }
 
   // ── Specialist routes ─────────────────────────────────────────────────────

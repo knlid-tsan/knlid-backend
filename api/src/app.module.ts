@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ScheduleModule } from '@nestjs/schedule';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { UsersModule } from './users/users.module';
@@ -26,9 +27,13 @@ import { City } from './cities/city.entity';
 import { CompaniesModule } from './companies/companies.module';
 import { Company } from './companies/entities/company.entity';
 import { CompanyMembership } from './companies/entities/company-membership.entity';
+import { Setting } from './settings/setting.entity';
+import { SettingsModule } from './settings/settings.module';
+import { GuarantorJobModule } from './guarantor-job/guarantor-job.module';
 
 @Module({
   imports: [
+    ScheduleModule.forRoot(),
     TypeOrmModule.forRoot({
       type: 'postgres',
       host: 'localhost',
@@ -50,6 +55,7 @@ import { CompanyMembership } from './companies/entities/company-membership.entit
         City,
         Company,
         CompanyMembership,
+        Setting,
       ],
       synchronize: true,
     }),
@@ -66,6 +72,8 @@ import { CompanyMembership } from './companies/entities/company-membership.entit
     VerificationModule,
     CitiesModule,
     CompaniesModule,
+    SettingsModule,
+    GuarantorJobModule,
   ],
   controllers: [AppController],
   providers: [AppService],

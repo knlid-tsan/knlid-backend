@@ -133,7 +133,7 @@ export class RewardsService {
     }
   }
 
-  async createForLead(lead: Lead, commissionAmount?: number): Promise<Reward> {
+  async createForLead(lead: Lead, commissionAmount?: number, paymentDueAt?: Date): Promise<Reward> {
     const tariff = await this.getTariffForLead(lead);
 
     let method: RewardMethod | null = null;
@@ -166,6 +166,8 @@ export class RewardsService {
         commission_amount: commissionToStore !== null ? String(commissionToStore) : null,
         amount: amount !== null ? String(amount) : null,
         status,
+        payment_due_at: paymentDueAt ?? null,
+        guarantor_company_id: null,
       }),
     );
 
@@ -267,5 +269,84 @@ export class RewardsService {
       throw new NotFoundException('Вознаграждение не найдено');
     }
     return reward;
+  }
+
+  // Вызывается крон-задачей: помечает reward как overdue и привязывает гаранта если есть
+  async markOverdue(rewardId: string, guarantorCompanyId: string | null): Promise<Reward> {
+    const reward = await this.getRewardOrFail(rewardId);
+    reward.status = RewardStatus.OVERDUE;
+    reward.guarantor_company_id = guarantorCompanyId;
+    return this.rewardsRepository.save(reward);
+  }
+
+  // Вызывается компанией-гарантом при покрытии долга
+  async payByGuarantor(
+    rewardId: string,
+    companyId: string,
+    proofUrl: string,
+    actorId: string,
+  ): Promise<Reward> {
+    const reward = await this.getRewardOrFail(rewardId);
+
+    if (reward.guarantor_company_id !== companyId) {
+      throw new ForbiddenException('Этот долг не относится к вашей компании');
+    }
+    if (reward.status !== RewardStatus.OVERDUE) {
+      throw new BadRequestException(
+        `Нельзя покрыть долг в статусе "${reward.status}"`,
+      );
+    }
+
+    reward.status = RewardStatus.PAID_BY_GUARANTOR;
+    reward.proof_url = proofUrl;
+    reward.paid_at = new Date();
+    await this.rewardsRepository.save(reward);
+
+    await this.auditService.log({
+      entityType: 'reward',
+      entityId: rewardId,
+      action: AuditAction.DEBT_PAID_BY_COMPANY,
+      actorId,
+      metadata: {
+        company_id: companyId,
+        proof_url: proofUrl,
+        author_id: reward.author_id,
+        executor_id: reward.executor_id,
+      },
+    });
+
+    await this.notificationsService.send(
+      reward.author_id,
+      'Долг покрыт компанией-гарантом',
+      'Компания-гарант подтвердила выплату вознаграждения.',
+      { reward_id: rewardId, action: 'debt_paid_by_company' },
+    );
+
+    await this.notificationsService.send(
+      reward.executor_id,
+      'Долг покрыт компанией-гарантом',
+      'Компания-гарант подтвердила выплату вознаграждения автору лида.',
+      { reward_id: rewardId, action: 'debt_paid_by_company' },
+    );
+
+    return reward;
+  }
+
+  // Используется крон-задачей и эндпоинтом /companies/me/debts
+  async findOverdueByCompany(companyId: string): Promise<Reward[]> {
+    return this.rewardsRepository.find({
+      where: { guarantor_company_id: companyId, status: RewardStatus.OVERDUE },
+      order: { payment_due_at: 'ASC' },
+    });
+  }
+
+  // Используется крон: ищет просроченные awaiting_payment
+  async findExpiredAwaiting(): Promise<Reward[]> {
+    return this.rewardsRepository
+      .createQueryBuilder('r')
+      .where('r.status = :status', { status: RewardStatus.AWAITING_PAYMENT })
+      .andWhere('r.payment_due_at IS NOT NULL')
+      .andWhere('r.payment_due_at < NOW()')
+      .getMany();
   }
 }

@@ -14,6 +14,7 @@ import { AuditService } from '../audit/audit.service';
 import { AuditAction } from '../audit/audit-action.enum';
 import { RegisterCompanyDto } from './dto/register-company.dto';
 import { RejectCompanyDto } from './dto/reject-company.dto';
+import { RewardsService } from '../rewards/rewards.service';
 
 @Injectable()
 export class CompaniesService {
@@ -25,6 +26,7 @@ export class CompaniesService {
     @InjectRepository(User)
     private usersRepository: Repository<User>,
     private auditService: AuditService,
+    private rewardsService: RewardsService,
   ) {}
 
   // ─── Registration & profile ───────────────────────────────────────────────
@@ -294,6 +296,37 @@ export class CompaniesService {
     });
 
     return saved;
+  }
+
+  // ─── Долги гаранта ───────────────────────────────────────────────────────
+
+  async getDebts(companyId: string) {
+    const rewards = await this.rewardsService.findOverdueByCompany(companyId);
+    if (!rewards.length) return [];
+
+    const executorIds = [...new Set(rewards.map((r) => r.executor_id))];
+    const authorIds   = [...new Set(rewards.map((r) => r.author_id))];
+    const userIds = [...new Set([...executorIds, ...authorIds])];
+
+    const users = await this.usersRepository.find({ where: { id: In(userIds) } });
+    const userMap = new Map(users.map((u) => [u.id, u]));
+
+    return rewards.map((r) => ({
+      reward_id:    r.id,
+      lead_id:      r.lead_id,
+      amount:       r.amount,
+      payment_due_at: r.payment_due_at,
+      executor: userMap.has(r.executor_id)
+        ? { id: r.executor_id, full_name: userMap.get(r.executor_id)!.full_name }
+        : null,
+      author: userMap.has(r.author_id)
+        ? { id: r.author_id, full_name: userMap.get(r.author_id)!.full_name }
+        : null,
+    }));
+  }
+
+  async payDebt(rewardId: string, companyId: string, proofUrl: string, actorId: string) {
+    return this.rewardsService.payByGuarantor(rewardId, companyId, proofUrl, actorId);
   }
 
   // ─── Private helpers ──────────────────────────────────────────────────────

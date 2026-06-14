@@ -10,6 +10,8 @@ import { DataSource, In, Repository } from 'typeorm';
 import { Lead } from './entities/lead.entity';
 import { Client } from './entities/client.entity';
 import { LeadStatusHistory } from './entities/lead-status-history.entity';
+import { CompanyMembership, MembershipStatus } from '../companies/entities/company-membership.entity';
+import { Company } from '../companies/entities/company.entity';
 import { CreateLeadDto } from './dto/create-lead.dto';
 import { AssignLeadDto } from './dto/assign-lead.dto';
 import { DeclineLeadDto } from './dto/decline-lead.dto';
@@ -28,6 +30,7 @@ import { OpenDisputeDto } from '../disputes/dto/open-dispute.dto';
 import { AuditService } from '../audit/audit.service';
 import { AuditAction } from '../audit/audit-action.enum';
 import { NotificationsService } from '../notifications/notifications.service';
+import { SettingsService } from '../settings/settings.service';
 
 function maskPhone(phone: string): string {
   const digits = phone.replace(/\D/g, '');
@@ -66,12 +69,17 @@ export class LeadsService {
     private leadsRepository: Repository<Lead>,
     @InjectRepository(LeadStatusHistory)
     private historyRepository: Repository<LeadStatusHistory>,
+    @InjectRepository(CompanyMembership)
+    private membershipsRepository: Repository<CompanyMembership>,
+    @InjectRepository(Company)
+    private companiesRepository: Repository<Company>,
     private usersService: UsersService,
     private rewardsService: RewardsService,
     private disputesService: DisputesService,
     private dataSource: DataSource,
     private auditService: AuditService,
     private notificationsService: NotificationsService,
+    private settingsService: SettingsService,
   ) {}
 
   async create(dto: CreateLeadDto, authorId: string, authorRole: UserRole, ip?: string) {
@@ -370,7 +378,10 @@ export class LeadsService {
     }
 
     if (to === LeadStatus.CLOSED_SUCCESS) {
-      await this.rewardsService.createForLead(lead, dto.commission_amount);
+      const deadlineDays = await this.settingsService.getPaymentDeadlineDays();
+      const paymentDueAt = new Date(lead.closed_at!);
+      paymentDueAt.setDate(paymentDueAt.getDate() + deadlineDays);
+      await this.rewardsService.createForLead(lead, dto.commission_amount, paymentDueAt);
     }
 
     return this.serializeLead(lead, userId);
@@ -443,7 +454,8 @@ export class LeadsService {
       });
     }
 
-    return { ...this.serializeLead(lead, userId), history };
+    const guarantor = await this.getGuarantorInfo(lead.executor_id);
+    return { ...this.serializeLead(lead, userId), history, guarantor };
   }
 
   private async findActiveDuplicate(type: Lead['type'], phone: string) {
@@ -587,8 +599,11 @@ export class LeadsService {
         : null,
     }));
 
-    const reward = await this.rewardsService.getForLead(lead.id);
-    const dispute = await this.disputesService.getOpenForLead(lead.id);
+    const [reward, dispute, guarantor] = await Promise.all([
+      this.rewardsService.getForLead(lead.id),
+      this.disputesService.getOpenForLead(lead.id),
+      this.getGuarantorInfo(lead.executor_id),
+    ]);
 
     const authorUser = userMap.get(lead.author_id);
     const executorUser = lead.executor_id ? userMap.get(lead.executor_id) : undefined;
@@ -622,6 +637,7 @@ export class LeadsService {
             phone: executorUser.phone,
             specialization: executorUser.specialization,
             city: executorUser.city,
+            guarantor,
           }
         : null,
       history: historyWithUser,
@@ -714,5 +730,17 @@ export class LeadsService {
           }
         : lead.client,
     };
+  }
+
+  async getGuarantorInfo(
+    executorId: string | null,
+  ): Promise<{ active: boolean; company_name: string } | null> {
+    if (!executorId) return null;
+    const membership = await this.membershipsRepository.findOne({
+      where: { user_id: executorId, status: MembershipStatus.ACTIVE },
+    });
+    if (!membership) return null;
+    const company = await this.companiesRepository.findOneBy({ id: membership.company_id });
+    return company ? { active: true, company_name: company.name } : null;
   }
 }
