@@ -1,5 +1,9 @@
 import 'package:flutter/services.dart';
 
+/// Strips formatting characters, leaving only + and digits: "+7 705 123 45 67" → "+77051234567".
+String stripPhone(String phone) =>
+    phone.replaceAll(RegExp(r'[^\d+]'), '');
+
 /// Formats a raw digit string as +7 XXX XXX XX XX for display.
 String formatPhone(String? raw) {
   if (raw == null || raw.isEmpty) return '';

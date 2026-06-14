@@ -33,12 +33,13 @@ class _PhoneScreenState extends State<PhoneScreen> {
     });
 
     try {
-      await _authService.requestOtp(_phoneController.text.trim());
+      final phone = stripPhone(_phoneController.text);
+      await _authService.requestOtp(phone);
       if (!mounted) return;
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (_) => OtpScreen(phone: _phoneController.text.trim()),
+          builder: (_) => OtpScreen(phone: phone),
         ),
       );
     } catch (e) {
