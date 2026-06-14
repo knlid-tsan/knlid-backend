@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../services/api_client.dart';
-import 'create_lead_screen.dart';
 
 const _roleLabels = {
   'user': 'Специалист',
@@ -9,14 +8,14 @@ const _roleLabels = {
   'company': 'Компания',
 };
 
-class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+class ProfileScreen extends StatefulWidget {
+  const ProfileScreen({super.key});
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  State<ProfileScreen> createState() => _ProfileScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _ProfileScreenState extends State<ProfileScreen> {
   final _client = ApiClient();
 
   String _phone = '';
@@ -61,42 +60,22 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
-      floatingActionButton: _role == 'user'
-          ? FloatingActionButton.extended(
-              onPressed: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => const CreateLeadScreen(),
-                ),
-              ),
-              backgroundColor: const Color(0xFF1E293B),
-              foregroundColor: Colors.white,
-              icon: const Icon(Icons.add),
-              label: const Text(
-                'Создать лид',
-                style: TextStyle(fontWeight: FontWeight.w600),
-              ),
-            )
-          : null,
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(24),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const SizedBox(height: 40),
-              // Logo
+              const SizedBox(height: 24),
               const Text(
-                'KN.LID',
+                'Профиль',
                 style: TextStyle(
-                  fontSize: 24,
+                  fontSize: 22,
                   fontWeight: FontWeight.bold,
                   color: Color(0xFF1E293B),
-                  letterSpacing: 1,
                 ),
               ),
-              const SizedBox(height: 48),
-              // Status card
+              const SizedBox(height: 32),
               Container(
                 padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
@@ -113,28 +92,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      children: [
-                        Container(
-                          width: 10,
-                          height: 10,
-                          decoration: const BoxDecoration(
-                            color: Color(0xFF22C55E),
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        const Text(
-                          'Вы вошли',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: Color(0xFF1E293B),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 20),
                     _InfoRow(label: 'Телефон', value: _phone),
                     const SizedBox(height: 12),
                     _InfoRow(label: 'Роль', value: roleLabel),
@@ -142,21 +99,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
               const Spacer(),
-              // Placeholder notice
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF1F5F9),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Text(
-                  'Основные экраны приложения в разработке. '
-                  'Авторизация работает.',
-                  style: TextStyle(fontSize: 13, color: Color(0xFF64748B)),
-                  textAlign: TextAlign.center,
-                ),
-              ),
-              const SizedBox(height: 16),
               OutlinedButton(
                 onPressed: _logout,
                 style: OutlinedButton.styleFrom(

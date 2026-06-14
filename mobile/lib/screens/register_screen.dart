@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import '../models/city.dart';
 import '../services/api_client.dart';
 import '../services/auth_service.dart';
-import 'home_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
   final String phone;
@@ -83,11 +82,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       );
       await _client.saveToken(token);
       if (!mounted) return;
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(builder: (_) => const HomeScreen()),
-        (r) => false,
-      );
+      Navigator.pushNamedAndRemoveUntil(context, '/home', (r) => false);
     } catch (e) {
       setState(() => _error = e.toString());
     } finally {

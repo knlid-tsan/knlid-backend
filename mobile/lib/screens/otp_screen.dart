@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import '../services/api_client.dart';
 import '../services/auth_service.dart';
 import 'register_screen.dart';
-import 'home_screen.dart';
 
 class OtpScreen extends StatefulWidget {
   final String phone;
@@ -81,11 +80,7 @@ class _OtpScreenState extends State<OtpScreen> {
       );
       await _client.saveToken(token);
       if (!mounted) return;
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(builder: (_) => const HomeScreen()),
-        (r) => false,
-      );
+      Navigator.pushNamedAndRemoveUntil(context, '/home', (r) => false);
     } on RegistrationRequiredException {
       if (!mounted) return;
       Navigator.push(

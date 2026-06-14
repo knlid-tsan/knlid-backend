@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'screens/splash_screen.dart';
 import 'screens/phone_screen.dart';
-import 'screens/home_screen.dart';
+import 'screens/main_screen.dart';
 
 void main() {
   runApp(const KnlidApp());
@@ -25,7 +25,7 @@ class KnlidApp extends StatelessWidget {
       routes: {
         '/': (_) => const SplashScreen(),
         '/phone': (_) => const PhoneScreen(),
-        '/home': (_) => const HomeScreen(),
+        '/home': (_) => const MainScreen(),
       },
     );
   }
