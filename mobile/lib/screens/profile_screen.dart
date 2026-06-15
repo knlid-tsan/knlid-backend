@@ -453,6 +453,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               activeMembership: _activeMembership,
               pendingMembership: _pendingMembership,
               actionLoading: _membershipActionLoading,
+              isVerified: user['status'] == 'active',
               onPickCompany: _showCompanyPicker,
               onLeave: (id) => _leaveMembership(id),
             ),
@@ -947,6 +948,7 @@ class _CompanyBlock extends StatelessWidget {
   final Map<String, dynamic>? activeMembership;
   final Map<String, dynamic>? pendingMembership;
   final bool actionLoading;
+  final bool isVerified;
   final VoidCallback onPickCompany;
   final void Function(String membershipId) onLeave;
 
@@ -954,6 +956,7 @@ class _CompanyBlock extends StatelessWidget {
     required this.activeMembership,
     required this.pendingMembership,
     required this.actionLoading,
+    required this.isVerified,
     required this.onPickCompany,
     required this.onLeave,
   });
@@ -999,7 +1002,7 @@ class _CompanyBlock extends StatelessWidget {
             SizedBox(
               width: double.infinity,
               child: OutlinedButton(
-                onPressed: actionLoading ? null : onPickCompany,
+                onPressed: (actionLoading || !isVerified) ? null : onPickCompany,
                 style: OutlinedButton.styleFrom(
                   side: const BorderSide(color: Color(0xFFCBD5E1)),
                   padding: const EdgeInsets.symmetric(vertical: 10),
@@ -1051,11 +1054,18 @@ class _CompanyBlock extends StatelessWidget {
               'Вы не привязаны к компании',
               style: TextStyle(fontSize: 14, color: Color(0xFF94A3B8)),
             ),
+            if (!isVerified) ...[
+              const SizedBox(height: 8),
+              const Text(
+                'Сначала пройдите верификацию',
+                style: TextStyle(fontSize: 12, color: Color(0xFFF59E0B)),
+              ),
+            ],
             const SizedBox(height: 12),
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: actionLoading ? null : onPickCompany,
+                onPressed: (actionLoading || !isVerified) ? null : onPickCompany,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF3B82F6),
                   foregroundColor: Colors.white,

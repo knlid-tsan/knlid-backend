@@ -98,6 +98,10 @@ export class CompaniesService {
   }
 
   async apply(companyId: string, userId: string): Promise<CompanyMembership> {
+    const user = await this.usersRepository.findOneBy({ id: userId });
+    if (!user || user.status !== UserStatus.ACTIVE)
+      throw new ForbiddenException('Подать заявку в компанию могут только верифицированные специалисты');
+
     const company = await this.companiesRepository.findOneBy({ id: companyId });
     if (!company) throw new NotFoundException('Компания не найдена');
     if (company.status !== CompanyStatus.ACTIVE)
