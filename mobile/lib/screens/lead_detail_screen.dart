@@ -5,6 +5,7 @@ import '../models/lead.dart';
 import '../services/leads_service.dart';
 import '../services/api_client.dart';
 import '../services/phone_formatter.dart';
+import 'verification_screen.dart';
 
 String _fmt(String amount) {
   final n = double.tryParse(amount);
@@ -175,11 +176,56 @@ class _LeadDetailScreenState extends State<LeadDetailScreen> {
     );
   }
 
-  Future<void> _onAccept() => _runAction(() async {
-        await _service.acceptLead(widget.leadId);
-        await _load();
-        _showSnack('Лид принят — телефон клиента теперь виден');
-      });
+  Future<void> _onAccept() async {
+    setState(() => _actionLoading = true);
+    try {
+      await _service.acceptLead(widget.leadId);
+      await _load();
+      _showSnack('Лид принят — телефон клиента теперь виден');
+    } on DioException catch (e) {
+      final msg = _extractError(e);
+      // 403 с текстом про верификацию → специальный диалог
+      if (e.response?.statusCode == 403 &&
+          msg.toLowerCase().contains('верификац')) {
+        if (!mounted) return;
+        await showDialog<void>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: const Text('Требуется верификация'),
+            content: const Text(
+              'Для принятия лидов необходимо пройти верификацию личности.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('Позже'),
+              ),
+              FilledButton(
+                onPressed: () {
+                  Navigator.pop(ctx);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const VerificationScreen(),
+                    ),
+                  );
+                },
+                style: FilledButton.styleFrom(
+                    backgroundColor: const Color(0xFF1E293B)),
+                child: const Text('Пройти верификацию'),
+              ),
+            ],
+          ),
+        );
+      } else {
+        _showSnack(msg, error: true);
+      }
+    } catch (e) {
+      _showSnack(_extractError(e), error: true);
+    } finally {
+      if (mounted) setState(() => _actionLoading = false);
+    }
+  }
 
   Future<void> _onDecline() async {
     final reason =

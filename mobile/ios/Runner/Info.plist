@@ -2,6 +2,10 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>NSCameraUsageDescription</key>
+	<string>Камера нужна для фотографирования себя с удостоверением личности при верификации, а также для обновления фото профиля.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Доступ к фотографиям нужен для выбора фото профиля и загрузки фото для верификации.</string>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 	<key>CFBundleDevelopmentRegion</key>
