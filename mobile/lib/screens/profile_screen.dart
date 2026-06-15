@@ -5,6 +5,7 @@ import '../services/api_client.dart';
 import '../services/phone_formatter.dart';
 import '../config.dart';
 import 'verification_screen.dart';
+import 'payment_form_screen.dart';
 
 // ─── Labels ──────────────────────────────────────────────────────────────────
 
@@ -36,6 +37,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Map<String, dynamic>? _user;
   String? _guarantorName;
+  String? _paymentBankName;
   bool _loading = true;
   bool _avatarUploading = false;
   String? _error;
@@ -65,9 +67,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
         } catch (_) {}
       }
 
+      String? paymentBankName;
+      if (user['payment_bank_id'] != null) {
+        try {
+          final banksRes = await _client.dio.get('/banks');
+          final banks = banksRes.data as List;
+          final match = banks.cast<Map<String, dynamic>>().firstWhere(
+            (b) => b['id'] == user['payment_bank_id'],
+            orElse: () => <String, dynamic>{},
+          );
+          if (match.isNotEmpty) paymentBankName = match['name'] as String?;
+        } catch (_) {}
+      }
+
       setState(() {
         _user = user;
         _guarantorName = guarantorName;
+        _paymentBankName = paymentBankName;
       });
     } on DioException catch (e) {
       final data = e.response?.data;
@@ -244,6 +260,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 );
                 _load();
               },
+            ),
+            const SizedBox(height: 12),
+            _PaymentBlock(
+              bankName: _paymentBankName,
+              paymentPhone: user['payment_phone'] as String?,
+              userPhone: user['phone'] as String,
+              onSaved: _load,
             ),
             const SizedBox(height: 16),
           ],
@@ -484,6 +507,109 @@ class _VerificationBlock extends StatelessWidget {
               style: TextStyle(fontSize: 12, color: Color(0xFF92400E)),
             ),
           ],
+        ],
+      ),
+    );
+  }
+}
+
+// ─── Payment block ────────────────────────────────────────────────────────────
+
+class _PaymentBlock extends StatelessWidget {
+  final String? bankName;
+  final String? paymentPhone;
+  final String userPhone;
+  final VoidCallback onSaved;
+
+  const _PaymentBlock({
+    required this.bankName,
+    required this.paymentPhone,
+    required this.userPhone,
+    required this.onSaved,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final hasDetails = bankName != null && paymentPhone != null;
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.account_balance_outlined,
+                  size: 16, color: Color(0xFF64748B)),
+              const SizedBox(width: 8),
+              const Expanded(
+                child: Text(
+                  'Платёжные реквизиты',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF475569),
+                  ),
+                ),
+              ),
+              TextButton(
+                onPressed: () async {
+                  final saved = await Navigator.push<bool>(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) =>
+                          PaymentFormScreen(initialPhone: userPhone),
+                    ),
+                  );
+                  if (saved == true) onSaved();
+                },
+                style: TextButton.styleFrom(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+                child: const Text(
+                  'Изменить',
+                  style: TextStyle(fontSize: 13, color: Color(0xFF3B82F6)),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          if (hasDetails) ...[
+            Text(
+              bankName!,
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: Color(0xFF1E293B),
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              formatPhone(paymentPhone),
+              style: const TextStyle(fontSize: 13, color: Color(0xFF64748B)),
+            ),
+          ] else
+            const Text(
+              'Не указаны',
+              style: TextStyle(
+                fontSize: 13,
+                color: Color(0xFFCBD5E1),
+                fontStyle: FontStyle.italic,
+              ),
+            ),
         ],
       ),
     );

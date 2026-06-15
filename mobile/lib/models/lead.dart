@@ -118,6 +118,24 @@ class LeadGuarantor {
       );
 }
 
+class AuthorPayment {
+  final String bankName;
+  final String phone;
+  final String? rewardAmount;
+
+  const AuthorPayment({
+    required this.bankName,
+    required this.phone,
+    this.rewardAmount,
+  });
+
+  factory AuthorPayment.fromJson(Map<String, dynamic> j) => AuthorPayment(
+        bankName: j['bank_name'] as String,
+        phone: j['phone'] as String,
+        rewardAmount: j['reward_amount'] as String?,
+      );
+}
+
 class Lead {
   final String id;
   final String type;
@@ -136,6 +154,8 @@ class Lead {
   // Only present in GET /leads/:id response
   final List<StatusHistoryItem>? history;
   final LeadGuarantor? guarantor;
+  // Only present for executor when status == closed_success
+  final AuthorPayment? authorPayment;
 
   const Lead({
     required this.id,
@@ -154,12 +174,14 @@ class Lead {
     this.client,
     this.history,
     this.guarantor,
+    this.authorPayment,
   });
 
   factory Lead.fromJson(Map<String, dynamic> j) {
     final rawHistory = j['history'];
     final rawGuarantor = j['guarantor'];
     final rawClient = j['client'];
+    final rawAuthorPayment = j['author_payment'];
 
     return Lead(
       id: j['id'] as String,
@@ -187,6 +209,9 @@ class Lead {
           : null,
       guarantor: rawGuarantor != null
           ? LeadGuarantor.fromJson(rawGuarantor as Map<String, dynamic>)
+          : null,
+      authorPayment: rawAuthorPayment != null
+          ? AuthorPayment.fromJson(rawAuthorPayment as Map<String, dynamic>)
           : null,
     );
   }

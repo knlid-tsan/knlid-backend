@@ -619,14 +619,18 @@ export class LeadsService {
     const participantMap = new Map(participants.map((u) => [u.id, u]));
 
     // После закрытия исполнитель видит реквизиты автора для перевода вознаграждения
-    let author_payment: { bank_name: string | null; phone: string | null } | null = null;
+    let author_payment: { bank_name: string | null; phone: string | null; reward_amount: string | null } | null = null;
     if (lead.status === LeadStatus.CLOSED_SUCCESS && isExecutor) {
       const author = participantMap.get(lead.author_id);
       if (author?.payment_bank_id) {
-        const bank = await this.banksService.findOne(author.payment_bank_id);
+        const [bank, reward] = await Promise.all([
+          this.banksService.findOne(author.payment_bank_id),
+          this.rewardsService.getForLead(lead.id),
+        ]);
         author_payment = {
           bank_name: bank?.name ?? null,
           phone: author.payment_phone ?? null,
+          reward_amount: reward?.amount ?? null,
         };
       }
     }

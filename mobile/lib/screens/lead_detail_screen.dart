@@ -544,6 +544,13 @@ class _LeadDetailScreenState extends State<LeadDetailScreen> {
                   ]),
                 ],
 
+                if (_isExecutor &&
+                    lead.status == 'closed_success' &&
+                    lead.authorPayment != null) ...[
+                  const SizedBox(height: 12),
+                  _AuthorPaymentBlock(payment: lead.authorPayment!),
+                ],
+
                 if (lead.guarantor != null && lead.guarantor!.active) ...[
                   const SizedBox(height: 12),
                   _Section(title: 'Гарант', rows: [
@@ -1000,6 +1007,119 @@ class _ClientPlaceholder extends StatelessWidget {
     );
   }
 }
+
+// ─── Author payment block ─────────────────────────────────────────────────────
+
+class _AuthorPaymentBlock extends StatelessWidget {
+  final AuthorPayment payment;
+  const _AuthorPaymentBlock({required this.payment});
+
+  String _fmtAmount(String raw) {
+    final n = double.tryParse(raw);
+    if (n == null) return raw;
+    return n
+        .toStringAsFixed(0)
+        .replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]} ');
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF0FDF4),
+        border: Border.all(color: const Color(0xFF86EFAC)),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            children: [
+              Icon(Icons.account_balance_outlined, size: 15, color: Color(0xFF16A34A)),
+              SizedBox(width: 8),
+              Text(
+                'ПЕРЕВОД АВТОРУ',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF16A34A),
+                  letterSpacing: 0.5,
+                ),
+              ),
+            ],
+          ),
+
+          // Сумма — главный элемент блока
+          if (payment.rewardAmount != null) ...[
+            const SizedBox(height: 12),
+            const Text(
+              'Переведите автору:',
+              style: TextStyle(fontSize: 13, color: Color(0xFF15803D)),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              '${_fmtAmount(payment.rewardAmount!)} ₸',
+              style: const TextStyle(
+                fontSize: 26,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF15803D),
+              ),
+            ),
+            const Divider(color: Color(0xFF86EFAC), height: 24),
+          ] else
+            const SizedBox(height: 12),
+
+          // Банк
+          Text(
+            payment.bankName,
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: Color(0xFF15803D),
+            ),
+          ),
+          const SizedBox(height: 6),
+
+          // Номер — tap-to-copy
+          GestureDetector(
+            onTap: () {
+              Clipboard.setData(ClipboardData(text: payment.phone));
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Номер скопирован'),
+                  backgroundColor: Color(0xFF22C55E),
+                  duration: Duration(seconds: 2),
+                ),
+              );
+            },
+            child: Row(
+              children: [
+                Text(
+                  formatPhone(payment.phone),
+                  style: const TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF15803D),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                const Icon(Icons.copy_outlined, size: 15, color: Color(0xFF16A34A)),
+              ],
+            ),
+          ),
+          const SizedBox(height: 4),
+          const Text(
+            'Нажмите на номер, чтобы скопировать',
+            style: TextStyle(fontSize: 11, color: Color(0xFF4ADE80)),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── History ──────────────────────────────────────────────────────────────────
 
 class _HistorySection extends StatelessWidget {
   final List<StatusHistoryItem> history;
