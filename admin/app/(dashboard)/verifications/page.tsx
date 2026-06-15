@@ -1,7 +1,9 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { api, ApiError } from '@/lib/api';
+
+const BASE_URL = 'http://localhost:3000';
 
 interface VerificationUser {
   id: string;
@@ -11,6 +13,7 @@ interface VerificationUser {
   city: string;
   updated_at: string;
   verification_attempts: number;
+  avatar_url: string | null;
 }
 
 const SPEC_LABELS: Record<string, string> = {
@@ -29,6 +32,19 @@ function formatDate(iso: string): string {
   });
 }
 
+function Initials({ name }: { name: string }) {
+  const parts = name.trim().split(/\s+/);
+  const letters = parts
+    .slice(0, 2)
+    .map((p) => p[0]?.toUpperCase() ?? '')
+    .join('');
+  return (
+    <div className="w-full h-full flex items-center justify-center bg-slate-200 text-slate-600 text-2xl font-semibold rounded-lg select-none">
+      {letters}
+    </div>
+  );
+}
+
 export default function VerificationsPage() {
   const [users, setUsers] = useState<VerificationUser[]>([]);
   const [listError, setListError] = useState('');
@@ -44,6 +60,12 @@ export default function VerificationsPage() {
   const [actionLoading, setActionLoading] = useState(false);
   const [actionError, setActionError] = useState('');
   const [toast, setToast] = useState('');
+
+  // Avatar management
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const [avatarError, setAvatarError] = useState('');
+  const [confirmRemoveAvatar, setConfirmRemoveAvatar] = useState(false);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
 
   const loadQueue = useCallback(async () => {
     setLoading(true);
@@ -71,6 +93,8 @@ export default function VerificationsPage() {
     setRejecting(false);
     setRejectReason('');
     setActionError('');
+    setAvatarError('');
+    setConfirmRemoveAvatar(false);
     setDocLoading(true);
     try {
       const blob = await api.getBlob(`/moderation/verifications/${user.id}/document`);
@@ -88,6 +112,7 @@ export default function VerificationsPage() {
     if (docUrl) URL.revokeObjectURL(docUrl);
     setSelected(null);
     setDocUrl(null);
+    setConfirmRemoveAvatar(false);
   }
 
   function showToast(message: string) {
@@ -128,6 +153,46 @@ export default function VerificationsPage() {
       setActionError(err instanceof ApiError ? err.message : 'Ошибка при отклонении');
     } finally {
       setActionLoading(false);
+    }
+  }
+
+  async function handleAvatarUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file || !selected) return;
+    setAvatarUploading(true);
+    setAvatarError('');
+    try {
+      const result = await api.postFile<{ avatar_url: string }>(
+        `/admin/users/${selected.id}/avatar`,
+        file,
+      );
+      const updatedUser = { ...selected, avatar_url: result.avatar_url };
+      setSelected(updatedUser);
+      setUsers((prev) => prev.map((u) => (u.id === selected.id ? updatedUser : u)));
+      showToast('Аватар обновлён');
+    } catch (err) {
+      setAvatarError(err instanceof ApiError ? err.message : 'Ошибка загрузки');
+    } finally {
+      setAvatarUploading(false);
+      if (avatarInputRef.current) avatarInputRef.current.value = '';
+    }
+  }
+
+  async function handleAvatarRemove() {
+    if (!selected) return;
+    setAvatarUploading(true);
+    setAvatarError('');
+    try {
+      await api.delete(`/admin/users/${selected.id}/avatar`);
+      const updatedUser = { ...selected, avatar_url: null };
+      setSelected(updatedUser);
+      setUsers((prev) => prev.map((u) => (u.id === selected.id ? updatedUser : u)));
+      setConfirmRemoveAvatar(false);
+      showToast('Аватар удалён');
+    } catch (err) {
+      setAvatarError(err instanceof ApiError ? err.message : 'Ошибка удаления');
+    } finally {
+      setAvatarUploading(false);
     }
   }
 
@@ -214,7 +279,7 @@ export default function VerificationsPage() {
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
           onClick={(e) => e.target === e.currentTarget && closeModal()}
         >
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-3xl max-h-[90vh] overflow-y-auto">
             <div className="flex items-start justify-between px-6 py-4 border-b border-gray-100">
               <div>
                 <h2 className="font-semibold text-gray-900">{selected.full_name}</h2>
@@ -230,20 +295,92 @@ export default function VerificationsPage() {
               </button>
             </div>
 
-            <div className="p-6 space-y-4">
-              {/* Document viewer */}
-              <div className="rounded-lg bg-gray-50 border border-gray-200 overflow-hidden min-h-[180px] flex items-center justify-center">
-                {docLoading ? (
-                  <span className="text-gray-400 text-sm">Загрузка документа...</span>
-                ) : docError ? (
-                  <span className="text-red-500 text-sm px-4 text-center">{docError}</span>
-                ) : docUrl ? (
-                  <img
-                    src={docUrl}
-                    alt="Документ пользователя"
-                    className="max-w-full max-h-[400px] object-contain"
-                  />
-                ) : null}
+            <div className="p-6 space-y-5">
+              {/* Dual-photo row */}
+              <div className="grid grid-cols-2 gap-4">
+                {/* Avatar */}
+                <div className="space-y-2">
+                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Аватар</p>
+                  <div className="rounded-lg bg-gray-50 border border-gray-200 overflow-hidden h-44 flex items-center justify-center">
+                    {selected.avatar_url ? (
+                      <img
+                        src={`${BASE_URL}/${selected.avatar_url}`}
+                        alt="Аватар пользователя"
+                        className="max-w-full max-h-44 object-contain"
+                      />
+                    ) : (
+                      <Initials name={selected.full_name} />
+                    )}
+                  </div>
+                  <div className="flex gap-2">
+                    <input
+                      ref={avatarInputRef}
+                      type="file"
+                      accept="image/jpeg,image/png"
+                      className="hidden"
+                      onChange={handleAvatarUpload}
+                    />
+                    <button
+                      onClick={() => avatarInputRef.current?.click()}
+                      disabled={avatarUploading}
+                      className="flex-1 text-sm border border-gray-300 rounded-lg px-3 py-1.5 text-gray-700 hover:bg-gray-50 disabled:opacity-50 transition-colors"
+                    >
+                      {avatarUploading ? '...' : 'Заменить'}
+                    </button>
+                    {selected.avatar_url && (
+                      <button
+                        onClick={() => setConfirmRemoveAvatar(true)}
+                        disabled={avatarUploading}
+                        className="text-sm border border-red-200 text-red-500 rounded-lg px-3 py-1.5 hover:bg-red-50 disabled:opacity-50 transition-colors"
+                      >
+                        Удалить
+                      </button>
+                    )}
+                  </div>
+                  {avatarError && (
+                    <p className="text-xs text-red-500">{avatarError}</p>
+                  )}
+                  {confirmRemoveAvatar && (
+                    <div className="rounded-lg border border-red-200 bg-red-50 p-3 space-y-2">
+                      <p className="text-xs text-red-700">Удалить аватар пользователя?</p>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={handleAvatarRemove}
+                          disabled={avatarUploading}
+                          className="text-xs bg-red-600 text-white rounded px-3 py-1 hover:bg-red-700 disabled:opacity-50"
+                        >
+                          {avatarUploading ? '...' : 'Удалить'}
+                        </button>
+                        <button
+                          onClick={() => setConfirmRemoveAvatar(false)}
+                          disabled={avatarUploading}
+                          className="text-xs text-gray-500 hover:text-gray-700 px-2"
+                        >
+                          Отмена
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Document */}
+                <div className="space-y-2">
+                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Документ</p>
+                  <div className="rounded-lg bg-gray-50 border border-gray-200 overflow-hidden h-44 flex items-center justify-center">
+                    {docLoading ? (
+                      <span className="text-gray-400 text-sm">Загрузка...</span>
+                    ) : docError ? (
+                      <span className="text-red-500 text-sm px-4 text-center">{docError}</span>
+                    ) : docUrl ? (
+                      <img
+                        src={docUrl}
+                        alt="Документ пользователя"
+                        className="max-w-full max-h-44 object-contain"
+                      />
+                    ) : null}
+                  </div>
+                  <p className="text-xs text-gray-400">Только для просмотра</p>
+                </div>
               </div>
 
               {actionError && (

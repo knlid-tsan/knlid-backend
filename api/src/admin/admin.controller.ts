@@ -10,10 +10,16 @@ import {
   Query,
   Req,
   UseGuards,
+  UseInterceptors,
+  UploadedFile,
   UnauthorizedException,
   BadRequestException,
   NotFoundException,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { diskStorage } from 'multer';
+import { extname } from 'path';
+import { randomUUID } from 'crypto';
 import { BanksService } from '../banks/banks.service';
 import { CreateBankDto } from '../banks/dto/create-bank.dto';
 import { UpdateBankDto } from '../banks/dto/update-bank.dto';
@@ -26,6 +32,7 @@ import { Roles } from '../auth/roles.decorator';
 import { User, UserRole, UserStatus } from '../users/user.entity';
 import { BootstrapAdminDto } from './dto/bootstrap-admin.dto';
 import { UpsertTariffV2Dto } from './dto/upsert-tariff-v2.dto';
+import { UsersService } from '../users/users.service';
 import { RewardsService } from '../rewards/rewards.service';
 import { LeadsService } from '../leads/leads.service';
 import { CitiesService } from '../cities/cities.service';
@@ -50,6 +57,7 @@ export class AdminController {
   constructor(
     @InjectRepository(User)
     private usersRepository: Repository<User>,
+    private usersService: UsersService,
     private rewardsService: RewardsService,
     private leadsService: LeadsService,
     private citiesService: CitiesService,
@@ -344,13 +352,51 @@ export class AdminController {
     return this.leadsService.adminFindCandidates(id);
   }
 
+  // ─── Аватар пользователя (модератор/админ) ───────────────────────────────
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.MODERATOR, UserRole.ADMIN)
+  @Post('users/:id/avatar')
+  @UseInterceptors(
+    FileInterceptor('file', {
+      storage: diskStorage({
+        destination: './uploads/avatars',
+        filename: (_req, file, cb) => {
+          cb(null, `${randomUUID()}${extname(file.originalname)}`);
+        },
+      }),
+      limits: { fileSize: 5 * 1024 * 1024 },
+      fileFilter: (_req, file, cb) => {
+        if (['image/jpeg', 'image/png'].includes(file.mimetype)) {
+          cb(null, true);
+        } else {
+          cb(new BadRequestException('Допустимые форматы: JPG, PNG'), false);
+        }
+      },
+    }),
+  )
+  async moderatorUploadAvatar(
+    @Param('id') id: string,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    if (!file) throw new BadRequestException('Файл не прикреплён');
+    return this.usersService.moderatorSetAvatar(id, file.path);
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.MODERATOR, UserRole.ADMIN)
+  @Delete('users/:id/avatar')
+  moderatorRemoveAvatar(@Param('id') id: string) {
+    return this.usersService.moderatorRemoveAvatar(id);
+  }
+
   // ─── Банки ────────────────────────────────────────────────────────────────
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN)
   @Get('banks')
   listBanks() {
-    return this.banksService.findAll();
+    return this.banksService.findAllAdmin();
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)

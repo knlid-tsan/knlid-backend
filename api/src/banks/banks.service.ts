@@ -19,6 +19,10 @@ export class BanksService {
     });
   }
 
+  findAllAdmin(): Promise<Bank[]> {
+    return this.banksRepository.find({ order: { name: 'ASC' } });
+  }
+
   findOne(id: string): Promise<Bank | null> {
     return this.banksRepository.findOneBy({ id });
   }

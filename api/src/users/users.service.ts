@@ -80,4 +80,20 @@ export class UsersService {
     await this.usersRepository.save(user);
     return { avatar_url: filePath };
   }
+
+  async moderatorSetAvatar(userId: string, filePath: string): Promise<{ avatar_url: string }> {
+    const user = await this.usersRepository.findOneBy({ id: userId });
+    if (!user) throw new NotFoundException('Пользователь не найден');
+    user.avatar_url = filePath;
+    await this.usersRepository.save(user);
+    return { avatar_url: filePath };
+  }
+
+  async moderatorRemoveAvatar(userId: string): Promise<{ avatar_url: null }> {
+    const user = await this.usersRepository.findOneBy({ id: userId });
+    if (!user) throw new NotFoundException('Пользователь не найден');
+    user.avatar_url = null as unknown as string;
+    await this.usersRepository.save(user);
+    return { avatar_url: null };
+  }
 }

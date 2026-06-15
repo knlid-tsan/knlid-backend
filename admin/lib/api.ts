@@ -32,6 +32,20 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   return res.json() as Promise<T>;
 }
 
+async function postFile<T>(path: string, file: File, fieldName = 'file'): Promise<T> {
+  const token = getToken();
+  const formData = new FormData();
+  formData.append(fieldName, file);
+  const headers: Record<string, string> = {};
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+  const res = await fetch(`${BASE_URL}${path}`, { method: 'POST', headers, body: formData });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new ApiError(res.status, (body as { message?: string }).message ?? `Ошибка ${res.status}`);
+  }
+  return res.json() as Promise<T>;
+}
+
 async function getBlob(path: string): Promise<Blob> {
   const token = getToken();
   const headers: Record<string, string> = {};
@@ -64,4 +78,5 @@ export const api = {
       body: body !== undefined ? JSON.stringify(body) : undefined,
     }),
   getBlob,
+  postFile: <T>(path: string, file: File, fieldName?: string) => postFile<T>(path, file, fieldName),
 };
