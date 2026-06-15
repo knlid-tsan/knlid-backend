@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import '../models/lead.dart';
 import 'api_client.dart';
 
@@ -51,6 +52,22 @@ class LeadsService {
     if (commissionAmount != null) data['commission_amount'] = commissionAmount;
     if (comment != null && comment.isNotEmpty) data['comment'] = comment;
     final response = await _dio.patch('/leads/$id/status', data: data);
+    return Lead.fromJson(response.data as Map<String, dynamic>);
+  }
+
+  Future<void> submitProof(String id, String filePath) async {
+    final formData = FormData.fromMap({
+      'file': await MultipartFile.fromFile(filePath),
+    });
+    await _dio.post(
+      '/leads/$id/submit-proof',
+      data: formData,
+      options: Options(contentType: 'multipart/form-data'),
+    );
+  }
+
+  Future<Lead> confirmPayment(String id) async {
+    final response = await _dio.post('/leads/$id/confirm-payment');
     return Lead.fromJson(response.data as Map<String, dynamic>);
   }
 

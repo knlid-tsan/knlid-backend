@@ -349,4 +349,37 @@ export class RewardsService {
       .andWhere('r.payment_due_at < NOW()')
       .getMany();
   }
+
+  // Исполнитель прикрепляет чек → reward переходит в paid, paid_at = now()
+  async attachProof(leadId: string, proofUrl: string): Promise<Reward> {
+    const reward = await this.rewardsRepository.findOneBy({ lead_id: leadId });
+    if (!reward) throw new Error(`Reward not found for lead ${leadId}`);
+    if (reward.status !== RewardStatus.AWAITING_PAYMENT) {
+      throw new Error(`Reward status is "${reward.status}", expected "awaiting_payment"`);
+    }
+
+    reward.status = RewardStatus.PAID;
+    reward.proof_url = proofUrl;
+    reward.paid_at = new Date();
+    await this.rewardsRepository.save(reward);
+
+    await this.notificationsService.send(
+      reward.author_id,
+      'Исполнитель прикрепил чек об оплате',
+      'Проверьте чек и подтвердите получение вознаграждения. Если не подтвердите в течение 5 дней — подтвердится автоматически.',
+      { reward_id: reward.id, lead_id: leadId, action: 'proof_attached' },
+    );
+
+    return reward;
+  }
+
+  // Крон авто-подтверждение: ищет paid-вознаграждения старше N дней без подтверждения автора
+  async findPaidOlderThan(days: number): Promise<Reward[]> {
+    return this.rewardsRepository
+      .createQueryBuilder('r')
+      .where('r.status = :status', { status: RewardStatus.PAID })
+      .andWhere('r.paid_at IS NOT NULL')
+      .andWhere(`r.paid_at <= NOW() - INTERVAL '${days} days'`)
+      .getMany();
+  }
 }

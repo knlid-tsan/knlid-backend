@@ -4,6 +4,7 @@ import {
   ForbiddenException,
   BadRequestException,
   ConflictException,
+  InternalServerErrorException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, In, Repository } from 'typeorm';
@@ -25,6 +26,7 @@ import { LeadType } from './enums/lead-type.enum';
 import { UsersService } from '../users/users.service';
 import { Specialization, UserRole, UserStatus } from '../users/user.entity';
 import { RewardsService } from '../rewards/rewards.service';
+import { RewardStatus } from '../rewards/enums/reward-status.enum';
 import { RewardMethod } from '../rewards/enums/reward-method.enum';
 import { BanksService } from '../banks/banks.service';
 import { DisputesService } from '../disputes/disputes.service';
@@ -33,6 +35,8 @@ import { AuditService } from '../audit/audit.service';
 import { AuditAction } from '../audit/audit-action.enum';
 import { NotificationsService } from '../notifications/notifications.service';
 import { SettingsService } from '../settings/settings.service';
+
+const SYSTEM_ACTOR_ID = '00000000-0000-0000-0000-000000000000';
 
 function maskPhone(phone: string): string {
   const digits = phone.replace(/\D/g, '');
@@ -595,6 +599,7 @@ export class LeadsService {
 
     // VIEW_CLIENT_PHONE — фиксируем когда исполнитель впервые видит телефон клиента
     const isExecutor = lead.executor_id === userId;
+    const isAuthor = lead.author_id === userId;
     const phoneVisible =
       isExecutor && !HIDE_PHONE_STATUSES.includes(lead.status);
 
@@ -618,20 +623,35 @@ export class LeadsService {
     ]);
     const participantMap = new Map(participants.map((u) => [u.id, u]));
 
-    // После закрытия исполнитель видит реквизиты автора для перевода вознаграждения
+    // Для закрытых/архивных лидов — подтягиваем вознаграждение один раз
     let author_payment: { bank_name: string | null; phone: string | null; reward_amount: string | null } | null = null;
-    if (lead.status === LeadStatus.CLOSED_SUCCESS && isExecutor) {
-      const author = participantMap.get(lead.author_id);
-      if (author?.payment_bank_id) {
-        const [bank, reward] = await Promise.all([
-          this.banksService.findOne(author.payment_bank_id),
-          this.rewardsService.getForLead(lead.id),
-        ]);
-        author_payment = {
-          bank_name: bank?.name ?? null,
-          phone: author.payment_phone ?? null,
-          reward_amount: reward?.amount ?? null,
-        };
+    let reward_status: string | null = null;
+    let reward_proof_url: string | null = null;
+
+    const isPaymentPhase =
+      lead.status === LeadStatus.CLOSED_SUCCESS || lead.status === LeadStatus.ARCHIVED;
+
+    if (isPaymentPhase) {
+      const reward = await this.rewardsService.getForLead(lead.id);
+      if (reward) {
+        reward_status = reward.status;
+
+        if (isExecutor && lead.status === LeadStatus.CLOSED_SUCCESS) {
+          const author = participantMap.get(lead.author_id);
+          if (author?.payment_bank_id) {
+            const bank = await this.banksService.findOne(author.payment_bank_id);
+            author_payment = {
+              bank_name: bank?.name ?? null,
+              phone: author.payment_phone ?? null,
+              reward_amount: reward.amount ?? null,
+            };
+          }
+        }
+
+        // Автор видит чек (proof_url) когда исполнитель его прикрепил
+        if (isAuthor && reward.status === RewardStatus.PAID) {
+          reward_proof_url = reward.proof_url;
+        }
       }
     }
 
@@ -644,6 +664,8 @@ export class LeadsService {
       history,
       guarantor,
       ...(author_payment !== null ? { author_payment } : {}),
+      ...(reward_status !== null ? { reward_status } : {}),
+      ...(reward_proof_url !== null ? { reward_proof_url } : {}),
     };
   }
 
@@ -913,6 +935,80 @@ export class LeadsService {
     }));
 
     return { data, total: Number(countRow.total), page, limit };
+  }
+
+  async submitProof(leadId: string, userId: string, filePath: string, ip?: string) {
+    const lead = await this.getLeadOrFail(leadId);
+
+    if (lead.executor_id !== userId) {
+      throw new ForbiddenException('Только исполнитель может прикрепить чек');
+    }
+    if (lead.status !== LeadStatus.CLOSED_SUCCESS) {
+      throw new BadRequestException('Чек можно прикрепить только к закрытому лиду');
+    }
+
+    try {
+      await this.rewardsService.attachProof(leadId, filePath);
+    } catch (err) {
+      throw new BadRequestException((err as Error).message);
+    }
+
+    await this.auditService.log({
+      entityType: 'reward',
+      entityId: leadId,
+      action: AuditAction.REWARD_PROOF_ATTACHED,
+      actorId: userId,
+      ip: ip ?? null,
+      metadata: { proof_url: filePath },
+    });
+
+    return this.serializeLead(lead, userId);
+  }
+
+  async confirmPayment(leadId: string, userId: string, ip?: string) {
+    const lead = await this.getLeadOrFail(leadId);
+
+    if (lead.author_id !== userId) {
+      throw new ForbiddenException('Только автор может подтвердить получение');
+    }
+    if (lead.status !== LeadStatus.CLOSED_SUCCESS) {
+      throw new BadRequestException('Подтвердить можно только закрытый лид');
+    }
+
+    const reward = await this.rewardsService.getForLead(leadId);
+    if (!reward || reward.status !== RewardStatus.PAID) {
+      throw new BadRequestException('Вознаграждение ещё не оплачено исполнителем');
+    }
+
+    await this.archiveLead(lead, userId, ip ?? null);
+    return this.serializeLead(lead, userId);
+  }
+
+  // Общий метод архивирования — используется и автором, и cron-задачей
+  async archiveLead(lead: Lead, actorId: string, ip: string | null) {
+    const from = lead.status;
+    lead.status = LeadStatus.ARCHIVED;
+    lead.closed_at = new Date();
+    await this.leadsRepository.save(lead);
+    await this.recordHistory(lead.id, from, LeadStatus.ARCHIVED, actorId);
+
+    await this.auditService.log({
+      entityType: 'lead',
+      entityId: lead.id,
+      action: actorId === SYSTEM_ACTOR_ID ? AuditAction.REWARD_AUTO_CONFIRMED : AuditAction.REWARD_CONFIRMED,
+      actorId,
+      ip,
+      metadata: { lead_id: lead.id },
+    });
+
+    if (lead.executor_id && actorId !== SYSTEM_ACTOR_ID) {
+      await this.notificationsService.send(
+        lead.executor_id,
+        'Получение подтверждено',
+        'Автор подтвердил получение вознаграждения. Лид переведён в архив.',
+        { lead_id: lead.id, action: 'payment_confirmed' },
+      );
+    }
   }
 
   async adminFindCandidates(leadId: string) {

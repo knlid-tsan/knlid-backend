@@ -5,6 +5,9 @@ const SYSTEM_ACTOR_ID = '00000000-0000-0000-0000-000000000000';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CompanyMembership, MembershipStatus } from '../companies/entities/company-membership.entity';
+import { Lead } from '../leads/entities/lead.entity';
+import { LeadStatus } from '../leads/enums/lead-status.enum';
+import { LeadsService } from '../leads/leads.service';
 import { RewardsService } from '../rewards/rewards.service';
 import { AuditService } from '../audit/audit.service';
 import { AuditAction } from '../audit/audit-action.enum';
@@ -17,6 +20,9 @@ export class GuarantorJobService {
   constructor(
     @InjectRepository(CompanyMembership)
     private membershipsRepository: Repository<CompanyMembership>,
+    @InjectRepository(Lead)
+    private leadsRepository: Repository<Lead>,
+    private leadsService: LeadsService,
     private rewardsService: RewardsService,
     private auditService: AuditService,
     private notificationsService: NotificationsService,
@@ -109,5 +115,55 @@ export class GuarantorJobService {
     const expired = await this.rewardsService.findExpiredAwaiting();
     await this.checkOverdueRewards();
     return { processed: expired.length };
+  }
+
+  // Ежедневно в 03:00 — авто-подтверждение выплат если автор молчал 5 дней
+  @Cron(CronExpression.EVERY_DAY_AT_3AM)
+  async checkAutoConfirmPayments(): Promise<void> {
+    this.logger.log('Запуск авто-подтверждения выплат (5 дней без ответа автора)');
+
+    const AUTO_CONFIRM_DAYS = 5;
+    const paidRewards = await this.rewardsService.findPaidOlderThan(AUTO_CONFIRM_DAYS);
+
+    if (!paidRewards.length) {
+      this.logger.log('Нет вознаграждений для авто-подтверждения');
+      return;
+    }
+
+    this.logger.log(`Найдено ${paidRewards.length} вознаграждений для авто-подтверждения`);
+
+    for (const reward of paidRewards) {
+      const lead = await this.leadsRepository.findOne({
+        where: { id: reward.lead_id },
+        relations: { client: true },
+      });
+
+      if (!lead || lead.status !== LeadStatus.CLOSED_SUCCESS) {
+        this.logger.log(`Lead ${reward.lead_id}: пропущен (статус: ${lead?.status ?? 'не найден'})`);
+        continue;
+      }
+
+      try {
+        await this.leadsService.archiveLead(lead, SYSTEM_ACTOR_ID, null);
+
+        await this.notificationsService.send(
+          reward.author_id,
+          'Получение подтверждено автоматически',
+          'Вы не подтвердили получение вознаграждения в течение 5 дней — оно подтверждено автоматически.',
+          { lead_id: lead.id, action: 'payment_auto_confirmed' },
+        );
+
+        this.logger.log(`Lead ${lead.id} → archived (авто-подтверждение)`);
+      } catch (err) {
+        this.logger.error(`Ошибка авто-подтверждения лида ${lead.id}: ${(err as Error).message}`);
+      }
+    }
+  }
+
+  // Ручной запуск авто-подтверждения (для тестирования)
+  async runAutoConfirmManually(days = 5): Promise<{ processed: number }> {
+    const rewards = await this.rewardsService.findPaidOlderThan(days);
+    await this.checkAutoConfirmPayments();
+    return { processed: rewards.length };
   }
 }

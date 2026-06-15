@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:dio/dio.dart';
+import 'package:image_picker/image_picker.dart';
 import '../models/lead.dart';
 import '../services/leads_service.dart';
 import '../services/api_client.dart';
 import '../services/phone_formatter.dart';
+import '../config.dart';
 import 'verification_screen.dart';
 
 String _fmt(String amount) {
@@ -58,6 +60,7 @@ class LeadDetailScreen extends StatefulWidget {
 
 class _LeadDetailScreenState extends State<LeadDetailScreen> {
   final _service = LeadsService();
+  final _picker = ImagePicker();
 
   Lead? _lead;
   LeadTariff? _tariff;
@@ -65,6 +68,7 @@ class _LeadDetailScreenState extends State<LeadDetailScreen> {
   bool _loading = true;
   String? _error;
   bool _actionLoading = false;
+  bool _proofUploading = false;
 
   bool get _isExecutor =>
       _userId.isNotEmpty && _userId == _lead?.executorId;
@@ -174,6 +178,55 @@ class _LeadDetailScreenState extends State<LeadDetailScreen> {
         ],
       ),
     );
+  }
+
+  Future<void> _pickAndUploadProof() async {
+    final source = await showModalBottomSheet<ImageSource>(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.camera_alt_outlined),
+              title: const Text('Камера'),
+              onTap: () => Navigator.pop(ctx, ImageSource.camera),
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library_outlined),
+              title: const Text('Галерея'),
+              onTap: () => Navigator.pop(ctx, ImageSource.gallery),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (source == null || !mounted) return;
+
+    final file = await _picker.pickImage(source: source, imageQuality: 85, maxWidth: 1920);
+    if (file == null || !mounted) return;
+
+    setState(() => _proofUploading = true);
+    try {
+      await _service.submitProof(widget.leadId, file.path);
+      await _load();
+      _showSnack('Чек прикреплён — ожидаем подтверждения автора');
+    } catch (e) {
+      _showSnack(_extractError(e), error: true);
+    } finally {
+      if (mounted) setState(() => _proofUploading = false);
+    }
+  }
+
+  Future<void> _confirmPayment() async {
+    await _runAction(() async {
+      await _service.confirmPayment(widget.leadId);
+      await _load();
+      _showSnack('Получение подтверждено — лид переведён в архив');
+    });
   }
 
   Future<void> _onAccept() async {
@@ -544,11 +597,40 @@ class _LeadDetailScreenState extends State<LeadDetailScreen> {
                   ]),
                 ],
 
+                // ── Исполнитель: реквизиты автора + блок загрузки чека
                 if (_isExecutor &&
                     lead.status == 'closed_success' &&
                     lead.authorPayment != null) ...[
                   const SizedBox(height: 12),
                   _AuthorPaymentBlock(payment: lead.authorPayment!),
+                  if (lead.rewardStatus == 'awaiting_payment') ...[
+                    const SizedBox(height: 12),
+                    _ProofUploadBlock(
+                      onUpload: _pickAndUploadProof,
+                      uploading: _proofUploading,
+                    ),
+                  ] else if (lead.rewardStatus == 'paid') ...[
+                    const SizedBox(height: 12),
+                    _ReceiptSentBanner(),
+                  ],
+                ],
+
+                // ── Автор: чек исполнителя + кнопка подтверждения
+                if (_isAuthor &&
+                    lead.status == 'closed_success' &&
+                    lead.rewardStatus == 'paid') ...[
+                  const SizedBox(height: 12),
+                  _ConfirmPaymentBlock(
+                    proofUrl: lead.rewardProofUrl,
+                    onConfirm: _confirmPayment,
+                    confirming: _actionLoading,
+                  ),
+                ],
+
+                // ── Архив: оба видят что получение подтверждено
+                if (lead.status == 'archived' && lead.rewardAmount != null) ...[
+                  const SizedBox(height: 12),
+                  _PaymentConfirmedBanner(),
                 ],
 
                 if (lead.guarantor != null && lead.guarantor!.active) ...[
@@ -1209,6 +1291,242 @@ class _HistoryRow extends StatelessWidget {
                           fontStyle: FontStyle.italic)),
                 ],
               ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── Proof upload block (executor) ───────────────────────────────────────────
+
+class _ProofUploadBlock extends StatelessWidget {
+  final VoidCallback onUpload;
+  final bool uploading;
+  const _ProofUploadBlock({required this.onUpload, required this.uploading});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFF7ED),
+        border: Border.all(color: const Color(0xFFFBBF24)),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            children: [
+              Icon(Icons.receipt_long_outlined, size: 15, color: Color(0xFFD97706)),
+              SizedBox(width: 8),
+              Text(
+                'ПОДТВЕРЖДЕНИЕ ОПЛАТЫ',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFFD97706),
+                  letterSpacing: 0.5,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          const Text(
+            'Переведите деньги и прикрепите скриншот или фото чека.',
+            style: TextStyle(fontSize: 13, color: Color(0xFF92400E)),
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton.icon(
+              onPressed: uploading ? null : onUpload,
+              icon: uploading
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                    )
+                  : const Icon(Icons.upload_outlined, size: 18),
+              label: Text(uploading ? 'Загрузка...' : 'Прикрепить чек'),
+              style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFFD97706),
+                padding: const EdgeInsets.symmetric(vertical: 13),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── Receipt sent banner (executor after upload) ──────────────────────────────
+
+class _ReceiptSentBanner extends StatelessWidget {
+  const _ReceiptSentBanner();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF0FDF4),
+        border: Border.all(color: const Color(0xFF86EFAC)),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: const Row(
+        children: [
+          Icon(Icons.check_circle_outline, size: 18, color: Color(0xFF16A34A)),
+          SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              'Чек прикреплён — ожидаем подтверждения автора',
+              style: TextStyle(fontSize: 13, color: Color(0xFF15803D)),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── Confirm payment block (author) ──────────────────────────────────────────
+
+class _ConfirmPaymentBlock extends StatelessWidget {
+  final String? proofUrl;
+  final VoidCallback onConfirm;
+  final bool confirming;
+  const _ConfirmPaymentBlock({
+    required this.proofUrl,
+    required this.onConfirm,
+    required this.confirming,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final imageUrl = proofUrl != null
+        ? '${AppConfig.apiBaseUrl}/$proofUrl'
+        : null;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF0F9FF),
+        border: Border.all(color: const Color(0xFF7DD3FC)),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            children: [
+              Icon(Icons.payments_outlined, size: 15, color: Color(0xFF0284C7)),
+              SizedBox(width: 8),
+              Text(
+                'ИСПОЛНИТЕЛЬ ОТМЕТИЛ ОПЛАТУ',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF0284C7),
+                  letterSpacing: 0.5,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          const Text(
+            'Исполнитель прикрепил чек. Проверьте и подтвердите получение.',
+            style: TextStyle(fontSize: 13, color: Color(0xFF0369A1)),
+          ),
+
+          // Чек (фото/документ)
+          if (imageUrl != null) ...[
+            const SizedBox(height: 12),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: Image.network(
+                imageUrl,
+                fit: BoxFit.contain,
+                width: double.infinity,
+                errorBuilder: (_, __, ___) => Container(
+                  height: 80,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE0F2FE),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Center(
+                    child: Text(
+                      'Не удалось загрузить чек',
+                      style: TextStyle(fontSize: 12, color: Color(0xFF0369A1)),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton(
+              onPressed: confirming ? null : onConfirm,
+              style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFF0284C7),
+                padding: const EdgeInsets.symmetric(vertical: 13),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+              child: confirming
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                    )
+                  : const Text('Подтвердить получение',
+                      style: TextStyle(fontWeight: FontWeight.w600)),
+            ),
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'Если не подтвердите в течение 5 дней — подтвердится автоматически',
+            style: TextStyle(fontSize: 11, color: Color(0xFF0369A1)),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── Payment confirmed banner (archived) ─────────────────────────────────────
+
+class _PaymentConfirmedBanner extends StatelessWidget {
+  const _PaymentConfirmedBanner();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF0FDF4),
+        border: Border.all(color: const Color(0xFF86EFAC)),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: const Row(
+        children: [
+          Icon(Icons.verified_outlined, size: 18, color: Color(0xFF16A34A)),
+          SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              'Вознаграждение получено и подтверждено',
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+                color: Color(0xFF15803D),
+              ),
             ),
           ),
         ],

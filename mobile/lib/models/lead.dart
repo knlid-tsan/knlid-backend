@@ -148,6 +148,10 @@ class Lead {
   final String? executorName;
   final String? rewardAmount;
   final bool rewardPaid;
+  // Статус вознаграждения (присутствует на closed_success / archived)
+  final String? rewardStatus;
+  // URL чека — виден автору когда rewardStatus == 'paid'
+  final String? rewardProofUrl;
   final DateTime createdAt;
   final DateTime? closedAt;
   final LeadClient? client;
@@ -169,6 +173,8 @@ class Lead {
     this.executorName,
     this.rewardAmount,
     required this.rewardPaid,
+    this.rewardStatus,
+    this.rewardProofUrl,
     required this.createdAt,
     this.closedAt,
     this.client,
@@ -195,6 +201,8 @@ class Lead {
       executorName: j['executor_name'] as String?,
       rewardAmount: j['reward_amount'] as String?,
       rewardPaid: j['reward_paid'] as bool? ?? false,
+      rewardStatus: j['reward_status'] as String?,
+      rewardProofUrl: j['reward_proof_url'] as String?,
       createdAt: DateTime.parse(j['created_at'] as String).toLocal(),
       closedAt: j['closed_at'] != null
           ? DateTime.parse(j['closed_at'] as String).toLocal()

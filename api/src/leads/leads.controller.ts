@@ -8,7 +8,14 @@ import {
   Query,
   Req,
   UseGuards,
+  UseInterceptors,
+  UploadedFile,
+  BadRequestException,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { diskStorage } from 'multer';
+import { extname } from 'path';
+import { randomUUID } from 'crypto';
 import { Request } from 'express';
 import { JwtAuthGuard, AuthenticatedUser } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
@@ -109,5 +116,39 @@ export class LeadsController {
     @Req() req: AuthenticatedRequest,
   ) {
     return this.leadsService.openDispute(id, dto, req.user.sub, req.ip);
+  }
+
+  @Post(':id/submit-proof')
+  @UseInterceptors(
+    FileInterceptor('file', {
+      storage: diskStorage({
+        destination: './uploads/proofs',
+        filename: (_req, file, cb) => {
+          cb(null, `${randomUUID()}${extname(file.originalname)}`);
+        },
+      }),
+      limits: { fileSize: 10 * 1024 * 1024 },
+      fileFilter: (_req, file, cb) => {
+        const allowed = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
+        if (allowed.includes(file.mimetype)) {
+          cb(null, true);
+        } else {
+          cb(new BadRequestException('Допустимые форматы: JPG, PNG, WebP, PDF'), false);
+        }
+      },
+    }),
+  )
+  submitProof(
+    @Param('id') id: string,
+    @UploadedFile() file: Express.Multer.File,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    if (!file) throw new BadRequestException('Файл не прикреплён');
+    return this.leadsService.submitProof(id, req.user.sub, file.path, req.ip);
+  }
+
+  @Post(':id/confirm-payment')
+  confirmPayment(@Param('id') id: string, @Req() req: AuthenticatedRequest) {
+    return this.leadsService.confirmPayment(id, req.user.sub, req.ip);
   }
 }

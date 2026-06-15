@@ -47,4 +47,8 @@ export enum AuditAction {
   SETTING_UPDATED = 'setting_updated',
 
   ASSIGNMENT_OVERRIDE = 'assignment_override',
+
+  REWARD_PROOF_ATTACHED = 'reward_proof_attached',
+  REWARD_CONFIRMED = 'reward_confirmed',
+  REWARD_AUTO_CONFIRMED = 'reward_auto_confirmed',
 }
