@@ -364,7 +364,7 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
             ),
             const SizedBox(height: 16),
 
-            _Label('Город'),
+            _Label('Город, где нужна услуга'),
             const SizedBox(height: 6),
             DropdownButtonFormField<String>(
               value: _selectedCity,
@@ -376,6 +376,11 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
                   ? null
                   : (v) => setState(() => _selectedCity = v),
               validator: (v) => v == null ? 'Выберите город' : null,
+            ),
+            const SizedBox(height: 4),
+            const Text(
+              'Где находится объект или нужна услуга — по этому городу подбирается местный специалист',
+              style: TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
             ),
             const SizedBox(height: 16),
 

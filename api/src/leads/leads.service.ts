@@ -915,6 +915,33 @@ export class LeadsService {
     return { data, total: Number(countRow.total), page, limit };
   }
 
+  async adminFindCandidates(leadId: string) {
+    const lead = await this.getLeadOrFail(leadId);
+    const requiredSpec = REQUIRED_SPECIALIZATION[lead.type as LeadType];
+
+    const candidates = await this.usersService.findCandidates(
+      requiredSpec,
+      lead.city,
+      lead.author_id,
+    );
+
+    return {
+      lead_id: lead.id,
+      lead_city: lead.city,
+      required_specialization: requiredSpec,
+      required_specialization_label: SPECIALIZATION_LABEL[requiredSpec],
+      candidates: candidates.map((u) => ({
+        id: u.id,
+        full_name: u.full_name,
+        phone: u.phone,
+        city: u.city,
+        specialization: u.specialization,
+        rating: u.rating,
+        leads_closed: u.leads_closed,
+      })),
+    };
+  }
+
   hasActiveLeadsOfType(type: LeadType): Promise<boolean> {
     return this.leadsRepository
       .findOne({ where: { type, status: In(ACTIVE_STATUSES as LeadStatus[]) } })

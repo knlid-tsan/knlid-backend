@@ -337,6 +337,13 @@ export class AdminController {
     return this.leadsService.adminFindOne(id);
   }
 
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.MODERATOR, UserRole.ADMIN)
+  @Get('leads/:id/candidates')
+  adminLeadCandidates(@Param('id') id: string) {
+    return this.leadsService.adminFindCandidates(id);
+  }
+
   // ─── Банки ────────────────────────────────────────────────────────────────
 
   @UseGuards(JwtAuthGuard, RolesGuard)

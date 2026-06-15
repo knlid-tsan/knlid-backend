@@ -44,6 +44,20 @@ export class UsersService {
     return this.usersRepository.findBy({ id: In(ids) });
   }
 
+  findCandidates(specialization: string, city: string, excludeUserId?: string): Promise<User[]> {
+    const qb = this.usersRepository
+      .createQueryBuilder('user')
+      .where('user.status = :status', { status: UserStatus.ACTIVE })
+      .andWhere('user.specialization = :spec', { spec: specialization })
+      .andWhere('user.city ILIKE :city', { city })
+      .orderBy('user.rating', 'DESC')
+      .addOrderBy('user.leads_closed', 'DESC');
+    if (excludeUserId) {
+      qb.andWhere('user.id != :excludeId', { excludeId: excludeUserId });
+    }
+    return qb.getMany();
+  }
+
   async updatePayment(userId: string, dto: UpdatePaymentDto): Promise<User> {
     const user = await this.usersRepository.findOneBy({ id: userId });
     if (!user) throw new NotFoundException('Пользователь не найден');

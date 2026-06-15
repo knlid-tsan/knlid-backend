@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import { api, ApiError } from '@/lib/api';
 import { LEAD_TYPE_LABELS } from '@/lib/lead-types';
@@ -33,6 +33,24 @@ interface Dispute {
   created_at: string;
   resolution_comment: string | null;
   resolved_at: string | null;
+}
+
+interface Candidate {
+  id: string;
+  full_name: string;
+  phone: string;
+  city: string;
+  specialization: string;
+  rating: number;
+  leads_closed: number;
+}
+
+interface CandidatesResponse {
+  lead_id: string;
+  lead_city: string;
+  required_specialization: string;
+  required_specialization_label: string;
+  candidates: Candidate[];
 }
 
 interface LeadDetail {
@@ -133,8 +151,15 @@ export default function LeadDetailClient({ id }: { id: string }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  useEffect(() => {
-    api
+  const [showCandidates, setShowCandidates] = useState(false);
+  const [candidatesData, setCandidatesData] = useState<CandidatesResponse | null>(null);
+  const [candidatesLoading, setCandidatesLoading] = useState(false);
+  const [candidatesError, setCandidatesError] = useState('');
+  const [assigning, setAssigning] = useState<string | null>(null);
+  const [assignError, setAssignError] = useState('');
+
+  const fetchLead = useCallback(() => {
+    return api
       .get<LeadDetail>(`/admin/leads/${id}`)
       .then(setLead)
       .catch((err) =>
@@ -142,6 +167,41 @@ export default function LeadDetailClient({ id }: { id: string }) {
       )
       .finally(() => setLoading(false));
   }, [id]);
+
+  useEffect(() => {
+    fetchLead();
+  }, [fetchLead]);
+
+  async function loadCandidates() {
+    setShowCandidates(true);
+    setCandidatesLoading(true);
+    setCandidatesError('');
+    setAssignError('');
+    try {
+      const data = await api.get<CandidatesResponse>(`/admin/leads/${id}/candidates`);
+      setCandidatesData(data);
+    } catch (err) {
+      setCandidatesError(err instanceof ApiError ? err.message : 'Не удалось загрузить кандидатов');
+    } finally {
+      setCandidatesLoading(false);
+    }
+  }
+
+  async function doAssign(executorId: string) {
+    setAssigning(executorId);
+    setAssignError('');
+    try {
+      await api.post(`/leads/${id}/assign`, { executor_id: executorId });
+      setShowCandidates(false);
+      setCandidatesData(null);
+      setLoading(true);
+      await fetchLead();
+    } catch (err) {
+      setAssignError(err instanceof ApiError ? err.message : 'Не удалось назначить исполнителя');
+    } finally {
+      setAssigning(null);
+    }
+  }
 
   if (loading) {
     return (
@@ -256,11 +316,87 @@ export default function LeadDetailClient({ id }: { id: string }) {
               <Field label="Специализация" value={SPEC_LABELS[lead.executor.specialization] ?? lead.executor.specialization} />
               <Field label="Город" value={lead.executor.city} />
             </div>
+          ) : lead.status === 'new' ? (
+            <div>
+              <p className="text-sm text-gray-400 mb-3">Не назначен</p>
+              {!showCandidates ? (
+                <button
+                  onClick={loadCandidates}
+                  className="bg-blue-600 text-white rounded-lg px-4 py-2 text-sm font-medium hover:bg-blue-700 transition-colors"
+                >
+                  Подобрать исполнителя
+                </button>
+              ) : (
+                <button
+                  onClick={() => { setShowCandidates(false); setAssignError(''); }}
+                  className="text-sm text-gray-400 hover:text-gray-600"
+                >
+                  Скрыть подбор ↑
+                </button>
+              )}
+            </div>
           ) : (
             <p className="text-sm text-gray-400">Не назначен</p>
           )}
         </Section>
       </div>
+
+      {/* Candidates panel — full width, only for new leads */}
+      {showCandidates && lead.status === 'new' && (
+        <Section title="Подбор исполнителя">
+          {assignError && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-700 mb-4">
+              {assignError}
+            </div>
+          )}
+          {candidatesLoading ? (
+            <p className="text-sm text-gray-400">Загрузка...</p>
+          ) : candidatesError ? (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-700">
+              {candidatesError}
+            </div>
+          ) : candidatesData && candidatesData.candidates.length === 0 ? (
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 text-sm text-amber-800">
+              В городе <span className="font-semibold">{candidatesData.lead_city}</span> нет доступных верифицированных специалистов
+              по специализации <span className="font-semibold">{candidatesData.required_specialization_label}</span>.
+              Лид остаётся в очереди.
+            </div>
+          ) : (
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-gray-100 bg-gray-50/70">
+                  <th className="text-left px-3 py-2 text-xs font-medium text-gray-500">Специалист</th>
+                  <th className="text-left px-3 py-2 text-xs font-medium text-gray-500">Телефон</th>
+                  <th className="text-left px-3 py-2 text-xs font-medium text-gray-500">Город</th>
+                  <th className="text-left px-3 py-2 text-xs font-medium text-gray-500">Рейтинг</th>
+                  <th className="text-left px-3 py-2 text-xs font-medium text-gray-500">Закрыто лидов</th>
+                  <th />
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-50">
+                {candidatesData?.candidates.map((c) => (
+                  <tr key={c.id} className="hover:bg-gray-50/50">
+                    <td className="px-3 py-2.5 text-gray-900 font-medium">{c.full_name}</td>
+                    <td className="px-3 py-2.5 text-gray-500">{c.phone}</td>
+                    <td className="px-3 py-2.5 text-gray-600">{c.city}</td>
+                    <td className="px-3 py-2.5 text-gray-600">{Number(c.rating).toFixed(1)}</td>
+                    <td className="px-3 py-2.5 text-gray-600">{c.leads_closed}</td>
+                    <td className="px-3 py-2.5 text-right">
+                      <button
+                        onClick={() => doAssign(c.id)}
+                        disabled={assigning !== null}
+                        className="bg-slate-800 text-white rounded-lg px-3 py-1.5 text-xs font-medium hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      >
+                        {assigning === c.id ? 'Назначение...' : 'Назначить'}
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </Section>
+      )}
 
       {/* Reward */}
       {lead.reward && (
