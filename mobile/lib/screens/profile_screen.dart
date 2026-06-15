@@ -233,7 +233,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
           const SizedBox(height: 20),
 
-          // ── Аватар ──
+          // ── Визитка: аватар + имя + специализация + город ──
           Center(
             child: Column(
               children: [
@@ -242,7 +242,43 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   uploading: _avatarUploading,
                   onTap: _pickAvatar,
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 12),
+                if ((user['full_name'] as String?)?.isNotEmpty == true)
+                  Text(
+                    user['full_name'] as String,
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF1E293B),
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                if (isSpecialist &&
+                    (user['specialization'] as String?)?.isNotEmpty == true) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    _specializationLabels[user['specialization']] ??
+                        user['specialization'] as String,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: Color(0xFF3B82F6),
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+                if ((user['city'] as String?)?.isNotEmpty == true) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    user['city'] as String,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      color: Color(0xFF64748B),
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+                const SizedBox(height: 6),
                 TextButton(
                   onPressed: _avatarUploading ? null : _pickAvatar,
                   style: TextButton.styleFrom(
