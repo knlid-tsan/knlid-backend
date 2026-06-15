@@ -156,8 +156,8 @@ export class CompaniesService {
     const membership = await this.membershipsRepository.findOneBy({ id: membershipId });
     if (!membership) throw new NotFoundException('Членство не найдено');
     if (membership.user_id !== userId) throw new ForbiddenException('Нет доступа');
-    if (membership.status !== MembershipStatus.ACTIVE)
-      throw new BadRequestException('Разорвать можно только активную связь');
+    if (membership.status !== MembershipStatus.ACTIVE && membership.status !== MembershipStatus.PENDING)
+      throw new BadRequestException('Разорвать можно только активную связь или ожидающую заявку');
 
     return this.endMembership(membership, userId, AuditAction.MEMBERSHIP_LEFT);
   }
