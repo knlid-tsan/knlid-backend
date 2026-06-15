@@ -2,12 +2,6 @@ import 'package:dio/dio.dart';
 import 'api_client.dart';
 import '../models/city.dart';
 
-/// Thrown when the backend responds 400 indicating a new user must supply
-/// registration fields before the token can be issued.
-class RegistrationRequiredException implements Exception {
-  const RegistrationRequiredException();
-}
-
 class AuthService {
   final _client = ApiClient();
 
@@ -20,37 +14,42 @@ class AuthService {
     }
   }
 
-  /// Step 2 — verify OTP and obtain a JWT.
-  ///
-  /// For existing users pass only [phone] + [code].
-  /// For new users pass all fields; the backend creates the account and returns
-  /// a token in one call.
-  ///
-  /// Throws [RegistrationRequiredException] when the user is new and
-  /// registration fields are missing.
-  /// Throws [String] with a human-readable error in all other failure cases.
+  /// Login — verify OTP for an EXISTING user. Throws [String] on error.
+  /// Returns JWT access token.
   Future<String> verifyOtp({
     required String phone,
     required String code,
-    String? fullName,
-    String? specialization,
-    String? city,
   }) async {
     try {
       final response = await _client.dio.post('/auth/verify-otp', data: {
         'phone': phone,
         'code': code,
-        if (fullName != null) 'full_name': fullName,
-        if (specialization != null) 'specialization': specialization,
-        if (city != null) 'city': city,
       });
       return response.data['access_token'] as String;
     } on DioException catch (e) {
-      final msg = _message(e);
-      if (e.response?.statusCode == 400 && msg.contains('регистрации')) {
-        throw const RegistrationRequiredException();
-      }
-      throw msg;
+      throw _message(e);
+    }
+  }
+
+  /// Register — create a new specialist account and return JWT.
+  Future<String> register({
+    required String phone,
+    required String code,
+    required String fullName,
+    required String specialization,
+    required String city,
+  }) async {
+    try {
+      final response = await _client.dio.post('/auth/register', data: {
+        'phone': phone,
+        'code': code,
+        'full_name': fullName,
+        'specialization': specialization,
+        'city': city,
+      });
+      return response.data['access_token'] as String;
+    } on DioException catch (e) {
+      throw _message(e);
     }
   }
 

@@ -24,7 +24,7 @@ class _PhoneScreenState extends State<PhoneScreen> {
     super.dispose();
   }
 
-  Future<void> _requestOtp() async {
+  Future<void> _requestOtp(AuthMode mode) async {
     if (!_formKey.currentState!.validate()) return;
 
     setState(() {
@@ -39,7 +39,7 @@ class _PhoneScreenState extends State<PhoneScreen> {
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (_) => OtpScreen(phone: phone),
+          builder: (_) => OtpScreen(phone: phone, mode: mode),
         ),
       );
     } catch (e) {
@@ -126,7 +126,7 @@ class _PhoneScreenState extends State<PhoneScreen> {
                 ],
                 const SizedBox(height: 24),
                 FilledButton(
-                  onPressed: _loading ? null : _requestOtp,
+                  onPressed: _loading ? null : () => _requestOtp(AuthMode.login),
                   style: FilledButton.styleFrom(
                     backgroundColor: const Color(0xFF1E293B),
                     padding: const EdgeInsets.symmetric(vertical: 16),
@@ -144,9 +144,25 @@ class _PhoneScreenState extends State<PhoneScreen> {
                           ),
                         )
                       : const Text(
-                          'Получить код',
+                          'Войти',
                           style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                         ),
+                ),
+                const SizedBox(height: 12),
+                OutlinedButton(
+                  onPressed: _loading ? null : () => _requestOtp(AuthMode.register),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: const Color(0xFF1E293B),
+                    side: const BorderSide(color: Color(0xFF1E293B)),
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: const Text(
+                    'Зарегистрироваться',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                  ),
                 ),
               ],
             ),

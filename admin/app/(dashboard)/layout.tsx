@@ -45,7 +45,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       return;
     }
     const payload = decodeToken(token);
-    if (!payload || payload.role === 'user') {
+    if (!payload || !['admin', 'moderator'].includes(payload.role)) {
       clearToken();
       router.replace('/login');
       return;

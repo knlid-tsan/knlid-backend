@@ -73,11 +73,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
     });
 
     try {
-      final token = await _authService.verifyOtp(
+      final token = await _authService.register(
         phone: widget.phone,
         code: widget.code,
         fullName: _nameController.text.trim(),
-        specialization: _specialization,
+        specialization: _specialization!,
         city: _city!.name,
       );
       await _client.saveToken(token);

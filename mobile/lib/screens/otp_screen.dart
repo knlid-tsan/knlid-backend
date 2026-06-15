@@ -4,9 +4,12 @@ import '../services/api_client.dart';
 import '../services/auth_service.dart';
 import 'register_screen.dart';
 
+enum AuthMode { login, register }
+
 class OtpScreen extends StatefulWidget {
   final String phone;
-  const OtpScreen({super.key, required this.phone});
+  final AuthMode mode;
+  const OtpScreen({super.key, required this.phone, required this.mode});
 
   @override
   State<OtpScreen> createState() => _OtpScreenState();
@@ -19,6 +22,7 @@ class _OtpScreenState extends State<OtpScreen> {
 
   bool _loading = false;
   String _error = '';
+  bool _showRegisterHint = false;
 
   // Resend cooldown
   static const _resendCooldown = 60;
@@ -60,7 +64,7 @@ class _OtpScreenState extends State<OtpScreen> {
     }
   }
 
-  Future<void> _verify() async {
+  Future<void> _submit() async {
     if (_loading) return;
     final code = _codeController.text.trim();
     if (code.length != 6) {
@@ -68,6 +72,14 @@ class _OtpScreenState extends State<OtpScreen> {
       return;
     }
 
+    if (widget.mode == AuthMode.login) {
+      await _login(code);
+    } else {
+      _goToRegister(code);
+    }
+  }
+
+  Future<void> _login(String code) async {
     setState(() {
       _loading = true;
       _error = '';
@@ -81,20 +93,29 @@ class _OtpScreenState extends State<OtpScreen> {
       await _client.saveToken(token);
       if (!mounted) return;
       Navigator.pushNamedAndRemoveUntil(context, '/home', (r) => false);
-    } on RegistrationRequiredException {
-      if (!mounted) return;
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => RegisterScreen(phone: widget.phone, code: code),
-        ),
-      );
     } catch (e) {
-      setState(() => _error = e.toString());
+      final msg = e.toString();
+      setState(() {
+        _error = msg;
+        _showRegisterHint = msg.contains('не найден');
+      });
     } finally {
       if (mounted) setState(() => _loading = false);
     }
   }
+
+  void _goToRegister(String code) {
+    if (!mounted) return;
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => RegisterScreen(phone: widget.phone, code: code),
+      ),
+    );
+  }
+
+  String get _buttonLabel =>
+      widget.mode == AuthMode.login ? 'Войти' : 'Продолжить';
 
   @override
   Widget build(BuildContext context) {
@@ -112,9 +133,9 @@ class _OtpScreenState extends State<OtpScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const SizedBox(height: 16),
-              const Text(
-                'Введите код',
-                style: TextStyle(
+              Text(
+                widget.mode == AuthMode.login ? 'Введите код' : 'Подтвердите номер',
+                style: const TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
                   color: Color(0xFF1E293B),
@@ -181,7 +202,7 @@ class _OtpScreenState extends State<OtpScreen> {
                   contentPadding: EdgeInsets.symmetric(vertical: 20),
                 ),
                 onChanged: (v) {
-                  if (v.length == 6) _verify();
+                  if (v.length == 6) _submit();
                 },
               ),
 
@@ -192,11 +213,25 @@ class _OtpScreenState extends State<OtpScreen> {
                   style: const TextStyle(color: Color(0xFFDC2626), fontSize: 13),
                   textAlign: TextAlign.center,
                 ),
+                if (_showRegisterHint) ...[
+                  const SizedBox(height: 8),
+                  TextButton(
+                    onPressed: () => _goToRegister(_codeController.text.trim()),
+                    child: const Text(
+                      'Зарегистрироваться с этим номером →',
+                      style: TextStyle(
+                        color: Color(0xFF1E293B),
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ),
+                ],
               ],
 
               const SizedBox(height: 24),
               FilledButton(
-                onPressed: _loading ? null : _verify,
+                onPressed: _loading ? null : _submit,
                 style: FilledButton.styleFrom(
                   backgroundColor: const Color(0xFF1E293B),
                   padding: const EdgeInsets.symmetric(vertical: 16),
@@ -213,9 +248,9 @@ class _OtpScreenState extends State<OtpScreen> {
                           color: Colors.white,
                         ),
                       )
-                    : const Text(
-                        'Войти',
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                    : Text(
+                        _buttonLabel,
+                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                       ),
               ),
 

@@ -3,6 +3,8 @@ import {
   Logger,
   UnauthorizedException,
   BadRequestException,
+  ConflictException,
+  NotFoundException,
   HttpException,
   HttpStatus,
 } from '@nestjs/common';
@@ -12,6 +14,7 @@ import { JwtService } from '@nestjs/jwt';
 import { OtpCode } from './otp-code.entity';
 import { UsersService } from '../users/users.service';
 import { VerifyOtpDto } from './dto/verify-otp.dto';
+import { RegisterDto } from './dto/register.dto';
 import { AuditService } from '../audit/audit.service';
 import { AuditAction } from '../audit/audit-action.enum';
 
@@ -71,36 +74,61 @@ export class AuthService {
       throw new UnauthorizedException('Код истёк, запросите новый');
     }
 
-    let user = await this.usersService.findActiveByPhone(dto.phone);
-    let isNewUser = false;
+    const user = await this.usersService.findActiveByPhone(dto.phone);
 
     if (!user) {
-      if (!dto.full_name || !dto.specialization || !dto.city) {
-        throw new BadRequestException(
-          'Для регистрации нужны full_name, specialization и city',
-        );
-      }
-
-      user = await this.usersService.create({
-        phone: dto.phone,
-        full_name: dto.full_name,
-        specialization: dto.specialization,
-        city: dto.city,
-      });
-      isNewUser = true;
+      throw new NotFoundException('Пользователь не найден. Пройдите регистрацию');
     }
 
     await this.otpCodesRepository.delete({ phone: dto.phone });
 
-    if (isNewUser) {
-      await this.auditService.log({
-        entityType: 'user',
-        entityId: user.id,
-        action: AuditAction.USER_REGISTERED,
-        actorId: user.id,
-        metadata: { phone: user.phone, specialization: user.specialization },
-      });
+    const access_token = await this.jwtService.signAsync({
+      sub: user.id,
+      phone: user.phone,
+      role: user.role,
+      ...(user.company_id ? { company_id: user.company_id } : {}),
+    });
+
+    return { access_token };
+  }
+
+  async registerUser(dto: RegisterDto): Promise<{ access_token: string }> {
+    const otp = await this.otpCodesRepository.findOne({
+      where: { phone: dto.phone, code: dto.code },
+      order: { created_at: 'DESC' },
+    });
+
+    if (!otp) {
+      throw new UnauthorizedException('Неверный код');
     }
+
+    if (otp.expires_at.getTime() < Date.now()) {
+      throw new UnauthorizedException('Код истёк, запросите новый');
+    }
+
+    const existing = await this.usersService.findActiveByPhone(dto.phone);
+    if (existing) {
+      throw new ConflictException(
+        'Пользователь с этим номером уже зарегистрирован. Войдите',
+      );
+    }
+
+    const user = await this.usersService.create({
+      phone: dto.phone,
+      full_name: dto.full_name,
+      specialization: dto.specialization,
+      city: dto.city,
+    });
+
+    await this.otpCodesRepository.delete({ phone: dto.phone });
+
+    await this.auditService.log({
+      entityType: 'user',
+      entityId: user.id,
+      action: AuditAction.USER_REGISTERED,
+      actorId: user.id,
+      metadata: { phone: user.phone, specialization: user.specialization },
+    });
 
     const access_token = await this.jwtService.signAsync({
       sub: user.id,

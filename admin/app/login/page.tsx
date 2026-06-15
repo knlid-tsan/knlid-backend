@@ -39,7 +39,7 @@ export default function LoginPage() {
         { phone, code },
       );
       const payload = decodeToken(access_token);
-      if (!payload || payload.role === 'user') {
+      if (!payload || !['admin', 'moderator'].includes(payload.role)) {
         setError('Доступ только для модераторов и администраторов');
         return;
       }
