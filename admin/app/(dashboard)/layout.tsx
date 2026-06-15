@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { getToken, clearToken, decodeToken } from '@/lib/auth';
+import { formatPhone } from '@/lib/format';
 
 interface NavItem {
   href: string;
@@ -116,7 +117,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <div className="flex-1 flex flex-col overflow-hidden">
         <header className="bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-end flex-shrink-0 gap-4">
           <div className="text-right">
-            <p className="text-sm font-medium text-gray-900">{phone}</p>
+            <p className="text-sm font-medium text-gray-900">{formatPhone(phone)}</p>
             <p className="text-xs text-gray-400">{roleLabel}</p>
           </div>
           <button

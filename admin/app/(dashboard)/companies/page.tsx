@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { api, ApiError } from '@/lib/api';
+import { formatPhone } from '@/lib/format';
 
 interface Company {
   id: string;
@@ -153,7 +154,7 @@ export default function CompaniesPage() {
                     <td className="px-5 py-3.5 font-medium text-gray-900">{c.name}</td>
                     <td className="px-5 py-3.5 font-mono text-gray-600 text-xs tracking-wide">{c.bin}</td>
                     <td className="px-5 py-3.5 text-gray-600">{c.city}</td>
-                    <td className="px-5 py-3.5 font-mono text-gray-600 text-xs">{c.phone}</td>
+                    <td className="px-5 py-3.5 font-mono text-gray-600 text-xs">{formatPhone(c.phone)}</td>
                     <td className="px-5 py-3.5">
                       <Badge status={c.status} />
                     </td>

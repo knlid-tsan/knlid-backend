@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import { api, ApiError } from '@/lib/api';
 import { LEAD_TYPE_LABELS } from '@/lib/lead-types';
+import { formatPhone, formatMoney } from '@/lib/format';
 
 interface HistoryEntry {
   id: string;
@@ -295,7 +296,7 @@ export default function LeadDetailClient({ id }: { id: string }) {
       <Section title="Клиент">
         <div className="grid grid-cols-2 gap-x-8 gap-y-3 sm:grid-cols-3">
           <Field label="Имя" value={lead.client.full_name} />
-          <Field label="Телефон" value={lead.client.phone} />
+          <Field label="Телефон" value={formatPhone(lead.client.phone)} />
           <Field label="Город" value={lead.client.city} />
         </div>
       </Section>
@@ -306,7 +307,7 @@ export default function LeadDetailClient({ id }: { id: string }) {
           {lead.author ? (
             <div className="grid grid-cols-1 gap-y-3">
               <Field label="Имя" value={lead.author.full_name} />
-              <Field label="Телефон" value={lead.author.phone} />
+              <Field label="Телефон" value={formatPhone(lead.author.phone)} />
               <Field label="Специализация" value={SPEC_LABELS[lead.author.specialization] ?? lead.author.specialization} />
               <Field label="Город" value={lead.author.city} />
             </div>
@@ -318,7 +319,7 @@ export default function LeadDetailClient({ id }: { id: string }) {
           {lead.executor ? (
             <div className="grid grid-cols-1 gap-y-3">
               <Field label="Имя" value={lead.executor.full_name} />
-              <Field label="Телефон" value={lead.executor.phone} />
+              <Field label="Телефон" value={formatPhone(lead.executor.phone)} />
               <Field label="Специализация" value={SPEC_LABELS[lead.executor.specialization] ?? lead.executor.specialization} />
               <Field label="Город" value={lead.executor.city} />
             </div>
@@ -392,7 +393,7 @@ export default function LeadDetailClient({ id }: { id: string }) {
                         )}
                       </div>
                     </td>
-                    <td className="px-3 py-2.5 text-gray-500">{c.phone}</td>
+                    <td className="px-3 py-2.5 text-gray-500">{formatPhone(c.phone)}</td>
                     <td className="px-3 py-2.5 text-gray-600">{c.city}</td>
                     <td className="px-3 py-2.5 text-gray-600">{Number(c.rating).toFixed(1)}</td>
                     <td className="px-3 py-2.5 text-gray-600">{c.leads_closed}</td>
@@ -424,13 +425,13 @@ export default function LeadDetailClient({ id }: { id: string }) {
             {lead.reward.commission_amount && (
               <Field
                 label="Комиссия специалиста"
-                value={`${Number(lead.reward.commission_amount).toLocaleString('ru-RU')} ₸`}
+                value={formatMoney(lead.reward.commission_amount)}
               />
             )}
             {lead.reward.amount && (
               <Field
                 label="Сумма вознаграждения"
-                value={`${Number(lead.reward.amount).toLocaleString('ru-RU')} ₽`}
+                value={formatMoney(lead.reward.amount)}
               />
             )}
             <div>

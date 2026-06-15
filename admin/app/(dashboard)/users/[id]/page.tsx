@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { api, ApiError } from '@/lib/api';
 import { getToken, decodeToken } from '@/lib/auth';
+import { formatPhone } from '@/lib/format';
 
 const BASE_URL = 'http://localhost:3000';
 
@@ -402,7 +403,7 @@ export default function UserDetailPage() {
             <dl className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
               <div>
                 <dt className="text-gray-400 text-xs">Телефон</dt>
-                <dd className="font-mono text-gray-900 mt-0.5">{user.phone}</dd>
+                <dd className="font-mono text-gray-900 mt-0.5">{formatPhone(user.phone)}</dd>
               </div>
               <div>
                 <dt className="text-gray-400 text-xs">Город</dt>

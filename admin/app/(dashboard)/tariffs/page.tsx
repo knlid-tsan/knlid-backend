@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { api, ApiError } from '@/lib/api';
 import { LEAD_TYPE_LABELS } from '@/lib/lead-types';
 import { getToken, decodeToken } from '@/lib/auth';
+import { formatMoney } from '@/lib/format';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -32,10 +33,7 @@ const TYPE_LABELS = LEAD_TYPE_LABELS;
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function fmtValue(method: string, value: string) {
-  const n = Number(value);
-  return method === 'percent'
-    ? `${n}%`
-    : `${n.toLocaleString('ru-RU')} ₸`;
+  return method === 'percent' ? `${Number(value)}%` : formatMoney(value);
 }
 
 function validateFormValue(method: 'percent' | 'fixed', raw: string): string {

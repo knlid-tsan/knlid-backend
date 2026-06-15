@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { api, ApiError } from '@/lib/api';
+import { formatPhone } from '@/lib/format';
 
 const BASE_URL = 'http://localhost:3000';
 
@@ -273,7 +274,7 @@ export default function VerificationsPage() {
                   <td className="px-4 py-3 font-medium text-gray-900 whitespace-nowrap">
                     {user.full_name}
                   </td>
-                  <td className="px-4 py-3 text-gray-600 whitespace-nowrap">{user.phone}</td>
+                  <td className="px-4 py-3 text-gray-600 whitespace-nowrap">{formatPhone(user.phone)}</td>
                   <td className="px-4 py-3 text-gray-600 whitespace-nowrap">
                     {SPEC_LABELS[user.specialization] ?? user.specialization}
                   </td>
@@ -309,7 +310,7 @@ export default function VerificationsPage() {
               <div>
                 <h2 className="font-semibold text-gray-900">{selected.full_name}</h2>
                 <p className="text-sm text-gray-500 mt-0.5">
-                  {selected.phone} · {SPEC_LABELS[selected.specialization] ?? selected.specialization} · {selected.city}
+                  {formatPhone(selected.phone)} · {SPEC_LABELS[selected.specialization] ?? selected.specialization} · {selected.city}
                 </p>
               </div>
               <button

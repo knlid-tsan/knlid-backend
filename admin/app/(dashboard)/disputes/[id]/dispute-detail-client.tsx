@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { api, ApiError } from '@/lib/api';
 import { LEAD_TYPE_LABELS } from '@/lib/lead-types';
+import { formatPhone, formatMoney } from '@/lib/format';
 
 /* ── Types ─────────────────────────────────────────────── */
 
@@ -265,7 +266,7 @@ export default function DisputeDetailClient({ id }: { id: string }) {
           <Section title="Клиент">
             <div className="grid grid-cols-2 gap-x-8 gap-y-3 sm:grid-cols-3">
               <Field label="Имя" value={lead.client.full_name} />
-              <Field label="Телефон" value={lead.client.phone} />
+              <Field label="Телефон" value={formatPhone(lead.client.phone)} />
               <Field label="Город" value={lead.client.city} />
             </div>
           </Section>
@@ -276,7 +277,7 @@ export default function DisputeDetailClient({ id }: { id: string }) {
               {lead.author ? (
                 <div className="grid grid-cols-1 gap-y-3">
                   <Field label="Имя" value={lead.author.full_name} />
-                  <Field label="Телефон" value={lead.author.phone} />
+                  <Field label="Телефон" value={formatPhone(lead.author.phone)} />
                   <Field label="Специализация" value={SPEC_LABELS[lead.author.specialization] ?? lead.author.specialization} />
                   <Field label="Город" value={lead.author.city} />
                 </div>
@@ -286,7 +287,7 @@ export default function DisputeDetailClient({ id }: { id: string }) {
               {lead.executor ? (
                 <div className="grid grid-cols-1 gap-y-3">
                   <Field label="Имя" value={lead.executor.full_name} />
-                  <Field label="Телефон" value={lead.executor.phone} />
+                  <Field label="Телефон" value={formatPhone(lead.executor.phone)} />
                   <Field label="Специализация" value={SPEC_LABELS[lead.executor.specialization] ?? lead.executor.specialization} />
                   <Field label="Город" value={lead.executor.city} />
                 </div>
@@ -302,10 +303,10 @@ export default function DisputeDetailClient({ id }: { id: string }) {
           <div className="grid grid-cols-2 gap-x-8 gap-y-3 sm:grid-cols-3">
             <Field label="Метод" value={reward.method ? (REWARD_METHOD_LABELS[reward.method] ?? reward.method) : '—'} />
             {reward.commission_amount && (
-              <Field label="Комиссия специалиста" value={`${Number(reward.commission_amount).toLocaleString('ru-RU')} ₸`} />
+              <Field label="Комиссия специалиста" value={formatMoney(reward.commission_amount)} />
             )}
             {reward.amount && (
-              <Field label="Вознаграждение" value={`${Number(reward.amount).toLocaleString('ru-RU')} ₽`} />
+              <Field label="Вознаграждение" value={formatMoney(reward.amount)} />
             )}
             <div>
               <p className="text-xs text-gray-400 mb-0.5">Статус выплаты</p>

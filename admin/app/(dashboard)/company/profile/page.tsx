@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { api, ApiError } from '@/lib/api';
+import { formatPhone } from '@/lib/format';
 
 interface CompanyProfile {
   id: string;
@@ -118,7 +119,7 @@ export default function ProfilePage() {
           <Row label="Название" value={profile.name} />
           <Row label="БИН" value={<span className="font-mono tracking-wide">{profile.bin}</span>} />
           <Row label="Город" value={profile.city} />
-          <Row label="Телефон" value={<span className="font-mono">{profile.phone}</span>} />
+          <Row label="Телефон" value={<span className="font-mono">{formatPhone(profile.phone)}</span>} />
           <Row label="Дата регистрации" value={fmtDate(profile.created_at)} />
           <Row
             label="Документ"

@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { api, ApiError } from '@/lib/api';
 import { LEAD_TYPE_LABELS } from '@/lib/lead-types';
+import { formatMoney } from '@/lib/format';
 
 interface AdminLeadRow {
   id: string;
@@ -237,7 +238,7 @@ export default function LeadsPage() {
                   </td>
                   <td className="px-4 py-3 text-gray-600 whitespace-nowrap">
                     {lead.reward_amount
-                      ? `${Number(lead.reward_amount).toLocaleString('ru-RU')} ₽`
+                      ? formatMoney(lead.reward_amount)
                       : '—'}
                   </td>
                   <td className="px-4 py-3 text-gray-500 whitespace-nowrap">

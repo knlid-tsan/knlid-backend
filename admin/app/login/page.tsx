@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { api, ApiError } from '@/lib/api';
 import { setToken, decodeToken } from '@/lib/auth';
+import { maskPhoneInput, stripPhone } from '@/lib/format';
 
 type Step = 'phone' | 'otp';
 
@@ -20,7 +21,7 @@ export default function LoginPage() {
     setError('');
     setLoading(true);
     try {
-      await api.post('/auth/request-otp', { phone });
+      await api.post('/auth/request-otp', { phone: stripPhone(phone) });
       setStep('otp');
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Ошибка отправки кода');
@@ -36,7 +37,7 @@ export default function LoginPage() {
     try {
       const { access_token } = await api.post<{ access_token: string }>(
         '/auth/verify-otp',
-        { phone, code },
+        { phone: stripPhone(phone), code },
       );
       const payload = decodeToken(access_token);
       if (!payload || !['admin', 'moderator'].includes(payload.role)) {
@@ -69,8 +70,8 @@ export default function LoginPage() {
               <input
                 type="tel"
                 value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                placeholder="+7 900 000 00 00"
+                onChange={(e) => setPhone(maskPhoneInput(e.target.value))}
+                placeholder="+7 700 000 00 00"
                 required
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />

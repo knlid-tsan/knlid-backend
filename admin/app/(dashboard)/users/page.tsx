@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { api, ApiError } from '@/lib/api';
+import { formatPhone } from '@/lib/format';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -253,7 +254,7 @@ export default function UsersPage() {
                     className="hover:bg-gray-50/60 transition-colors cursor-pointer"
                   >
                     <td className="px-5 py-3.5 font-medium text-gray-900">{u.full_name}</td>
-                    <td className="px-5 py-3.5 font-mono text-gray-600 text-xs tracking-wide">{u.phone}</td>
+                    <td className="px-5 py-3.5 font-mono text-gray-600 text-xs tracking-wide">{formatPhone(u.phone)}</td>
                     <td className="px-5 py-3.5 text-gray-600">{SPEC_LABEL[u.specialization] ?? u.specialization}</td>
                     <td className="px-5 py-3.5 text-gray-600">{u.city}</td>
                     <td className="px-5 py-3.5">

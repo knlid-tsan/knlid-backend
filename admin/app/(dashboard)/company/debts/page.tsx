@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { api, ApiError } from '@/lib/api';
+import { formatMoney } from '@/lib/format';
 
 interface Debt {
   reward_id: string;
@@ -177,7 +178,7 @@ export default function DebtsPage() {
                         {d.author?.full_name ?? '—'}
                       </td>
                       <td className="px-5 py-3.5 font-medium text-gray-900">
-                        {Number(d.amount).toLocaleString('ru-RU')} ₸
+                        {formatMoney(d.amount)}
                       </td>
                       <td className="px-5 py-3.5 text-xs whitespace-nowrap">
                         <span className={overdue ? 'text-red-600 font-medium' : 'text-gray-500'}>

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { api, ApiError } from '@/lib/api';
+import { formatPhone } from '@/lib/format';
 
 interface Company {
   id: string;
@@ -185,7 +186,7 @@ export default function CompanyDetailPage() {
               </div>
               <div>
                 <dt className="text-gray-400 text-xs mb-0.5">Телефон</dt>
-                <dd className="font-mono text-gray-800">{company.phone}</dd>
+                <dd className="font-mono text-gray-800">{formatPhone(company.phone)}</dd>
               </div>
               <div>
                 <dt className="text-gray-400 text-xs mb-0.5">Дата заявки</dt>
