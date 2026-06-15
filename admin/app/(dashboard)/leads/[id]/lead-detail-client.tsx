@@ -43,6 +43,7 @@ interface Candidate {
   specialization: string;
   rating: number;
   leads_closed: number;
+  company_name: string | null;
 }
 
 interface CandidatesResponse {
@@ -381,7 +382,16 @@ export default function LeadDetailClient({ id }: { id: string }) {
               <tbody className="divide-y divide-gray-50">
                 {candidatesData?.candidates.map((c) => (
                   <tr key={c.id} className="hover:bg-gray-50/50">
-                    <td className="px-3 py-2.5 text-gray-900 font-medium">{c.full_name}</td>
+                    <td className="px-3 py-2.5 text-gray-900 font-medium">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span>{c.full_name}</span>
+                        {c.company_name && (
+                          <span className="inline-flex items-center rounded-full bg-blue-50 border border-blue-200 text-blue-700 text-xs font-medium px-2 py-0.5 whitespace-nowrap">
+                            Гарант: {c.company_name}
+                          </span>
+                        )}
+                      </div>
+                    </td>
                     <td className="px-3 py-2.5 text-gray-500">{c.phone}</td>
                     <td className="px-3 py-2.5 text-gray-600">{c.city}</td>
                     <td className="px-3 py-2.5 text-gray-600">{Number(c.rating).toFixed(1)}</td>

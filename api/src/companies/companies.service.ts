@@ -251,6 +251,93 @@ export class CompaniesService {
     });
   }
 
+  // ─── Moderator membership management ─────────────────────────────────────
+
+  async getUserMembership(userId: string) {
+    const memberships = await this.membershipsRepository.find({
+      where: [
+        { user_id: userId, status: MembershipStatus.ACTIVE },
+        { user_id: userId, status: MembershipStatus.PENDING },
+      ],
+      order: { created_at: 'DESC' },
+    });
+    if (!memberships.length) return null;
+
+    const companyIds = [...new Set(memberships.map((m) => m.company_id))];
+    const companies = await this.companiesRepository.find({ where: { id: In(companyIds) } });
+    const companyMap = new Map(companies.map((c) => [c.id, c]));
+
+    return memberships.map((m) => ({
+      id: m.id,
+      company_id: m.company_id,
+      company_name: companyMap.get(m.company_id)?.name ?? null,
+      status: m.status,
+      created_at: m.created_at,
+    }));
+  }
+
+  async moderatorAssignMembership(
+    userId: string,
+    companyId: string,
+    actorId: string,
+  ): Promise<CompanyMembership> {
+    const company = await this.companiesRepository.findOneBy({ id: companyId });
+    if (!company) throw new NotFoundException('Компания не найдена');
+    if (company.status !== CompanyStatus.ACTIVE)
+      throw new BadRequestException('Назначить можно только активную компанию');
+
+    // Завершить все существующие active и pending привязки пользователя
+    const existing = await this.membershipsRepository.find({
+      where: [
+        { user_id: userId, status: MembershipStatus.ACTIVE },
+        { user_id: userId, status: MembershipStatus.PENDING },
+      ],
+    });
+    for (const m of existing) {
+      await this.endMembership(m, actorId, AuditAction.MEMBERSHIP_AUTO_ENDED, {
+        replaced_by_moderator: actorId,
+        new_company_id: companyId,
+      });
+    }
+
+    const membership = await this.membershipsRepository.save(
+      this.membershipsRepository.create({
+        user_id: userId,
+        company_id: companyId,
+        status: MembershipStatus.ACTIVE,
+      }),
+    );
+
+    await this.auditService.log({
+      entityType: 'company_membership',
+      entityId: membership.id,
+      action: AuditAction.MEMBERSHIP_ASSIGNED_BY_MODERATOR,
+      actorId,
+      metadata: { user_id: userId, company_id: companyId, company_name: company.name },
+    });
+
+    return membership;
+  }
+
+  async moderatorRemoveMembership(userId: string, actorId: string): Promise<void> {
+    const active = await this.membershipsRepository.findOne({
+      where: [
+        { user_id: userId, status: MembershipStatus.ACTIVE },
+        { user_id: userId, status: MembershipStatus.PENDING },
+      ],
+      order: { created_at: 'DESC' },
+    });
+    if (!active) throw new NotFoundException('Активная или ожидающая привязка не найдена');
+
+    const company = await this.companiesRepository.findOneBy({ id: active.company_id });
+
+    await this.endMembership(active, actorId, AuditAction.MEMBERSHIP_REMOVED_BY_MODERATOR, {
+      user_id: userId,
+      company_id: active.company_id,
+      company_name: company?.name ?? null,
+    });
+  }
+
   // ─── Moderation ───────────────────────────────────────────────────────────
 
   async listForModeration(status?: CompanyStatus): Promise<Company[]> {

@@ -9,9 +9,10 @@ import { CitiesModule } from '../cities/cities.module';
 import { SettingsModule } from '../settings/settings.module';
 import { BanksModule } from '../banks/banks.module';
 import { UsersModule } from '../users/users.module';
+import { CompaniesModule } from '../companies/companies.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([User]), AuthModule, RewardsModule, LeadsModule, CitiesModule, SettingsModule, BanksModule, UsersModule],
+  imports: [TypeOrmModule.forFeature([User]), AuthModule, RewardsModule, LeadsModule, CitiesModule, SettingsModule, BanksModule, UsersModule, CompaniesModule],
   controllers: [AdminController],
 })
 export class AdminModule {}

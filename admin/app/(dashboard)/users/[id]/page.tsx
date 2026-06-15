@@ -143,6 +143,18 @@ export default function UserDetailPage() {
   const [avatarToast, setAvatarToast] = useState('');
   const avatarInputRef = useRef<HTMLInputElement>(null);
 
+  // Membership management
+  type MembershipEntry = { id: string; company_id: string; company_name: string | null; status: string; created_at: string };
+  const [membership, setMembership] = useState<MembershipEntry[] | null>(null);
+  const [membershipLoading, setMembershipLoading] = useState(false);
+  const [membershipError, setMembershipError] = useState('');
+  const [membershipToast, setMembershipToast] = useState('');
+  const [companies, setCompanies] = useState<{ id: string; name: string; city: string }[]>([]);
+  const [assignOpen, setAssignOpen] = useState(false);
+  const [selectedCompanyId, setSelectedCompanyId] = useState('');
+  const [assignLoading, setAssignLoading] = useState(false);
+  const [confirmRemoveMembership, setConfirmRemoveMembership] = useState(false);
+
   useEffect(() => {
     const token = getToken();
     if (!token) return;
@@ -168,6 +180,68 @@ export default function UserDetailPage() {
   }, [id]);
 
   useEffect(() => { load(); }, [load]);
+
+  const loadMembership = useCallback(async () => {
+    setMembershipLoading(true);
+    setMembershipError('');
+    try {
+      const data = await api.get<MembershipEntry[] | null>(`/admin/users/${id}/membership`);
+      setMembership(data);
+    } catch (err) {
+      setMembershipError(err instanceof ApiError ? err.message : 'Ошибка загрузки привязки');
+    } finally {
+      setMembershipLoading(false);
+    }
+  }, [id]);
+
+  useEffect(() => { loadMembership(); }, [loadMembership]);
+
+  async function loadCompanies() {
+    if (companies.length > 0) return;
+    try {
+      const data = await api.get<{ id: string; name: string; city: string }[]>('/companies');
+      setCompanies(data);
+    } catch {
+      // ignore
+    }
+  }
+
+  function showMembershipToast(msg: string) {
+    setMembershipToast(msg);
+    setTimeout(() => setMembershipToast(''), 3000);
+  }
+
+  async function handleAssignMembership() {
+    if (!selectedCompanyId) return;
+    setAssignLoading(true);
+    setMembershipError('');
+    try {
+      await api.post(`/admin/users/${id}/membership/assign`, { company_id: selectedCompanyId });
+      setAssignOpen(false);
+      setSelectedCompanyId('');
+      showMembershipToast('Компания назначена');
+      await loadMembership();
+    } catch (err) {
+      setMembershipError(err instanceof ApiError ? err.message : 'Ошибка назначения');
+    } finally {
+      setAssignLoading(false);
+    }
+  }
+
+  async function handleRemoveMembership() {
+    setAssignLoading(true);
+    setMembershipError('');
+    try {
+      await api.delete(`/admin/users/${id}/membership`);
+      setConfirmRemoveMembership(false);
+      showMembershipToast('Привязка убрана');
+      await loadMembership();
+    } catch (err) {
+      setMembershipError(err instanceof ApiError ? err.message : 'Ошибка удаления');
+    } finally {
+      setAssignLoading(false);
+    }
+  }
 
   async function doAction(fn: () => Promise<void>) {
     setActionLoading(true);
@@ -543,6 +617,120 @@ export default function UserDetailPage() {
           </div>
 
           {/* Avatar */}
+          {/* Membership */}
+          {user.role === 'user' && (
+            <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+              <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">
+                Компания-гарант
+              </h2>
+              {membershipLoading ? (
+                <p className="text-xs text-gray-400">Загрузка...</p>
+              ) : (() => {
+                const active = membership?.find((m) => m.status === 'active');
+                const pending = membership?.find((m) => m.status === 'pending');
+                const current = active ?? pending ?? null;
+                return (
+                  <>
+                    {current ? (
+                      <div className="mb-3">
+                        <p className="text-sm font-medium text-gray-900">{current.company_name ?? current.company_id}</p>
+                        <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium mt-1 ${
+                          current.status === 'active'
+                            ? 'bg-green-50 text-green-700 border border-green-200'
+                            : 'bg-amber-50 text-amber-700 border border-amber-200'
+                        }`}>
+                          {current.status === 'active' ? 'Активен' : 'Заявка на рассмотрении'}
+                        </span>
+                      </div>
+                    ) : (
+                      <p className="text-xs text-gray-400 mb-3">Не привязан к компании</p>
+                    )}
+
+                    {membershipError && (
+                      <p className="text-xs text-red-500 mb-2">{membershipError}</p>
+                    )}
+
+                    {!assignOpen && !confirmRemoveMembership && (
+                      <div className="flex flex-wrap gap-2">
+                        <button
+                          onClick={async () => { await loadCompanies(); setAssignOpen(true); }}
+                          disabled={assignLoading}
+                          className="text-xs border border-gray-300 rounded-lg px-3 py-1.5 text-gray-700 hover:bg-gray-50 disabled:opacity-50 transition-colors"
+                        >
+                          {current ? 'Сменить' : 'Назначить'}
+                        </button>
+                        {current && (
+                          <button
+                            onClick={() => setConfirmRemoveMembership(true)}
+                            disabled={assignLoading}
+                            className="text-xs border border-red-200 text-red-500 rounded-lg px-3 py-1.5 hover:bg-red-50 disabled:opacity-50 transition-colors"
+                          >
+                            Убрать
+                          </button>
+                        )}
+                      </div>
+                    )}
+
+                    {assignOpen && (
+                      <div className="space-y-2">
+                        <select
+                          value={selectedCompanyId}
+                          onChange={(e) => setSelectedCompanyId(e.target.value)}
+                          className="w-full border border-gray-200 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-400"
+                        >
+                          <option value="">— выберите компанию —</option>
+                          {companies.map((c) => (
+                            <option key={c.id} value={c.id}>{c.name} ({c.city})</option>
+                          ))}
+                        </select>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={handleAssignMembership}
+                            disabled={assignLoading || !selectedCompanyId}
+                            className="text-xs font-medium bg-slate-800 text-white rounded-lg px-3 py-1.5 hover:bg-slate-700 disabled:opacity-50 transition-colors"
+                          >
+                            {assignLoading ? '...' : 'Сохранить'}
+                          </button>
+                          <button
+                            onClick={() => { setAssignOpen(false); setSelectedCompanyId(''); setMembershipError(''); }}
+                            className="text-xs text-gray-500 hover:text-gray-700"
+                          >
+                            Отмена
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    {confirmRemoveMembership && (
+                      <div className="rounded-lg border border-red-200 bg-red-50 p-3 space-y-2">
+                        <p className="text-xs text-red-700">Убрать привязку к компании?</p>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={handleRemoveMembership}
+                            disabled={assignLoading}
+                            className="text-xs bg-red-600 text-white rounded px-3 py-1 hover:bg-red-700 disabled:opacity-50"
+                          >
+                            {assignLoading ? '...' : 'Убрать'}
+                          </button>
+                          <button
+                            onClick={() => { setConfirmRemoveMembership(false); setMembershipError(''); }}
+                            className="text-xs text-gray-500 hover:text-gray-700 px-2"
+                          >
+                            Отмена
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    {membershipToast && (
+                      <p className="text-xs text-green-600 mt-2">{membershipToast}</p>
+                    )}
+                  </>
+                );
+              })()}
+            </div>
+          )}
+
           <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
             <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">
               Аватар

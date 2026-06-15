@@ -39,6 +39,8 @@ export enum AuditAction {
   MEMBERSHIP_LEFT = 'membership_left',
   MEMBERSHIP_REMOVED = 'membership_removed',
   MEMBERSHIP_AUTO_ENDED = 'membership_auto_ended',
+  MEMBERSHIP_ASSIGNED_BY_MODERATOR = 'membership_assigned_by_moderator',
+  MEMBERSHIP_REMOVED_BY_MODERATOR = 'membership_removed_by_moderator',
 
   REWARD_OVERDUE = 'reward_overdue',
   DEBT_TRANSFERRED_TO_COMPANY = 'debt_transferred_to_company',

@@ -35,6 +35,7 @@ import { UpsertTariffV2Dto } from './dto/upsert-tariff-v2.dto';
 import { UsersService } from '../users/users.service';
 import { RewardsService } from '../rewards/rewards.service';
 import { LeadsService } from '../leads/leads.service';
+import { CompaniesService } from '../companies/companies.service';
 import { CitiesService } from '../cities/cities.service';
 import { SettingsService } from '../settings/settings.service';
 import { AuditService } from '../audit/audit.service';
@@ -64,6 +65,7 @@ export class AdminController {
     private settingsService: SettingsService,
     private auditService: AuditService,
     private banksService: BanksService,
+    private companiesService: CompaniesService,
     private dataSource: DataSource,
   ) {}
 
@@ -418,5 +420,37 @@ export class AdminController {
   @Delete('banks/:id')
   deleteBank(@Param('id') id: string) {
     return this.banksService.remove(id);
+  }
+
+  // ─── Привязка к компании (модератор) ─────────────────────────────────────
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.MODERATOR, UserRole.ADMIN)
+  @Get('users/:id/membership')
+  getUserMembership(@Param('id') id: string) {
+    return this.companiesService.getUserMembership(id);
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.MODERATOR, UserRole.ADMIN)
+  @Post('users/:id/membership/assign')
+  async moderatorAssignMembership(
+    @Param('id') id: string,
+    @Body('company_id') companyId: string,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    if (!companyId) throw new BadRequestException('company_id обязателен');
+    return this.companiesService.moderatorAssignMembership(id, companyId, req.user.sub);
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.MODERATOR, UserRole.ADMIN)
+  @Delete('users/:id/membership')
+  async moderatorRemoveMembership(
+    @Param('id') id: string,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    await this.companiesService.moderatorRemoveMembership(id, req.user.sub);
+    return { ok: true };
   }
 }

@@ -36,7 +36,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
   final _picker = ImagePicker();
 
   Map<String, dynamic>? _user;
-  String? _guarantorName;
+  Map<String, dynamic>? _activeMembership;
+  Map<String, dynamic>? _pendingMembership;
+  bool _membershipActionLoading = false;
   String? _paymentBankName;
   bool _loading = true;
   bool _avatarUploading = false;
@@ -54,16 +56,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
       final userRes = await _client.dio.get('/users/me');
       final user = userRes.data as Map<String, dynamic>;
 
-      String? guarantorName;
+      Map<String, dynamic>? activeMembership;
+      Map<String, dynamic>? pendingMembership;
       if (user['role'] == 'user') {
         try {
           final membershipsRes = await _client.dio.get('/memberships/my');
-          final memberships = membershipsRes.data as List;
-          final active = memberships.firstWhere(
-            (m) => m['status'] == 'active',
-            orElse: () => null,
-          );
-          if (active != null) guarantorName = active['company_name'] as String?;
+          final memberships = (membershipsRes.data as List).cast<Map<String, dynamic>>();
+          activeMembership = memberships.where((m) => m['status'] == 'active').firstOrNull;
+          pendingMembership = memberships.where((m) => m['status'] == 'pending').firstOrNull;
         } catch (_) {}
       }
 
@@ -82,7 +82,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
       setState(() {
         _user = user;
-        _guarantorName = guarantorName;
+        _activeMembership = activeMembership;
+        _pendingMembership = pendingMembership;
         _paymentBankName = paymentBankName;
       });
     } on DioException catch (e) {
@@ -93,6 +94,111 @@ class _ProfileScreenState extends State<ProfileScreen> {
       setState(() => _error = e.toString());
     } finally {
       if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _showCompanyPicker() async {
+    List<Map<String, dynamic>> companies = [];
+    try {
+      final res = await _client.dio.get('/companies');
+      companies = (res.data as List).cast<Map<String, dynamic>>();
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Не удалось загрузить список компаний')),
+      );
+      return;
+    }
+    if (companies.isEmpty) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Нет доступных компаний')),
+      );
+      return;
+    }
+
+    if (!mounted) return;
+    final selected = await showModalBottomSheet<Map<String, dynamic>>(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => DraggableScrollableSheet(
+        expand: false,
+        initialChildSize: 0.5,
+        maxChildSize: 0.85,
+        builder: (_, sc) => Column(
+          children: [
+            const SizedBox(height: 8),
+            Container(
+              width: 36, height: 4,
+              decoration: BoxDecoration(
+                color: const Color(0xFFCBD5E1),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text('Выберите компанию', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+              ),
+            ),
+            const Divider(height: 1),
+            Expanded(
+              child: ListView.separated(
+                controller: sc,
+                itemCount: companies.length,
+                separatorBuilder: (_, __) => const Divider(height: 1, indent: 16, endIndent: 16),
+                itemBuilder: (_, i) {
+                  final c = companies[i];
+                  return ListTile(
+                    title: Text(c['name'] as String, style: const TextStyle(fontWeight: FontWeight.w500)),
+                    subtitle: Text(c['city'] as String? ?? '', style: const TextStyle(fontSize: 13, color: Color(0xFF64748B))),
+                    onTap: () => Navigator.pop(ctx, c),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (selected == null) return;
+
+    setState(() => _membershipActionLoading = true);
+    try {
+      await _client.dio.post('/companies/${selected['id']}/apply');
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Заявка в «${selected['name']}» отправлена')),
+      );
+      await _load();
+    } on DioException catch (e) {
+      if (!mounted) return;
+      final msg = (e.response?.data is Map ? e.response?.data['message'] : null) ?? 'Ошибка отправки заявки';
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg is String ? msg : 'Ошибка')));
+    } finally {
+      if (mounted) setState(() => _membershipActionLoading = false);
+    }
+  }
+
+  Future<void> _leaveMembership(String membershipId) async {
+    setState(() => _membershipActionLoading = true);
+    try {
+      await _client.dio.post('/memberships/$membershipId/leave');
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Заявка отозвана')),
+      );
+      await _load();
+    } on DioException catch (e) {
+      if (!mounted) return;
+      final msg = (e.response?.data is Map ? e.response?.data['message'] : null) ?? 'Ошибка';
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg is String ? msg : 'Ошибка')));
+    } finally {
+      if (mounted) setState(() => _membershipActionLoading = false);
     }
   }
 
@@ -340,16 +446,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
             _InfoRow('Телефон', formatPhone(user['phone'] as String?)),
           ]),
 
-          // ── Гарант ──
-          if (_guarantorName != null) ...[
+          // ── Компания-гарант ──
+          if (isSpecialist) ...[
             const SizedBox(height: 12),
-            _Card(children: [
-              _InfoRow('Гарант', _guarantorName!,
-                  valueStyle: const TextStyle(
-                    fontSize: 14, fontWeight: FontWeight.w500,
-                    color: Color(0xFF3B82F6),
-                  )),
-            ]),
+            _CompanyBlock(
+              activeMembership: _activeMembership,
+              pendingMembership: _pendingMembership,
+              actionLoading: _membershipActionLoading,
+              onPickCompany: _showCompanyPicker,
+              onLeave: (id) => _leaveMembership(id),
+            ),
           ],
 
           // ── Статистика ──
@@ -829,6 +935,141 @@ class _Stat extends StatelessWidget {
           const SizedBox(height: 2),
           Text(label,
               style: const TextStyle(fontSize: 10, color: Color(0xFF94A3B8))),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── Company block ────────────────────────────────────────────────────────────
+
+class _CompanyBlock extends StatelessWidget {
+  final Map<String, dynamic>? activeMembership;
+  final Map<String, dynamic>? pendingMembership;
+  final bool actionLoading;
+  final VoidCallback onPickCompany;
+  final void Function(String membershipId) onLeave;
+
+  const _CompanyBlock({
+    required this.activeMembership,
+    required this.pendingMembership,
+    required this.actionLoading,
+    required this.onPickCompany,
+    required this.onLeave,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Компания-гарант',
+            style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600,
+                color: Color(0xFF94A3B8), letterSpacing: 0.5),
+          ),
+          const SizedBox(height: 10),
+          if (activeMembership != null) ...[
+            // State 3: active
+            Text(
+              activeMembership!['company_name'] as String? ?? '',
+              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600,
+                  color: Color(0xFF1E293B)),
+            ),
+            const SizedBox(height: 4),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              decoration: BoxDecoration(
+                color: const Color(0xFFDCFCE7),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: const Text('Активен',
+                  style: TextStyle(fontSize: 12, color: Color(0xFF16A34A),
+                      fontWeight: FontWeight.w500)),
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton(
+                onPressed: actionLoading ? null : onPickCompany,
+                style: OutlinedButton.styleFrom(
+                  side: const BorderSide(color: Color(0xFFCBD5E1)),
+                  padding: const EdgeInsets.symmetric(vertical: 10),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+                child: actionLoading
+                    ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                    : const Text('Сменить компанию',
+                        style: TextStyle(fontSize: 14, color: Color(0xFF475569))),
+              ),
+            ),
+          ] else if (pendingMembership != null) ...[
+            // State 2: pending
+            Text(
+              pendingMembership!['company_name'] as String? ?? '',
+              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600,
+                  color: Color(0xFF1E293B)),
+            ),
+            const SizedBox(height: 4),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFEF9C3),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: const Text('Заявка на рассмотрении',
+                  style: TextStyle(fontSize: 12, color: Color(0xFFB45309),
+                      fontWeight: FontWeight.w500)),
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton(
+                onPressed: actionLoading ? null : () => onLeave(pendingMembership!['id'] as String),
+                style: OutlinedButton.styleFrom(
+                  side: const BorderSide(color: Color(0xFFFCA5A5)),
+                  padding: const EdgeInsets.symmetric(vertical: 10),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+                child: actionLoading
+                    ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                    : const Text('Отозвать заявку',
+                        style: TextStyle(fontSize: 14, color: Color(0xFFDC2626))),
+              ),
+            ),
+          ] else ...[
+            // State 1: no company
+            const Text(
+              'Вы не привязаны к компании',
+              style: TextStyle(fontSize: 14, color: Color(0xFF94A3B8)),
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: actionLoading ? null : onPickCompany,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF3B82F6),
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+                child: actionLoading
+                    ? const SizedBox(width: 16, height: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                    : const Text('Выбрать компанию', style: TextStyle(fontSize: 14)),
+              ),
+            ),
+          ],
         ],
       ),
     );

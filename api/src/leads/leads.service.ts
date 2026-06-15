@@ -1021,6 +1021,24 @@ export class LeadsService {
       lead.author_id,
     );
 
+    // Batch-load active memberships for all candidates (один запрос, не N)
+    let companyNameByUserId = new Map<string, string>();
+    if (candidates.length > 0) {
+      const userIds = candidates.map((u) => u.id);
+      const memberships = await this.membershipsRepository.find({
+        where: { user_id: In(userIds), status: MembershipStatus.ACTIVE },
+      });
+      if (memberships.length > 0) {
+        const companyIds = [...new Set(memberships.map((m) => m.company_id))];
+        const companies = await this.companiesRepository.find({ where: { id: In(companyIds) } });
+        const companyMap = new Map(companies.map((c) => [c.id, c.name]));
+        for (const m of memberships) {
+          const name = companyMap.get(m.company_id);
+          if (name) companyNameByUserId.set(m.user_id, name);
+        }
+      }
+    }
+
     return {
       lead_id: lead.id,
       lead_city: lead.city,
@@ -1034,6 +1052,7 @@ export class LeadsService {
         specialization: u.specialization,
         rating: u.rating,
         leads_closed: u.leads_closed,
+        company_name: companyNameByUserId.get(u.id) ?? null,
       })),
     };
   }
