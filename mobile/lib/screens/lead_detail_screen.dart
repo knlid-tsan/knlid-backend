@@ -628,9 +628,9 @@ class _LeadDetailScreenState extends State<LeadDetailScreen> {
                 ],
 
                 // ── Архив: оба видят что получение подтверждено
-                if (lead.status == 'archived' && lead.rewardAmount != null) ...[
+                if (lead.status == 'archived') ...[
                   const SizedBox(height: 12),
-                  _PaymentConfirmedBanner(),
+                  _PaymentConfirmedBanner(closedAt: lead.closedAt),
                 ],
 
                 if (lead.guarantor != null && lead.guarantor!.active) ...[
@@ -1504,29 +1504,43 @@ class _ConfirmPaymentBlock extends StatelessWidget {
 // ─── Payment confirmed banner (archived) ─────────────────────────────────────
 
 class _PaymentConfirmedBanner extends StatelessWidget {
-  const _PaymentConfirmedBanner();
+  final DateTime? closedAt;
+  const _PaymentConfirmedBanner({this.closedAt});
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: const Color(0xFFF0FDF4),
         border: Border.all(color: const Color(0xFF86EFAC)),
         borderRadius: BorderRadius.circular(12),
       ),
-      child: const Row(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(Icons.verified_outlined, size: 18, color: Color(0xFF16A34A)),
-          SizedBox(width: 10),
+          const Icon(Icons.verified_outlined, size: 20, color: Color(0xFF16A34A)),
+          const SizedBox(width: 10),
           Expanded(
-            child: Text(
-              'Вознаграждение получено и подтверждено',
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w500,
-                color: Color(0xFF15803D),
-              ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Вознаграждение получено и подтверждено',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF15803D),
+                  ),
+                ),
+                if (closedAt != null) ...[
+                  const SizedBox(height: 3),
+                  Text(
+                    'Завершено ${formatLeadDate(closedAt!)}',
+                    style: const TextStyle(fontSize: 11, color: Color(0xFF4ADE80)),
+                  ),
+                ],
+              ],
             ),
           ),
         ],
