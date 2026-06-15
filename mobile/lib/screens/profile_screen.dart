@@ -980,8 +980,65 @@ class _CompanyBlock extends StatelessWidget {
                 color: Color(0xFF94A3B8), letterSpacing: 0.5),
           ),
           const SizedBox(height: 10),
-          if (activeMembership != null) ...[
-            // State 3: active
+          if (activeMembership != null && pendingMembership != null) ...[
+            // State 4: active + pending (смена в процессе)
+            Text(
+              activeMembership!['company_name'] as String? ?? '',
+              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600,
+                  color: Color(0xFF1E293B)),
+            ),
+            const SizedBox(height: 4),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              decoration: BoxDecoration(
+                color: const Color(0xFFDCFCE7),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: const Text('Текущий гарант',
+                  style: TextStyle(fontSize: 12, color: Color(0xFF16A34A),
+                      fontWeight: FontWeight.w500)),
+            ),
+            const SizedBox(height: 12),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFFBEB),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: const Color(0xFFFDE68A)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('Заявка на смену на рассмотрении:',
+                      style: TextStyle(fontSize: 11, color: Color(0xFF92400E))),
+                  const SizedBox(height: 2),
+                  Text(
+                    pendingMembership!['company_name'] as String? ?? '',
+                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600,
+                        color: Color(0xFF78350F)),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 8),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton(
+                onPressed: actionLoading ? null : () => onLeave(pendingMembership!['id'] as String),
+                style: OutlinedButton.styleFrom(
+                  side: const BorderSide(color: Color(0xFFFCA5A5)),
+                  padding: const EdgeInsets.symmetric(vertical: 10),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+                child: actionLoading
+                    ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                    : const Text('Отозвать заявку на смену',
+                        style: TextStyle(fontSize: 14, color: Color(0xFFDC2626))),
+              ),
+            ),
+          ] else if (activeMembership != null) ...[
+            // State 3: active only
             Text(
               activeMembership!['company_name'] as String? ?? '',
               style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600,
@@ -1015,7 +1072,7 @@ class _CompanyBlock extends StatelessWidget {
               ),
             ),
           ] else if (pendingMembership != null) ...[
-            // State 2: pending
+            // State 2: pending only
             Text(
               pendingMembership!['company_name'] as String? ?? '',
               style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600,
