@@ -15,6 +15,7 @@ class MainScreen extends StatefulWidget {
 
 class _MainScreenState extends State<MainScreen> {
   int _currentIndex = 0;
+  int _createdRevision = 0;
   String _role = '';
   String _userStatus = '';
   String? _rejectionReason;
@@ -87,10 +88,10 @@ class _MainScreenState extends State<MainScreen> {
           Expanded(
             child: IndexedStack(
               index: _currentIndex,
-              children: const [
-                LeadsCreatedScreen(),
-                LeadsAssignedScreen(),
-                ProfileScreen(),
+              children: [
+                LeadsCreatedScreen(key: ValueKey(_createdRevision)),
+                const LeadsAssignedScreen(),
+                const ProfileScreen(),
               ],
             ),
           ),
@@ -98,10 +99,13 @@ class _MainScreenState extends State<MainScreen> {
       ),
       floatingActionButton: _role == 'user' && _currentIndex < 2
           ? FloatingActionButton.extended(
-              onPressed: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const CreateLeadScreen()),
-              ),
+              onPressed: () async {
+                await Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const CreateLeadScreen()),
+                );
+                if (mounted) setState(() => _createdRevision++);
+              },
               backgroundColor: const Color(0xFF1E293B),
               foregroundColor: Colors.white,
               icon: const Icon(Icons.add),

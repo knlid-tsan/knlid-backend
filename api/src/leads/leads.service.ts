@@ -647,6 +647,23 @@ export class LeadsService {
     };
   }
 
+  async checkDuplicate(type: string, phone: string) {
+    if (!type || !phone) return { duplicate: false };
+    const validTypes = Object.values(LeadType) as string[];
+    if (!validTypes.includes(type)) return { duplicate: false };
+    const lead = await this.findActiveDuplicate(type as LeadType, phone);
+    if (!lead) return { duplicate: false };
+    return {
+      duplicate: true,
+      lead: {
+        id: lead.id,
+        type: lead.type,
+        status: lead.status,
+        created_at: lead.created_at,
+      },
+    };
+  }
+
   private async findActiveDuplicate(type: Lead['type'], phone: string) {
     return this.leadsRepository
       .createQueryBuilder('lead')

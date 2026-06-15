@@ -10,7 +10,7 @@ const leadTypeLabels = {
 };
 
 const leadStatusLabels = {
-  'new': 'Новый',
+  'new': 'Ожидает подбора',
   'pending_acceptance': 'Ожидает принятия',
   'in_progress': 'В работе',
   'contract': 'Договор',

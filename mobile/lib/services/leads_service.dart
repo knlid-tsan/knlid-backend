@@ -61,4 +61,36 @@ class LeadsService {
     );
     return Lead.fromJson(response.data as Map<String, dynamic>);
   }
+
+  Future<Map<String, dynamic>> checkDuplicate(String type, String phone) async {
+    final response = await _dio.get(
+      '/leads/check-duplicate',
+      queryParameters: {'type': type, 'phone': phone},
+    );
+    return response.data as Map<String, dynamic>;
+  }
+
+  Future<Lead> createLead({
+    required String type,
+    required String city,
+    required String description,
+    required String clientPhone,
+    required String clientName,
+    required String clientCity,
+    bool force = false,
+  }) async {
+    final data = <String, dynamic>{
+      'type': type,
+      'city': city,
+      'description': description,
+      'client': {
+        'phone': clientPhone,
+        'full_name': clientName,
+        'city': clientCity,
+      },
+    };
+    if (force) data['force'] = true;
+    final response = await _dio.post('/leads', data: data);
+    return Lead.fromJson(response.data as Map<String, dynamic>);
+  }
 }

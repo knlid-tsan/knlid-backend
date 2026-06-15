@@ -5,6 +5,7 @@ import {
   Patch,
   Body,
   Param,
+  Query,
   Req,
   UseGuards,
 } from '@nestjs/common';
@@ -44,6 +45,15 @@ export class LeadsController {
   @Get('my-assigned')
   findMyAssigned(@Req() req: AuthenticatedRequest) {
     return this.leadsService.findMyAssigned(req.user.sub);
+  }
+
+  // Must be before :id routes to avoid param capture
+  @Get('check-duplicate')
+  checkDuplicate(
+    @Query('type') type: string,
+    @Query('phone') phone: string,
+  ) {
+    return this.leadsService.checkDuplicate(type, phone);
   }
 
   @Roles(UserRole.USER, UserRole.MODERATOR, UserRole.ADMIN)
