@@ -37,7 +37,7 @@ export class UsersController {
   @UseGuards(JwtAuthGuard)
   @Get('me')
   async getMe(@Req() req: AuthenticatedRequest) {
-    return this.usersService.findOne(req.user.sub);
+    return this.usersService.findOneProfile(req.user.sub);
   }
 
   // PATCH /users/me/payment — сохранить платёжные реквизиты
