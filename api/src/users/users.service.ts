@@ -29,6 +29,31 @@ export class UsersService {
     return this.usersRepository.findOneBy({ id });
   }
 
+  // Найти профиль с живыми счётчиками лидов (для GET /users/me)
+  async findOneProfile(id: string): Promise<User | null> {
+    const user = await this.usersRepository.findOneBy({ id });
+    if (!user) return null;
+
+    const [stats] = await this.usersRepository.manager.query<
+      [{ leads_sent: number; leads_received: number; leads_closed: number }]
+    >(
+      `SELECT
+         COUNT(CASE WHEN author_id = $1 THEN 1 END)::int          AS leads_sent,
+         COUNT(CASE WHEN executor_id = $1::uuid THEN 1 END)::int  AS leads_received,
+         COUNT(CASE WHEN executor_id = $1::uuid
+                     AND status IN ('closed_success', 'archived')
+                    THEN 1 END)::int                               AS leads_closed
+       FROM leads`,
+      [id],
+    );
+
+    user.leads_sent     = Number(stats.leads_sent);
+    user.leads_received = Number(stats.leads_received);
+    user.leads_closed   = Number(stats.leads_closed);
+
+    return user;
+  }
+
   // Найти по номеру телефона (любой статус, включая archived)
   findByPhone(phone: string): Promise<User | null> {
     return this.usersRepository.findOneBy({ phone });
