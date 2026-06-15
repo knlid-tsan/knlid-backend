@@ -279,8 +279,9 @@ export default function VerificationsPage() {
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
           onClick={(e) => e.target === e.currentTarget && closeModal()}
         >
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-3xl max-h-[90vh] overflow-y-auto">
-            <div className="flex items-start justify-between px-6 py-4 border-b border-gray-100">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-3xl flex flex-col" style={{ maxHeight: '90vh' }}>
+            {/* Sticky header */}
+            <div className="flex items-start justify-between px-6 py-4 border-b border-gray-100 flex-shrink-0">
               <div>
                 <h2 className="font-semibold text-gray-900">{selected.full_name}</h2>
                 <p className="text-sm text-gray-500 mt-0.5">
@@ -295,7 +296,8 @@ export default function VerificationsPage() {
               </button>
             </div>
 
-            <div className="p-6 space-y-5">
+            {/* Scrollable body */}
+            <div className="p-6 space-y-5 overflow-y-auto flex-1">
               {/* Dual-photo row */}
               <div className="grid grid-cols-2 gap-4">
                 {/* Avatar */}
@@ -383,12 +385,31 @@ export default function VerificationsPage() {
                 </div>
               </div>
 
+              {rejecting && (
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Причина отклонения
+                    </label>
+                    <textarea
+                      value={rejectReason}
+                      onChange={(e) => setRejectReason(e.target.value)}
+                      rows={3}
+                      placeholder="Укажите причину отклонения..."
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent resize-none"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Sticky footer — action buttons always visible */}
+            <div className="px-6 py-4 border-t border-gray-100 flex-shrink-0 space-y-3">
               {actionError && (
                 <p className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2">
                   {actionError}
                 </p>
               )}
-
               {!rejecting ? (
                 <div className="flex gap-3">
                   <button
@@ -407,40 +428,26 @@ export default function VerificationsPage() {
                   </button>
                 </div>
               ) : (
-                <div className="space-y-3">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Причина отклонения
-                    </label>
-                    <textarea
-                      value={rejectReason}
-                      onChange={(e) => setRejectReason(e.target.value)}
-                      rows={3}
-                      placeholder="Укажите причину отклонения..."
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent resize-none"
-                    />
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <button
-                      onClick={handleReject}
-                      disabled={actionLoading || !rejectReason.trim()}
-                      className="flex-1 bg-red-600 text-white rounded-lg px-4 py-2.5 text-sm font-medium hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                    >
-                      {actionLoading ? '...' : 'Подтвердить отклонение'}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setRejecting(false);
-                        setRejectReason('');
-                        setActionError('');
-                      }}
-                      disabled={actionLoading}
-                      className="text-sm text-gray-500 hover:text-gray-700 transition-colors px-2"
-                    >
-                      Отмена
-                    </button>
-                  </div>
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={handleReject}
+                    disabled={actionLoading || !rejectReason.trim()}
+                    className="flex-1 bg-red-600 text-white rounded-lg px-4 py-2.5 text-sm font-medium hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    {actionLoading ? '...' : 'Подтвердить отклонение'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setRejecting(false);
+                      setRejectReason('');
+                      setActionError('');
+                    }}
+                    disabled={actionLoading}
+                    className="text-sm text-gray-500 hover:text-gray-700 transition-colors px-2"
+                  >
+                    Отмена
+                  </button>
                 </div>
               )}
             </div>

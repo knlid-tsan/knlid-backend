@@ -144,19 +144,31 @@ class _ProfileScreenState extends State<ProfileScreen> {
       final formData = FormData.fromMap({
         'file': await MultipartFile.fromFile(file.path, filename: file.name),
       });
-      await _client.dio.post(
+      final response = await _client.dio.post<Map<String, dynamic>>(
         '/users/me/avatar',
         data: formData,
-        options: Options(contentType: 'multipart/form-data'),
       );
+      // Update avatar URL directly from server response, then refresh full profile
+      if (mounted && response.data != null) {
+        final avatarUrl = response.data!['avatar_url'] as String?;
+        if (avatarUrl != null) {
+          setState(() => _user = {...?_user, 'avatar_url': avatarUrl});
+        }
+      }
       await _load();
-    } on DioException catch (e) {
+    } catch (e) {
       if (!mounted) return;
-      final data = e.response?.data;
-      final msg = data is Map ? data['message'] : 'Ошибка загрузки фото';
+      String msg = 'Ошибка загрузки фото';
+      if (e is DioException) {
+        final data = e.response?.data;
+        if (data is Map && data['message'] is String) {
+          msg = data['message'] as String;
+        } else if (e.response?.statusCode == 403) {
+          msg = 'Нет прав для загрузки аватара';
+        }
+      }
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(msg is String ? msg : 'Ошибка загрузки фото'),
-            backgroundColor: const Color(0xFFDC2626)),
+        SnackBar(content: Text(msg), backgroundColor: const Color(0xFFDC2626)),
       );
     } finally {
       if (mounted) setState(() => _avatarUploading = false);

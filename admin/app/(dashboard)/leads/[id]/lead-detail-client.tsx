@@ -260,6 +260,15 @@ export default function LeadDetailClient({ id }: { id: string }) {
         </div>
       )}
 
+      {/* Description */}
+      <Section title="Описание / суть запроса">
+        {lead.description ? (
+          <p className="text-sm text-gray-800 whitespace-pre-wrap leading-relaxed">{lead.description}</p>
+        ) : (
+          <p className="text-sm text-gray-400 italic">Описание не указано</p>
+        )}
+      </Section>
+
       {/* Main info */}
       <Section title="Основное">
         <div className="grid grid-cols-2 gap-x-8 gap-y-3 sm:grid-cols-3">
@@ -278,10 +287,6 @@ export default function LeadDetailClient({ id }: { id: string }) {
               </Link>
             </div>
           )}
-        </div>
-        <div className="mt-3">
-          <p className="text-xs text-gray-400 mb-0.5">Описание</p>
-          <p className="text-sm text-gray-800 whitespace-pre-wrap">{lead.description}</p>
         </div>
       </Section>
 
