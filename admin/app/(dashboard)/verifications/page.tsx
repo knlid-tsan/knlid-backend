@@ -65,6 +65,7 @@ export default function VerificationsPage() {
   const [avatarUploading, setAvatarUploading] = useState(false);
   const [avatarError, setAvatarError] = useState('');
   const [confirmRemoveAvatar, setConfirmRemoveAvatar] = useState(false);
+  const [avatarDownloading, setAvatarDownloading] = useState(false);
   const avatarInputRef = useRef<HTMLInputElement>(null);
 
   const loadQueue = useCallback(async () => {
@@ -196,6 +197,29 @@ export default function VerificationsPage() {
     }
   }
 
+  async function handleAvatarDownload() {
+    if (!selected?.avatar_url) return;
+    setAvatarDownloading(true);
+    try {
+      const res = await fetch(`${BASE_URL}/${selected.avatar_url}`);
+      if (!res.ok) throw new Error(`Ошибка ${res.status}`);
+      const blob = await res.blob();
+      const objUrl = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = objUrl;
+      const ext = selected.avatar_url.split('.').pop() ?? 'jpg';
+      a.download = `avatar_${selected.full_name.replace(/\s+/g, '_')}.${ext}`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(objUrl);
+    } catch {
+      setAvatarError('Не удалось скачать аватар');
+    } finally {
+      setAvatarDownloading(false);
+    }
+  }
+
   return (
     <>
       <div className="mb-6">
@@ -322,9 +346,18 @@ export default function VerificationsPage() {
                       className="hidden"
                       onChange={handleAvatarUpload}
                     />
+                    {selected.avatar_url && (
+                      <button
+                        onClick={handleAvatarDownload}
+                        disabled={avatarUploading || avatarDownloading}
+                        className="text-sm border border-gray-300 rounded-lg px-3 py-1.5 text-gray-700 hover:bg-gray-50 disabled:opacity-50 transition-colors"
+                      >
+                        {avatarDownloading ? '...' : 'Скачать'}
+                      </button>
+                    )}
                     <button
                       onClick={() => avatarInputRef.current?.click()}
-                      disabled={avatarUploading}
+                      disabled={avatarUploading || avatarDownloading}
                       className="flex-1 text-sm border border-gray-300 rounded-lg px-3 py-1.5 text-gray-700 hover:bg-gray-50 disabled:opacity-50 transition-colors"
                     >
                       {avatarUploading ? '...' : 'Заменить'}
@@ -332,7 +365,7 @@ export default function VerificationsPage() {
                     {selected.avatar_url && (
                       <button
                         onClick={() => setConfirmRemoveAvatar(true)}
-                        disabled={avatarUploading}
+                        disabled={avatarUploading || avatarDownloading}
                         className="text-sm border border-red-200 text-red-500 rounded-lg px-3 py-1.5 hover:bg-red-50 disabled:opacity-50 transition-colors"
                       >
                         Удалить
@@ -403,8 +436,11 @@ export default function VerificationsPage() {
               )}
             </div>
 
-            {/* Sticky footer — action buttons always visible */}
-            <div className="px-6 py-4 border-t border-gray-100 flex-shrink-0 space-y-3">
+            {/* Sticky footer — verification decision, always visible */}
+            <div className="px-6 pt-3 pb-4 border-t-2 border-gray-200 flex-shrink-0 space-y-3 bg-gray-50/60">
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest">
+                Решение по верификации
+              </p>
               {actionError && (
                 <p className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2">
                   {actionError}

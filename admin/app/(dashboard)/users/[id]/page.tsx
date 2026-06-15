@@ -1,9 +1,11 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { api, ApiError } from '@/lib/api';
 import { getToken, decodeToken } from '@/lib/auth';
+
+const BASE_URL = 'http://localhost:3000';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -26,6 +28,7 @@ interface UserDetail {
   status: string;
   role: string;
   rating: string;
+  avatar_url: string | null;
   verification_rejection_reason: string | null;
   verification_attempts: number;
   verification_blocked_until: string | null;
@@ -132,6 +135,14 @@ export default function UserDetailPage() {
   const [roleSelectOpen, setRoleSelectOpen] = useState(false);
   const [selectedRole, setSelectedRole] = useState('');
 
+  // Avatar management
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const [avatarDownloading, setAvatarDownloading] = useState(false);
+  const [avatarError, setAvatarError] = useState('');
+  const [confirmRemoveAvatar, setConfirmRemoveAvatar] = useState(false);
+  const [avatarToast, setAvatarToast] = useState('');
+  const avatarInputRef = useRef<HTMLInputElement>(null);
+
   useEffect(() => {
     const token = getToken();
     if (!token) return;
@@ -195,6 +206,67 @@ export default function UserDetailPage() {
       await api.post(`/admin/users/${id}/role`, { role: selectedRole });
       setRoleSelectOpen(false);
     });
+  }
+
+  function showAvatarToast(msg: string) {
+    setAvatarToast(msg);
+    setTimeout(() => setAvatarToast(''), 3000);
+  }
+
+  async function handleAvatarUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+    setAvatarUploading(true);
+    setAvatarError('');
+    try {
+      const result = await api.postFile<{ avatar_url: string }>(`/admin/users/${id}/avatar`, file);
+      setUser((prev) => prev ? { ...prev, avatar_url: result.avatar_url } : prev);
+      showAvatarToast('Аватар обновлён');
+    } catch (err) {
+      setAvatarError(err instanceof ApiError ? err.message : 'Ошибка загрузки');
+    } finally {
+      setAvatarUploading(false);
+      if (avatarInputRef.current) avatarInputRef.current.value = '';
+    }
+  }
+
+  async function handleAvatarRemove() {
+    if (!user) return;
+    setAvatarUploading(true);
+    setAvatarError('');
+    try {
+      await api.delete(`/admin/users/${id}/avatar`);
+      setUser((prev) => prev ? { ...prev, avatar_url: null } : prev);
+      setConfirmRemoveAvatar(false);
+      showAvatarToast('Аватар удалён');
+    } catch (err) {
+      setAvatarError(err instanceof ApiError ? err.message : 'Ошибка удаления');
+    } finally {
+      setAvatarUploading(false);
+    }
+  }
+
+  async function handleAvatarDownload() {
+    if (!user?.avatar_url) return;
+    setAvatarDownloading(true);
+    try {
+      const res = await fetch(`${BASE_URL}/${user.avatar_url}`);
+      if (!res.ok) throw new Error(`Ошибка ${res.status}`);
+      const blob = await res.blob();
+      const objUrl = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = objUrl;
+      const ext = user.avatar_url.split('.').pop() ?? 'jpg';
+      a.download = `avatar_${user.full_name.replace(/\s+/g, '_')}.${ext}`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(objUrl);
+    } catch {
+      setAvatarError('Не удалось скачать аватар');
+    } finally {
+      setAvatarDownloading(false);
+    }
   }
 
   // ── Render ──────────────────────────────────────────────────────────────────
@@ -467,6 +539,85 @@ export default function UserDetailPage() {
                   )
                 )}
               </div>
+            )}
+          </div>
+
+          {/* Avatar */}
+          <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+            <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">
+              Аватар
+            </h2>
+            <input
+              ref={avatarInputRef}
+              type="file"
+              accept="image/jpeg,image/png"
+              className="hidden"
+              onChange={handleAvatarUpload}
+            />
+            <div className="rounded-lg bg-gray-50 border border-gray-200 overflow-hidden h-36 flex items-center justify-center mb-3">
+              {user.avatar_url ? (
+                <img
+                  src={`${BASE_URL}/${user.avatar_url}`}
+                  alt="Аватар"
+                  className="max-w-full max-h-36 object-contain"
+                />
+              ) : (
+                <span className="text-gray-400 text-sm">Нет аватара</span>
+              )}
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {user.avatar_url && (
+                <button
+                  onClick={handleAvatarDownload}
+                  disabled={avatarUploading || avatarDownloading}
+                  className="text-xs border border-gray-300 rounded-lg px-3 py-1.5 text-gray-700 hover:bg-gray-50 disabled:opacity-50 transition-colors"
+                >
+                  {avatarDownloading ? '...' : 'Скачать'}
+                </button>
+              )}
+              <button
+                onClick={() => avatarInputRef.current?.click()}
+                disabled={avatarUploading || avatarDownloading}
+                className="flex-1 text-xs border border-gray-300 rounded-lg px-3 py-1.5 text-gray-700 hover:bg-gray-50 disabled:opacity-50 transition-colors"
+              >
+                {avatarUploading ? '...' : 'Заменить'}
+              </button>
+              {user.avatar_url && (
+                <button
+                  onClick={() => setConfirmRemoveAvatar(true)}
+                  disabled={avatarUploading || avatarDownloading}
+                  className="text-xs border border-red-200 text-red-500 rounded-lg px-3 py-1.5 hover:bg-red-50 disabled:opacity-50 transition-colors"
+                >
+                  Удалить
+                </button>
+              )}
+            </div>
+            {avatarError && (
+              <p className="text-xs text-red-500 mt-2">{avatarError}</p>
+            )}
+            {confirmRemoveAvatar && (
+              <div className="mt-3 rounded-lg border border-red-200 bg-red-50 p-3 space-y-2">
+                <p className="text-xs text-red-700">Удалить аватар пользователя?</p>
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleAvatarRemove}
+                    disabled={avatarUploading}
+                    className="text-xs bg-red-600 text-white rounded px-3 py-1 hover:bg-red-700 disabled:opacity-50"
+                  >
+                    {avatarUploading ? '...' : 'Удалить'}
+                  </button>
+                  <button
+                    onClick={() => setConfirmRemoveAvatar(false)}
+                    disabled={avatarUploading}
+                    className="text-xs text-gray-500 hover:text-gray-700 px-2"
+                  >
+                    Отмена
+                  </button>
+                </div>
+              </div>
+            )}
+            {avatarToast && (
+              <p className="text-xs text-green-600 mt-2">{avatarToast}</p>
             )}
           </div>
 
