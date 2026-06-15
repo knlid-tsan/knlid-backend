@@ -48,7 +48,7 @@ export class VerificationService {
       user.verification_blocked_until = null;
     }
 
-    user.identity_doc_url = filePath;
+    user.identity_photo_url = filePath;
     user.status = UserStatus.PENDING;
     user.verification_attempts += 1;
     user.verification_rejection_reason = null;
@@ -76,11 +76,11 @@ export class VerificationService {
   async getDocumentPath(userId: string): Promise<string> {
     const user = await this.getUserOrFail(userId);
 
-    if (!user.identity_doc_url) {
+    if (!user.identity_photo_url) {
       throw new NotFoundException('Документ не найден');
     }
 
-    return user.identity_doc_url;
+    return user.identity_photo_url;
   }
 
   async approve(userId: string, moderatorId: string): Promise<User> {

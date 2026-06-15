@@ -1,13 +1,16 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Not, Repository } from 'typeorm';
 import { User, UserStatus } from './user.entity';
+import { BanksService } from '../banks/banks.service';
+import { UpdatePaymentDto } from './dto/update-payment.dto';
 
 @Injectable()
 export class UsersService {
   constructor(
     @InjectRepository(User)
     private usersRepository: Repository<User>,
+    private banksService: BanksService,
   ) {}
 
   // Создать пользователя
@@ -39,5 +42,28 @@ export class UsersService {
   findByIds(ids: string[]): Promise<User[]> {
     if (ids.length === 0) return Promise.resolve([]);
     return this.usersRepository.findBy({ id: In(ids) });
+  }
+
+  async updatePayment(userId: string, dto: UpdatePaymentDto): Promise<User> {
+    const user = await this.usersRepository.findOneBy({ id: userId });
+    if (!user) throw new NotFoundException('Пользователь не найден');
+
+    const bank = await this.banksService.findOne(dto.bank_id);
+    if (!bank || !bank.is_active) {
+      throw new BadRequestException('Банк не найден или недоступен');
+    }
+
+    user.payment_bank_id = dto.bank_id;
+    user.payment_phone = dto.payment_phone;
+    return this.usersRepository.save(user);
+  }
+
+  async updateAvatar(userId: string, filePath: string): Promise<{ avatar_url: string }> {
+    const user = await this.usersRepository.findOneBy({ id: userId });
+    if (!user) throw new NotFoundException('Пользователь не найден');
+
+    user.avatar_url = filePath;
+    await this.usersRepository.save(user);
+    return { avatar_url: filePath };
   }
 }

@@ -26,6 +26,7 @@ import { UsersService } from '../users/users.service';
 import { Specialization, UserRole, UserStatus } from '../users/user.entity';
 import { RewardsService } from '../rewards/rewards.service';
 import { RewardMethod } from '../rewards/enums/reward-method.enum';
+import { BanksService } from '../banks/banks.service';
 import { DisputesService } from '../disputes/disputes.service';
 import { OpenDisputeDto } from '../disputes/dto/open-dispute.dto';
 import { AuditService } from '../audit/audit.service';
@@ -90,6 +91,7 @@ export class LeadsService {
     private companiesRepository: Repository<Company>,
     private usersService: UsersService,
     private rewardsService: RewardsService,
+    private banksService: BanksService,
     private disputesService: DisputesService,
     private dataSource: DataSource,
     private auditService: AuditService,
@@ -246,6 +248,14 @@ export class LeadsService {
           by_moderator: isModerator,
         },
       });
+    }
+
+    // Проверка платёжных реквизитов автора (нужны исполнителю для перевода вознаграждения)
+    const author = await this.usersService.findOne(lead.author_id);
+    if (!author?.payment_bank_id || !author?.payment_phone?.trim()) {
+      throw new ForbiddenException(
+        'Автор должен заполнить платёжные реквизиты для передачи лида',
+      );
     }
 
     const from = lead.status;
@@ -608,6 +618,19 @@ export class LeadsService {
     ]);
     const participantMap = new Map(participants.map((u) => [u.id, u]));
 
+    // После закрытия исполнитель видит реквизиты автора для перевода вознаграждения
+    let author_payment: { bank_name: string | null; phone: string | null } | null = null;
+    if (lead.status === LeadStatus.CLOSED_SUCCESS && isExecutor) {
+      const author = participantMap.get(lead.author_id);
+      if (author?.payment_bank_id) {
+        const bank = await this.banksService.findOne(author.payment_bank_id);
+        author_payment = {
+          bank_name: bank?.name ?? null,
+          phone: author.payment_phone ?? null,
+        };
+      }
+    }
+
     return {
       ...this.serializeLead(lead, userId),
       author_name: participantMap.get(lead.author_id)?.full_name ?? null,
@@ -616,6 +639,7 @@ export class LeadsService {
         : null,
       history,
       guarantor,
+      ...(author_payment !== null ? { author_payment } : {}),
     };
   }
 

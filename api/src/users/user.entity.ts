@@ -55,8 +55,17 @@ export class User {
   @Column({ type: 'enum', enum: UserRole, default: UserRole.USER })
   role: UserRole;
 
-  @Column({ nullable: true }) // nullable — поле может быть пустым
-  identity_doc_url: string;
+  @Column({ nullable: true })
+  identity_photo_url: string;
+
+  @Column({ nullable: true })
+  avatar_url: string;
+
+  @Column({ type: 'uuid', nullable: true })
+  payment_bank_id: string | null;
+
+  @Column({ type: 'varchar', nullable: true })
+  payment_phone: string | null;
 
   // Причина последнего отклонения верификации — видна пользователю в GET /users/me
   @Column({ type: 'text', nullable: true })

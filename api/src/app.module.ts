@@ -30,6 +30,8 @@ import { CompanyMembership } from './companies/entities/company-membership.entit
 import { Setting } from './settings/setting.entity';
 import { SettingsModule } from './settings/settings.module';
 import { GuarantorJobModule } from './guarantor-job/guarantor-job.module';
+import { BanksModule } from './banks/banks.module';
+import { Bank } from './banks/bank.entity';
 
 @Module({
   imports: [
@@ -56,6 +58,7 @@ import { GuarantorJobModule } from './guarantor-job/guarantor-job.module';
         Company,
         CompanyMembership,
         Setting,
+        Bank,
       ],
       synchronize: false,
     }),
@@ -74,6 +77,7 @@ import { GuarantorJobModule } from './guarantor-job/guarantor-job.module';
     CompaniesModule,
     SettingsModule,
     GuarantorJobModule,
+    BanksModule,
   ],
   controllers: [AppController],
   providers: [AppService],

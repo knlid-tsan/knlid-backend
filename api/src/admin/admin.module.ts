@@ -7,9 +7,10 @@ import { RewardsModule } from '../rewards/rewards.module';
 import { LeadsModule } from '../leads/leads.module';
 import { CitiesModule } from '../cities/cities.module';
 import { SettingsModule } from '../settings/settings.module';
+import { BanksModule } from '../banks/banks.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([User]), AuthModule, RewardsModule, LeadsModule, CitiesModule, SettingsModule],
+  imports: [TypeOrmModule.forFeature([User]), AuthModule, RewardsModule, LeadsModule, CitiesModule, SettingsModule, BanksModule],
   controllers: [AdminController],
 })
 export class AdminModule {}

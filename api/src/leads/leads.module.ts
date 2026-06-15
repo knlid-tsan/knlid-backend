@@ -12,6 +12,7 @@ import { AuthModule } from '../auth/auth.module';
 import { RewardsModule } from '../rewards/rewards.module';
 import { DisputesModule } from '../disputes/disputes.module';
 import { SettingsModule } from '../settings/settings.module';
+import { BanksModule } from '../banks/banks.module';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { SettingsModule } from '../settings/settings.module';
     RewardsModule,
     DisputesModule,
     SettingsModule,
+    BanksModule,
   ],
   controllers: [LeadsController],
   providers: [LeadsService],

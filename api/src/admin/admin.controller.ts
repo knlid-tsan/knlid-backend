@@ -14,6 +14,9 @@ import {
   BadRequestException,
   NotFoundException,
 } from '@nestjs/common';
+import { BanksService } from '../banks/banks.service';
+import { CreateBankDto } from '../banks/dto/create-bank.dto';
+import { UpdateBankDto } from '../banks/dto/update-bank.dto';
 import { Request } from 'express';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
@@ -52,6 +55,7 @@ export class AdminController {
     private citiesService: CitiesService,
     private settingsService: SettingsService,
     private auditService: AuditService,
+    private banksService: BanksService,
     private dataSource: DataSource,
   ) {}
 
@@ -164,7 +168,7 @@ export class AdminController {
       .take(limit)
       .getManyAndCount();
 
-    const data = users.map(({ identity_doc_url: _, ...u }) => u);
+    const data = users.map(({ identity_photo_url: _, ...u }) => u);
     return { data, total, page, limit };
   }
 
@@ -188,7 +192,7 @@ export class AdminController {
 
     const recentActions = await this.auditService.findByUser(id, 20);
 
-    const { identity_doc_url: _, ...userFields } = user;
+    const { identity_photo_url: _, ...userFields } = user;
     return {
       ...userFields,
       stats: {
@@ -331,5 +335,35 @@ export class AdminController {
   @Get('leads/:id')
   adminLead(@Param('id') id: string) {
     return this.leadsService.adminFindOne(id);
+  }
+
+  // ─── Банки ────────────────────────────────────────────────────────────────
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @Get('banks')
+  listBanks() {
+    return this.banksService.findAll();
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @Post('banks')
+  createBank(@Body() dto: CreateBankDto) {
+    return this.banksService.create(dto);
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @Patch('banks/:id')
+  updateBank(@Param('id') id: string, @Body() dto: UpdateBankDto) {
+    return this.banksService.update(id, dto);
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @Delete('banks/:id')
+  deleteBank(@Param('id') id: string) {
+    return this.banksService.remove(id);
   }
 }
