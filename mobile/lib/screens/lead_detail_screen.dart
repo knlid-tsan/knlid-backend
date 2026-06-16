@@ -698,14 +698,10 @@ class _LeadDetailScreenState extends State<LeadDetailScreen> {
                     onTap: () => _onUpdateStatus('deposit'),
                     small: true),
                 const SizedBox(width: 8),
-                _ActionBtn(
-                    label: '✓ Закрыть',
-                    onTap: _onClose,
-                    filled: true,
-                    small: true),
+                _MutedCancelBtn(onTap: _onCancelByExecutor),
               ]),
               const SizedBox(height: 8),
-              _CancelBtn(onTap: _onCancelByExecutor),
+              _CloseBtn(label: '✓ Закрыть', onTap: _onClose),
             ],
           ),
         );
@@ -719,13 +715,13 @@ class _LeadDetailScreenState extends State<LeadDetailScreen> {
               Row(children: [
                 _ActionBtn(
                     label: '→ Задаток',
-                    onTap: () => _onUpdateStatus('deposit')),
-                const SizedBox(width: 12),
-                _ActionBtn(
-                    label: '✓ Закрыть', onTap: _onClose, filled: true),
+                    onTap: () => _onUpdateStatus('deposit'),
+                    small: true),
+                const SizedBox(width: 8),
+                _MutedCancelBtn(onTap: _onCancelByExecutor),
               ]),
               const SizedBox(height: 8),
-              _CancelBtn(onTap: _onCancelByExecutor),
+              _CloseBtn(label: '✓ Закрыть', onTap: _onClose),
             ],
           ),
         );
@@ -737,13 +733,10 @@ class _LeadDetailScreenState extends State<LeadDetailScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Row(children: [
-                _ActionBtn(
-                    label: '✓ Закрыть сделку',
-                    onTap: _onClose,
-                    filled: true),
+                _MutedCancelBtn(onTap: _onCancelByExecutor),
               ]),
               const SizedBox(height: 8),
-              _CancelBtn(onTap: _onCancelByExecutor),
+              _CloseBtn(label: '✓ Закрыть сделку', onTap: _onClose),
             ],
           ),
         );
@@ -858,26 +851,48 @@ class _ActionBtn extends StatelessWidget {
   }
 }
 
-class _CancelBtn extends StatelessWidget {
+class _MutedCancelBtn extends StatelessWidget {
   final VoidCallback onTap;
-  const _CancelBtn({required this.onTap});
+  const _MutedCancelBtn({required this.onTap});
 
   @override
   Widget build(BuildContext context) {
     return OutlinedButton(
       onPressed: onTap,
       style: OutlinedButton.styleFrom(
-        side: const BorderSide(color: Color(0xFFDC2626)),
-        padding: const EdgeInsets.symmetric(vertical: 11),
+        side: const BorderSide(color: Color(0xFFCBD5E1)),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
       child: const Text(
-        'Отменить лид',
+        'Отменить',
         style: TextStyle(
-          color: Color(0xFFDC2626),
+          color: Color(0xFF94A3B8),
           fontWeight: FontWeight.w500,
-          fontSize: 14,
+          fontSize: 13,
         ),
+      ),
+    );
+  }
+}
+
+class _CloseBtn extends StatelessWidget {
+  final String label;
+  final VoidCallback onTap;
+  const _CloseBtn({required this.label, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return FilledButton(
+      onPressed: onTap,
+      style: FilledButton.styleFrom(
+        backgroundColor: const Color(0xFF1E293B),
+        padding: const EdgeInsets.symmetric(vertical: 14),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+      child: Text(
+        label,
+        style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
       ),
     );
   }
