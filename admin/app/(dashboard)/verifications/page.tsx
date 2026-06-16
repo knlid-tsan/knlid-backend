@@ -17,6 +17,15 @@ interface VerificationUser {
   avatar_url: string | null;
 }
 
+const REJECT_REASONS = [
+  'Лицо не видно или плохо различимо',
+  'Документ нечитаемый (размытый, блики)',
+  'Документ виден не полностью',
+  'Фото не соответствует требованиям (селфи без документа или документ без лица)',
+  'Данные на документе не читаются',
+  'Подозрение на чужой или поддельный документ',
+];
+
 const SPEC_LABELS: Record<string, string> = {
   realtor: 'Риелтор',
   mortgage: 'Ипотечный брокер',
@@ -57,7 +66,8 @@ export default function VerificationsPage() {
   const [docError, setDocError] = useState('');
 
   const [rejecting, setRejecting] = useState(false);
-  const [rejectReason, setRejectReason] = useState('');
+  const [selectedPreset, setSelectedPreset] = useState('');
+  const [otherText, setOtherText] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
   const [actionError, setActionError] = useState('');
   const [toast, setToast] = useState('');
@@ -93,7 +103,8 @@ export default function VerificationsPage() {
     setDocUrl(null);
     setDocError('');
     setRejecting(false);
-    setRejectReason('');
+    setSelectedPreset('');
+    setOtherText('');
     setActionError('');
     setAvatarError('');
     setConfirmRemoveAvatar(false);
@@ -140,12 +151,14 @@ export default function VerificationsPage() {
   }
 
   async function handleReject() {
-    if (!selected || !rejectReason.trim()) return;
+    if (!selected || !selectedPreset) return;
+    const finalReason = selectedPreset === 'other' ? otherText.trim() : selectedPreset;
+    if (!finalReason) return;
     setActionLoading(true);
     setActionError('');
     try {
       await api.post(`/moderation/verifications/${selected.id}/reject`, {
-        reason: rejectReason,
+        reason: finalReason,
       });
       const id = selected.id;
       closeModal();
@@ -420,19 +433,53 @@ export default function VerificationsPage() {
               </div>
 
               {rejecting && (
-                <div className="space-y-3">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Причина отклонения
+                <div className="space-y-2">
+                  <p className="text-sm font-medium text-gray-700">Причина отклонения</p>
+                  <div className="rounded-lg border border-gray-200 divide-y divide-gray-100 overflow-hidden">
+                    {REJECT_REASONS.map((reason) => (
+                      <label
+                        key={reason}
+                        className={`flex items-start gap-3 px-4 py-3 cursor-pointer transition-colors ${
+                          selectedPreset === reason ? 'bg-red-50' : 'hover:bg-gray-50'
+                        }`}
+                      >
+                        <input
+                          type="radio"
+                          name="rejectReason"
+                          value={reason}
+                          checked={selectedPreset === reason}
+                          onChange={() => { setSelectedPreset(reason); setOtherText(''); }}
+                          className="mt-0.5 accent-red-600 shrink-0"
+                        />
+                        <span className="text-sm text-gray-700 leading-snug">{reason}</span>
+                      </label>
+                    ))}
+                    <label
+                      className={`flex items-start gap-3 px-4 py-3 cursor-pointer transition-colors ${
+                        selectedPreset === 'other' ? 'bg-red-50' : 'hover:bg-gray-50'
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="rejectReason"
+                        value="other"
+                        checked={selectedPreset === 'other'}
+                        onChange={() => setSelectedPreset('other')}
+                        className="mt-0.5 accent-red-600 shrink-0"
+                      />
+                      <span className="text-sm text-gray-700 leading-snug">Другое</span>
                     </label>
-                    <textarea
-                      value={rejectReason}
-                      onChange={(e) => setRejectReason(e.target.value)}
-                      rows={3}
-                      placeholder="Укажите причину отклонения..."
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent resize-none"
-                    />
                   </div>
+                  {selectedPreset === 'other' && (
+                    <textarea
+                      value={otherText}
+                      onChange={(e) => setOtherText(e.target.value)}
+                      rows={2}
+                      placeholder="Укажите причину..."
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent resize-none"
+                      autoFocus
+                    />
+                  )}
                 </div>
               )}
             </div>
@@ -468,7 +515,7 @@ export default function VerificationsPage() {
                 <div className="flex items-center gap-3">
                   <button
                     onClick={handleReject}
-                    disabled={actionLoading || !rejectReason.trim()}
+                    disabled={actionLoading || !selectedPreset || (selectedPreset === 'other' && !otherText.trim())}
                     className="flex-1 bg-red-600 text-white rounded-lg px-4 py-2.5 text-sm font-medium hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   >
                     {actionLoading ? '...' : 'Подтвердить отклонение'}
@@ -477,7 +524,8 @@ export default function VerificationsPage() {
                     type="button"
                     onClick={() => {
                       setRejecting(false);
-                      setRejectReason('');
+                      setSelectedPreset('');
+                      setOtherText('');
                       setActionError('');
                     }}
                     disabled={actionLoading}
