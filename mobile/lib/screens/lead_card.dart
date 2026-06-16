@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/lead.dart';
+import '../theme/app_colors.dart';
 
 String _fmtAmount(String amount) {
   final n = double.tryParse(amount);
@@ -60,7 +61,7 @@ class LeadCard extends StatelessWidget {
                       style: const TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w600,
-                        color: Color(0xFF1E293B),
+                        color: AppColors.textPrimary,
                       ),
                     ),
                   ),
@@ -132,7 +133,7 @@ class _InfoLine extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = dim ? const Color(0xFFCBD5E1) : const Color(0xFF64748B);
+    final color = dim ? AppColors.divider : AppColors.textSecondary;
     return Row(
       children: [
         Icon(icon, size: 14, color: color),

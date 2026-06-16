@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import '../services/api_client.dart';
 import '../services/auth_service.dart';
+import '../theme/app_colors.dart';
 import 'register_screen.dart';
 
 enum AuthMode { login, register }
@@ -117,14 +118,23 @@ class _OtpScreenState extends State<OtpScreen> {
   String get _buttonLabel =>
       widget.mode == AuthMode.login ? 'Войти' : 'Продолжить';
 
+  String _formatPhone(String raw) {
+    final digits = raw.replaceAll(RegExp(r'\D'), '');
+    if (digits.length == 11 && digits.startsWith('7')) {
+      return '+7 ${digits.substring(1, 4)} ${digits.substring(4, 7)} '
+          '${digits.substring(7, 9)} ${digits.substring(9, 11)}';
+    }
+    return raw;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor: const Color(0xFFF8FAFC),
+        backgroundColor: AppColors.background,
         elevation: 0,
-        leading: const BackButton(color: Color(0xFF1E293B)),
+        leading: const BackButton(color: AppColors.textPrimary),
       ),
       body: SafeArea(
         child: Padding(
@@ -138,13 +148,13 @@ class _OtpScreenState extends State<OtpScreen> {
                 style: const TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF1E293B),
+                  color: AppColors.textPrimary,
                 ),
               ),
               const SizedBox(height: 8),
               Text(
-                'Код отправлен на ${widget.phone}',
-                style: const TextStyle(fontSize: 14, color: Color(0xFF64748B)),
+                'Код отправлен в WhatsApp на номер ${_formatPhone(widget.phone)}',
+                style: const TextStyle(fontSize: 14, color: AppColors.textSecondary),
               ),
               const SizedBox(height: 20),
 
@@ -186,18 +196,18 @@ class _OtpScreenState extends State<OtpScreen> {
                   hintText: '000000',
                   hintStyle: TextStyle(
                     letterSpacing: 8,
-                    color: Color(0xFFCBD5E1),
+                    color: AppColors.divider,
                     fontSize: 28,
                   ),
                   filled: true,
-                  fillColor: Color(0xFFF1F5F9),
+                  fillColor: AppColors.surface,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.all(Radius.circular(12)),
                     borderSide: BorderSide.none,
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.all(Radius.circular(12)),
-                    borderSide: BorderSide(color: Color(0xFF1E293B), width: 1.5),
+                    borderSide: BorderSide(color: AppColors.primary, width: 1.5),
                   ),
                   contentPadding: EdgeInsets.symmetric(vertical: 20),
                 ),
@@ -210,7 +220,7 @@ class _OtpScreenState extends State<OtpScreen> {
                 const SizedBox(height: 12),
                 Text(
                   _error,
-                  style: const TextStyle(color: Color(0xFFDC2626), fontSize: 13),
+                  style: const TextStyle(color: AppColors.brand, fontSize: 13),
                   textAlign: TextAlign.center,
                 ),
                 if (_showRegisterHint) ...[
@@ -220,7 +230,7 @@ class _OtpScreenState extends State<OtpScreen> {
                     child: const Text(
                       'Зарегистрироваться с этим номером →',
                       style: TextStyle(
-                        color: Color(0xFF1E293B),
+                        color: AppColors.primary,
                         fontWeight: FontWeight.w600,
                         fontSize: 14,
                       ),
@@ -233,7 +243,7 @@ class _OtpScreenState extends State<OtpScreen> {
               FilledButton(
                 onPressed: _loading ? null : _submit,
                 style: FilledButton.styleFrom(
-                  backgroundColor: const Color(0xFF1E293B),
+                  backgroundColor: AppColors.primary,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -261,14 +271,14 @@ class _OtpScreenState extends State<OtpScreen> {
                         'Отправить повторно через $_secondsLeft с',
                         style: const TextStyle(
                           fontSize: 13,
-                          color: Color(0xFF94A3B8),
+                          color: AppColors.textSecondary,
                         ),
                       )
                     : TextButton(
                         onPressed: _resend,
                         child: const Text(
                           'Отправить повторно',
-                          style: TextStyle(color: Color(0xFF1E293B)),
+                          style: TextStyle(color: AppColors.primary),
                         ),
                       ),
               ),

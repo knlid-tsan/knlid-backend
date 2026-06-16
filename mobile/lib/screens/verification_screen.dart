@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import 'package:image_picker/image_picker.dart';
 import '../services/api_client.dart';
+import '../theme/app_colors.dart';
 
 // Состояния верификации, производные от status + rejection_reason
 enum _VerifState { notStarted, pending, rejected, active }
@@ -105,7 +106,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
             Container(
               width: 36, height: 4,
               decoration: BoxDecoration(
-                color: const Color(0xFFCBD5E1),
+                color: AppColors.divider,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -130,14 +131,14 @@ class _VerificationScreenState extends State<VerificationScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: AppColors.background,
       appBar: AppBar(
         title: const Text(
           'Верификация',
           style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600),
         ),
         backgroundColor: Colors.white,
-        foregroundColor: const Color(0xFF1E293B),
+        foregroundColor: AppColors.textPrimary,
         elevation: 0,
         surfaceTintColor: Colors.white,
       ),
@@ -169,14 +170,14 @@ class _VerificationScreenState extends State<VerificationScreen> {
           _stateTitle(),
           style: const TextStyle(
             fontSize: 20, fontWeight: FontWeight.bold,
-            color: Color(0xFF1E293B),
+            color: AppColors.textPrimary,
           ),
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 8),
         Text(
           _stateSubtitle(),
-          style: const TextStyle(fontSize: 14, color: Color(0xFF64748B), height: 1.5),
+          style: const TextStyle(fontSize: 14, color: AppColors.textSecondary, height: 1.5),
           textAlign: TextAlign.center,
         ),
 
@@ -193,12 +194,12 @@ class _VerificationScreenState extends State<VerificationScreen> {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Icon(Icons.info_outline, size: 16, color: Color(0xFFDC2626)),
+                const Icon(Icons.info_outline, size: 16, color: AppColors.brand),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     'Причина: $_rejectionReason',
-                    style: const TextStyle(fontSize: 13, color: Color(0xFFB91C1C)),
+                    style: const TextStyle(fontSize: 13, color: AppColors.brand),
                   ),
                 ),
               ],
@@ -229,7 +230,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
                   'Как пройти верификацию',
                   style: TextStyle(
                     fontSize: 14, fontWeight: FontWeight.w600,
-                    color: Color(0xFF1E293B),
+                    color: AppColors.textPrimary,
                   ),
                 ),
                 const SizedBox(height: 10),
@@ -253,7 +254,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
             ),
             child: Text(
               _error!,
-              style: const TextStyle(fontSize: 13, color: Color(0xFFDC2626)),
+              style: const TextStyle(fontSize: 13, color: AppColors.brand),
             ),
           ),
         ],
@@ -265,7 +266,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
           FilledButton.icon(
             onPressed: _uploading ? null : _pickAndUpload,
             style: FilledButton.styleFrom(
-              backgroundColor: const Color(0xFF1E293B),
+              backgroundColor: AppColors.primary,
               padding: const EdgeInsets.symmetric(vertical: 16),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
@@ -286,10 +287,10 @@ class _VerificationScreenState extends State<VerificationScreen> {
 
   Color _stateColor() {
     switch (_state) {
-      case _VerifState.active:   return const Color(0xFF22C55E);
+      case _VerifState.active:   return AppColors.success;
       case _VerifState.pending:  return const Color(0xFFF59E0B);
-      case _VerifState.rejected: return const Color(0xFFDC2626);
-      case _VerifState.notStarted: return const Color(0xFF64748B);
+      case _VerifState.rejected: return AppColors.brand;
+      case _VerifState.notStarted: return AppColors.textSecondary;
     }
   }
 
@@ -341,7 +342,7 @@ class _Step extends StatelessWidget {
             width: 20, height: 20,
             alignment: Alignment.center,
             decoration: const BoxDecoration(
-              color: Color(0xFF1E293B),
+              color: AppColors.textPrimary,
               shape: BoxShape.circle,
             ),
             child: Text(
@@ -355,7 +356,7 @@ class _Step extends StatelessWidget {
           Expanded(
             child: Text(
               text,
-              style: const TextStyle(fontSize: 13, color: Color(0xFF475569), height: 1.4),
+              style: const TextStyle(fontSize: 13, color: AppColors.textSecondary, height: 1.4),
             ),
           ),
         ],

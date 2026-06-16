@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/lead.dart';
 import '../services/leads_service.dart';
+import '../theme/app_colors.dart';
 import 'lead_card.dart';
 import 'lead_detail_screen.dart';
 
@@ -47,7 +48,7 @@ class _LeadsAssignedScreenState extends State<LeadsAssignedScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: AppColors.background,
       body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -59,7 +60,7 @@ class _LeadsAssignedScreenState extends State<LeadsAssignedScreen> {
                 style: TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF1E293B),
+                  color: AppColors.textPrimary,
                 ),
               ),
             ),
@@ -144,7 +145,7 @@ class _FilterToggle extends StatelessWidget {
       child: Container(
         height: 36,
         decoration: BoxDecoration(
-          color: const Color(0xFFE2E8F0),
+          color: AppColors.divider,
           borderRadius: BorderRadius.circular(10),
         ),
         child: Row(
@@ -201,8 +202,8 @@ class _Tab extends StatelessWidget {
                 fontWeight:
                     selected ? FontWeight.w600 : FontWeight.w500,
                 color: selected
-                    ? const Color(0xFF1E293B)
-                    : const Color(0xFF64748B),
+                    ? AppColors.textPrimary
+                    : AppColors.textSecondary,
               ),
             ),
           ),
@@ -228,17 +229,17 @@ class _EmptyState extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, size: 64, color: const Color(0xFFCBD5E1)),
+            Icon(icon, size: 64, color: AppColors.divider),
             const SizedBox(height: 16),
             Text(title,
                 style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
-                    color: Color(0xFF64748B))),
+                    color: AppColors.textSecondary)),
             const SizedBox(height: 8),
             Text(hint,
                 style:
-                    const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
+                    const TextStyle(fontSize: 13, color: AppColors.textSecondary),
                 textAlign: TextAlign.center),
           ],
         ),
@@ -260,11 +261,11 @@ class _ErrorState extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.error_outline, size: 48, color: Color(0xFFCBD5E1)),
+            const Icon(Icons.error_outline, size: 48, color: AppColors.divider),
             const SizedBox(height: 16),
             Text(message,
                 style:
-                    const TextStyle(fontSize: 13, color: Color(0xFF64748B)),
+                    const TextStyle(fontSize: 13, color: AppColors.textSecondary),
                 textAlign: TextAlign.center),
             const SizedBox(height: 20),
             OutlinedButton.icon(

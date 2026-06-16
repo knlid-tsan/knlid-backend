@@ -3,6 +3,7 @@ import 'package:dio/dio.dart';
 import '../models/city.dart';
 import '../services/api_client.dart';
 import '../services/auth_service.dart';
+import '../theme/app_colors.dart';
 
 const _specializationLabels = {
   'realtor': 'Риелтор',
@@ -111,14 +112,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor: const Color(0xFFF8FAFC),
+        backgroundColor: AppColors.background,
         elevation: 0,
-        leading: const BackButton(color: Color(0xFF1E293B)),
+        leading: const BackButton(color: AppColors.textPrimary),
         title: const Text(
           'Редактировать профиль',
-          style: TextStyle(color: Color(0xFF1E293B), fontWeight: FontWeight.w600),
+          style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w600),
         ),
       ),
       body: SafeArea(
@@ -179,7 +180,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   const SizedBox(height: 6),
                   const Text(
                     'Имя и фамилию нельзя изменить после верификации',
-                    style: TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
+                    style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
                   ),
                 ],
                 const SizedBox(height: 20),
@@ -238,7 +239,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     ),
                     child: Text(
                       _error,
-                      style: const TextStyle(color: Color(0xFFDC2626), fontSize: 13),
+                      style: const TextStyle(color: AppColors.brand, fontSize: 13),
                     ),
                   ),
                 ],
@@ -249,7 +250,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       ? null
                       : _submit,
                   style: FilledButton.styleFrom(
-                    backgroundColor: const Color(0xFF1E293B),
+                    backgroundColor: AppColors.primary,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -282,14 +283,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       InputDecoration(
         hintText: hint,
         filled: true,
-        fillColor: disabled ? const Color(0xFFE2E8F0) : const Color(0xFFF1F5F9),
+        fillColor: disabled ? AppColors.divider : AppColors.surface,
         border: const OutlineInputBorder(
           borderRadius: BorderRadius.all(Radius.circular(12)),
           borderSide: BorderSide.none,
         ),
         focusedBorder: const OutlineInputBorder(
           borderRadius: BorderRadius.all(Radius.circular(12)),
-          borderSide: BorderSide(color: Color(0xFF1E293B), width: 1.5),
+          borderSide: BorderSide(color: AppColors.primary, width: 1.5),
         ),
         disabledBorder: const OutlineInputBorder(
           borderRadius: BorderRadius.all(Radius.circular(12)),
@@ -312,7 +313,7 @@ class _Label extends StatelessWidget {
         style: const TextStyle(
           fontSize: 14,
           fontWeight: FontWeight.w500,
-          color: Color(0xFF475569),
+          color: AppColors.textSecondary,
         ),
       );
 }
@@ -338,7 +339,7 @@ class _SpecOption extends StatelessWidget {
         margin: const EdgeInsets.only(bottom: 8),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
-          color: selected ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
+          color: selected ? AppColors.primary : AppColors.divider,
           borderRadius: BorderRadius.circular(12),
         ),
         child: Row(
@@ -346,7 +347,7 @@ class _SpecOption extends StatelessWidget {
             Icon(
               selected ? Icons.radio_button_checked : Icons.radio_button_unchecked,
               size: 18,
-              color: selected ? Colors.white : const Color(0xFF94A3B8),
+              color: selected ? Colors.white : AppColors.textSecondary,
             ),
             const SizedBox(width: 12),
             Text(
@@ -354,7 +355,7 @@ class _SpecOption extends StatelessWidget {
               style: TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.w500,
-                color: selected ? Colors.white : const Color(0xFF1E293B),
+                color: selected ? Colors.white : AppColors.textPrimary,
               ),
             ),
           ],
@@ -373,16 +374,16 @@ class _LockedField extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
-        color: const Color(0xFFE2E8F0),
+        color: AppColors.divider,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
         children: [
-          const Icon(Icons.lock_outline, size: 16, color: Color(0xFF94A3B8)),
+          const Icon(Icons.lock_outline, size: 16, color: AppColors.textSecondary),
           const SizedBox(width: 10),
           Text(
             value,
-            style: const TextStyle(fontSize: 15, color: Color(0xFF94A3B8)),
+            style: const TextStyle(fontSize: 15, color: AppColors.textSecondary),
           ),
         ],
       ),
@@ -397,7 +398,7 @@ class _LockedHint extends StatelessWidget {
   Widget build(BuildContext context) {
     return const Text(
       'Недоступно: у вас есть лиды в работе',
-      style: TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
+      style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
     );
   }
 }

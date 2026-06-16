@@ -4,6 +4,7 @@ import 'package:image_picker/image_picker.dart';
 import '../services/api_client.dart';
 import '../services/phone_formatter.dart';
 import '../config.dart';
+import '../theme/app_colors.dart';
 import 'verification_screen.dart';
 import 'payment_form_screen.dart';
 import 'edit_profile_screen.dart';
@@ -135,7 +136,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             Container(
               width: 36, height: 4,
               decoration: BoxDecoration(
-                color: const Color(0xFFCBD5E1),
+                color: AppColors.divider,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -156,7 +157,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   final c = companies[i];
                   return ListTile(
                     title: Text(c['name'] as String, style: const TextStyle(fontWeight: FontWeight.w500)),
-                    subtitle: Text(c['city'] as String? ?? '', style: const TextStyle(fontSize: 13, color: Color(0xFF64748B))),
+                    subtitle: Text(c['city'] as String? ?? '', style: const TextStyle(fontSize: 13, color: AppColors.textSecondary)),
                     onTap: () => Navigator.pop(ctx, c),
                   );
                 },
@@ -217,7 +218,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             Container(
               width: 36, height: 4,
               decoration: BoxDecoration(
-                color: const Color(0xFFCBD5E1),
+                color: AppColors.divider,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -275,7 +276,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         }
       }
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(msg), backgroundColor: const Color(0xFFDC2626)),
+        SnackBar(content: Text(msg), backgroundColor: AppColors.brand),
       );
     } finally {
       if (mounted) setState(() => _avatarUploading = false);
@@ -291,7 +292,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: AppColors.background,
       body: SafeArea(child: _buildBody()),
     );
   }
@@ -307,7 +308,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text(_error!,
-                  style: const TextStyle(fontSize: 13, color: Color(0xFF64748B)),
+                  style: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
                   textAlign: TextAlign.center),
               const SizedBox(height: 20),
               OutlinedButton.icon(
@@ -335,7 +336,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           const Text(
             'Профиль',
             style: TextStyle(
-              fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF1E293B),
+              fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.textPrimary,
             ),
           ),
           const SizedBox(height: 20),
@@ -356,7 +357,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     style: const TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
-                      color: Color(0xFF1E293B),
+                      color: AppColors.textPrimary,
                     ),
                     textAlign: TextAlign.center,
                   ),
@@ -369,7 +370,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     style: const TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w500,
-                      color: Color(0xFF3B82F6),
+                      color: AppColors.primary,
                     ),
                     textAlign: TextAlign.center,
                   ),
@@ -380,22 +381,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     user['city'] as String,
                     style: const TextStyle(
                       fontSize: 13,
-                      color: Color(0xFF64748B),
+                      color: AppColors.textSecondary,
                     ),
                     textAlign: TextAlign.center,
                   ),
                 ],
-                const SizedBox(height: 6),
-                TextButton(
-                  onPressed: _avatarUploading ? null : _pickAvatar,
-                  style: TextButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                if (user['avatar_url'] == null) ...[
+                  const SizedBox(height: 6),
+                  TextButton(
+                    onPressed: _avatarUploading ? null : _pickAvatar,
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                    ),
+                    child: const Text(
+                      'Добавить фото',
+                      style: TextStyle(fontSize: 13, color: AppColors.primary),
+                    ),
                   ),
-                  child: Text(
-                    user['avatar_url'] != null ? 'Изменить фото' : 'Добавить фото',
-                    style: const TextStyle(fontSize: 13, color: Color(0xFF3B82F6)),
-                  ),
-                ),
+                ],
               ],
             ),
           ),
@@ -441,7 +444,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   if (changed == true) _load();
                 },
                 style: TextButton.styleFrom(
-                  foregroundColor: const Color(0xFF3B82F6),
+                  foregroundColor: AppColors.primary,
                   padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
                   textStyle: const TextStyle(fontSize: 13),
                   minimumSize: Size.zero,
@@ -498,13 +501,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
           OutlinedButton(
             onPressed: _logout,
             style: OutlinedButton.styleFrom(
-              side: const BorderSide(color: Color(0xFFE2E8F0), width: 1.5),
+              side: const BorderSide(color: AppColors.divider, width: 1.5),
               padding: const EdgeInsets.symmetric(vertical: 14),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
             child: const Text(
               'Выйти',
-              style: TextStyle(color: Color(0xFF64748B), fontWeight: FontWeight.w500),
+              style: TextStyle(color: AppColors.textSecondary, fontWeight: FontWeight.w500),
             ),
           ),
         ],
@@ -540,12 +543,12 @@ class _AvatarWidget extends StatelessWidget {
         children: [
           CircleAvatar(
             radius: 44,
-            backgroundColor: const Color(0xFFE2E8F0),
+            backgroundColor: AppColors.divider,
             backgroundImage: avatarUrl != null
                 ? NetworkImage('${AppConfig.apiBaseUrl}/$avatarUrl')
                 : null,
             child: avatarUrl == null
-                ? const Icon(Icons.person, size: 44, color: Color(0xFF94A3B8))
+                ? const Icon(Icons.person, size: 44, color: AppColors.textSecondary)
                 : null,
           ),
           if (uploading)
@@ -563,18 +566,18 @@ class _AvatarWidget extends StatelessWidget {
                 ),
               ),
             ),
-          // Иконка-карандаш
-          Positioned(
-            bottom: 0, right: 0,
-            child: Container(
-              width: 28, height: 28,
-              decoration: const BoxDecoration(
-                color: Color(0xFF1E293B),
-                shape: BoxShape.circle,
+          if (avatarUrl != null)
+            Positioned(
+              bottom: 0, right: 0,
+              child: Container(
+                width: 28, height: 28,
+                decoration: const BoxDecoration(
+                  color: AppColors.primary,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.edit, size: 14, color: Colors.white),
               ),
-              child: const Icon(Icons.edit, size: 14, color: Colors.white),
             ),
-          ),
         ],
       ),
     );
@@ -606,7 +609,7 @@ class _VerificationBlock extends StatelessWidget {
     final String label;
 
     if (isActive) {
-      color = const Color(0xFF22C55E);
+      color = AppColors.success;
       icon = Icons.verified_outlined;
       label = 'Верифицированы ✓';
     } else if (isPending) {
@@ -614,11 +617,11 @@ class _VerificationBlock extends StatelessWidget {
       icon = Icons.hourglass_top_outlined;
       label = 'Фото на проверке';
     } else if (isRejected) {
-      color = const Color(0xFFDC2626);
+      color = AppColors.brand;
       icon = Icons.cancel_outlined;
       label = 'Верификация отклонена';
     } else {
-      color = const Color(0xFF94A3B8);
+      color = AppColors.textSecondary;
       icon = Icons.badge_outlined;
       label = 'Не верифицированы';
     }
@@ -651,7 +654,7 @@ class _VerificationBlock extends StatelessWidget {
             const SizedBox(height: 6),
             Text(
               'Причина: $rejectionReason',
-              style: const TextStyle(fontSize: 12, color: Color(0xFFB91C1C)),
+              style: const TextStyle(fontSize: 12, color: AppColors.brand),
             ),
           ],
 
@@ -729,7 +732,7 @@ class _PaymentBlock extends StatelessWidget {
           Row(
             children: [
               const Icon(Icons.account_balance_outlined,
-                  size: 16, color: Color(0xFF64748B)),
+                  size: 16, color: AppColors.textSecondary),
               const SizedBox(width: 8),
               const Expanded(
                 child: Text(
@@ -737,7 +740,7 @@ class _PaymentBlock extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
-                    color: Color(0xFF475569),
+                    color: AppColors.textSecondary,
                   ),
                 ),
               ),
@@ -760,7 +763,7 @@ class _PaymentBlock extends StatelessWidget {
                 ),
                 child: const Text(
                   'Изменить',
-                  style: TextStyle(fontSize: 13, color: Color(0xFF3B82F6)),
+                  style: TextStyle(fontSize: 13, color: AppColors.primary),
                 ),
               ),
             ],
@@ -772,20 +775,20 @@ class _PaymentBlock extends StatelessWidget {
               style: const TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
-                color: Color(0xFF1E293B),
+                color: AppColors.textPrimary,
               ),
             ),
             const SizedBox(height: 2),
             Text(
               formatPhone(paymentPhone),
-              style: const TextStyle(fontSize: 13, color: Color(0xFF64748B)),
+              style: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
             ),
           ] else
             const Text(
               'Не указаны',
               style: TextStyle(
                 fontSize: 13,
-                color: Color(0xFFCBD5E1),
+                color: AppColors.divider,
                 fontStyle: FontStyle.italic,
               ),
             ),
@@ -830,7 +833,7 @@ class _NameRow extends StatelessWidget {
     return Text(
       name,
       style: const TextStyle(
-        fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF1E293B),
+        fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textPrimary,
       ),
     );
   }
@@ -853,7 +856,7 @@ class _InfoRow extends StatelessWidget {
           SizedBox(
             width: 110,
             child: Text(label,
-                style: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8))),
+                style: const TextStyle(fontSize: 13, color: AppColors.textSecondary)),
           ),
           Expanded(
             child: Text(
@@ -861,7 +864,7 @@ class _InfoRow extends StatelessWidget {
               style: valueStyle ??
                   const TextStyle(
                     fontSize: 14, fontWeight: FontWeight.w500,
-                    color: Color(0xFF1E293B),
+                    color: AppColors.textPrimary,
                   ),
             ),
           ),
@@ -906,7 +909,7 @@ class _StatsCard extends StatelessWidget {
             'Статистика',
             style: TextStyle(
               fontSize: 11, fontWeight: FontWeight.w600,
-              color: Color(0xFF94A3B8), letterSpacing: 0.5,
+              color: AppColors.textSecondary, letterSpacing: 0.5,
             ),
           ),
           const SizedBox(height: 14),
@@ -924,7 +927,7 @@ class _StatsCard extends StatelessWidget {
                 value: '$closed',
                 label: 'Закрыто',
                 icon: Icons.check_circle_outline,
-                color: const Color(0xFF22C55E),
+                color: AppColors.success,
               ),
             ],
           ),
@@ -949,7 +952,7 @@ class _Stat extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final c = color ?? const Color(0xFF64748B);
+    final c = color ?? AppColors.textSecondary;
     return Expanded(
       child: Column(
         children: [
@@ -959,7 +962,7 @@ class _Stat extends StatelessWidget {
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: c)),
           const SizedBox(height: 2),
           Text(label,
-              style: const TextStyle(fontSize: 10, color: Color(0xFF94A3B8))),
+              style: const TextStyle(fontSize: 10, color: AppColors.textSecondary)),
         ],
       ),
     );
@@ -993,7 +996,7 @@ class _CompanyBlock extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        border: Border.all(color: AppColors.divider),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1001,7 +1004,7 @@ class _CompanyBlock extends StatelessWidget {
           const Text(
             'Компания-гарант',
             style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600,
-                color: Color(0xFF94A3B8), letterSpacing: 0.5),
+                color: AppColors.textSecondary, letterSpacing: 0.5),
           ),
           const SizedBox(height: 10),
           if (activeMembership != null && pendingMembership != null) ...[
@@ -1009,7 +1012,7 @@ class _CompanyBlock extends StatelessWidget {
             Text(
               activeMembership!['company_name'] as String? ?? '',
               style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600,
-                  color: Color(0xFF1E293B)),
+                  color: AppColors.textPrimary),
             ),
             const SizedBox(height: 4),
             Container(
@@ -1058,7 +1061,7 @@ class _CompanyBlock extends StatelessWidget {
                 child: actionLoading
                     ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
                     : const Text('Отозвать заявку на смену',
-                        style: TextStyle(fontSize: 14, color: Color(0xFFDC2626))),
+                        style: TextStyle(fontSize: 14, color: AppColors.brand)),
               ),
             ),
           ] else if (activeMembership != null) ...[
@@ -1066,7 +1069,7 @@ class _CompanyBlock extends StatelessWidget {
             Text(
               activeMembership!['company_name'] as String? ?? '',
               style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600,
-                  color: Color(0xFF1E293B)),
+                  color: AppColors.textPrimary),
             ),
             const SizedBox(height: 4),
             Container(
@@ -1085,14 +1088,14 @@ class _CompanyBlock extends StatelessWidget {
               child: OutlinedButton(
                 onPressed: (actionLoading || !isVerified) ? null : onPickCompany,
                 style: OutlinedButton.styleFrom(
-                  side: const BorderSide(color: Color(0xFFCBD5E1)),
+                  side: const BorderSide(color: AppColors.divider),
                   padding: const EdgeInsets.symmetric(vertical: 10),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                 ),
                 child: actionLoading
                     ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
                     : const Text('Сменить компанию',
-                        style: TextStyle(fontSize: 14, color: Color(0xFF475569))),
+                        style: TextStyle(fontSize: 14, color: AppColors.textSecondary)),
               ),
             ),
           ] else if (pendingMembership != null) ...[
@@ -1100,7 +1103,7 @@ class _CompanyBlock extends StatelessWidget {
             Text(
               pendingMembership!['company_name'] as String? ?? '',
               style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600,
-                  color: Color(0xFF1E293B)),
+                  color: AppColors.textPrimary),
             ),
             const SizedBox(height: 4),
             Container(
@@ -1126,14 +1129,14 @@ class _CompanyBlock extends StatelessWidget {
                 child: actionLoading
                     ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
                     : const Text('Отозвать заявку',
-                        style: TextStyle(fontSize: 14, color: Color(0xFFDC2626))),
+                        style: TextStyle(fontSize: 14, color: AppColors.brand)),
               ),
             ),
           ] else ...[
             // State 1: no company
             const Text(
               'Вы не привязаны к компании',
-              style: TextStyle(fontSize: 14, color: Color(0xFF94A3B8)),
+              style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
             ),
             if (!isVerified) ...[
               const SizedBox(height: 8),
@@ -1148,7 +1151,7 @@ class _CompanyBlock extends StatelessWidget {
               child: ElevatedButton(
                 onPressed: (actionLoading || !isVerified) ? null : onPickCompany,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF3B82F6),
+                  backgroundColor: AppColors.primary,
                   foregroundColor: Colors.white,
                   elevation: 0,
                   padding: const EdgeInsets.symmetric(vertical: 12),

@@ -141,17 +141,9 @@ class _HomeScreenState extends State<HomeScreen> {
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
       children: [
-        // ── Title ──────────────────────────────────────────────────────────
         const Padding(
-          padding: EdgeInsets.fromLTRB(4, 24, 4, 20),
-          child: Text(
-            'Главная',
-            style: TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
-              color: AppColors.textPrimary,
-            ),
-          ),
+          padding: EdgeInsets.fromLTRB(0, 24, 0, 20),
+          child: Center(child: _CompactLogo()),
         ),
 
         // ── Block: Переданные ──────────────────────────────────────────────
@@ -273,6 +265,39 @@ class _HomeScreenState extends State<HomeScreen> {
 }
 
 // ─── Private widgets ──────────────────────────────────────────────────────────
+
+class _CompactLogo extends StatelessWidget {
+  const _CompactLogo();
+
+  static const _red = AppColors.brand;
+  static const _style = TextStyle(
+    fontSize: 28,
+    fontWeight: FontWeight.w700,
+    color: _red,
+    height: 1,
+    letterSpacing: -1,
+  );
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        const Text('kn', style: _style),
+        const SizedBox(width: 2),
+        Container(
+          width: 10,
+          height: 10,
+          decoration: const BoxDecoration(color: _red, shape: BoxShape.circle),
+          child: const Icon(Icons.home, size: 6, color: Colors.white),
+        ),
+        const SizedBox(width: 2),
+        const Text('lid', style: _style),
+      ],
+    );
+  }
+}
 
 class _SectionHeader extends StatelessWidget {
   final String label;

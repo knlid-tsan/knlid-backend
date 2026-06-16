@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import '../services/api_client.dart';
 import '../services/phone_formatter.dart';
+import '../theme/app_colors.dart';
 
 class PaymentFormScreen extends StatefulWidget {
   final String initialPhone;
@@ -71,14 +72,14 @@ class _PaymentFormScreenState extends State<PaymentFormScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: AppColors.background,
       appBar: AppBar(
         title: const Text(
           'Платёжные реквизиты',
           style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600),
         ),
         backgroundColor: Colors.white,
-        foregroundColor: const Color(0xFF1E293B),
+        foregroundColor: AppColors.textPrimary,
         elevation: 0,
         surfaceTintColor: Colors.white,
       ),
@@ -98,18 +99,18 @@ class _PaymentFormScreenState extends State<PaymentFormScreen> {
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
               color: const Color(0xFFEFF6FF),
-              border: Border.all(color: const Color(0xFFBFDBFE)),
+              border: Border.all(color: AppColors.divider),
               borderRadius: BorderRadius.circular(10),
             ),
             child: const Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(Icons.info_outline, size: 16, color: Color(0xFF3B82F6)),
+                Icon(Icons.info_outline, size: 16, color: AppColors.primary),
                 SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     'Укажите реквизиты, на которые вы получаете вознаграждение за переданные лиды.',
-                    style: TextStyle(fontSize: 13, color: Color(0xFF1E40AF)),
+                    style: TextStyle(fontSize: 13, color: AppColors.primary),
                   ),
                 ),
               ],
@@ -122,7 +123,7 @@ class _PaymentFormScreenState extends State<PaymentFormScreen> {
             style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w500,
-              color: Color(0xFF475569),
+              color: AppColors.textSecondary,
             ),
           ),
           const SizedBox(height: 8),
@@ -133,19 +134,19 @@ class _PaymentFormScreenState extends State<PaymentFormScreen> {
               fillColor: Colors.white,
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                borderSide: const BorderSide(color: AppColors.divider),
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                borderSide: const BorderSide(color: AppColors.divider),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: Color(0xFF1E293B), width: 1.5),
+                borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
               ),
               errorBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: Color(0xFFDC2626)),
+                borderSide: const BorderSide(color: AppColors.brand),
               ),
               contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               hintText: 'Выберите банк',
@@ -166,7 +167,7 @@ class _PaymentFormScreenState extends State<PaymentFormScreen> {
             style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w500,
-              color: Color(0xFF475569),
+              color: AppColors.textSecondary,
             ),
           ),
           const SizedBox(height: 8),
@@ -179,19 +180,19 @@ class _PaymentFormScreenState extends State<PaymentFormScreen> {
               fillColor: Colors.white,
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                borderSide: const BorderSide(color: AppColors.divider),
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                borderSide: const BorderSide(color: AppColors.divider),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: Color(0xFF1E293B), width: 1.5),
+                borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
               ),
               errorBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: Color(0xFFDC2626)),
+                borderSide: const BorderSide(color: AppColors.brand),
               ),
               contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               hintText: '+7 XXX XXX XX XX',
@@ -206,7 +207,7 @@ class _PaymentFormScreenState extends State<PaymentFormScreen> {
           const SizedBox(height: 6),
           const Text(
             'По умолчанию подставлен ваш номер входа. Можно изменить.',
-            style: TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
+            style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
           ),
 
           if (_error != null) ...[
@@ -220,7 +221,7 @@ class _PaymentFormScreenState extends State<PaymentFormScreen> {
               ),
               child: Text(
                 _error!,
-                style: const TextStyle(fontSize: 13, color: Color(0xFFDC2626)),
+                style: const TextStyle(fontSize: 13, color: AppColors.brand),
               ),
             ),
           ],
@@ -229,7 +230,7 @@ class _PaymentFormScreenState extends State<PaymentFormScreen> {
           FilledButton(
             onPressed: _saving ? null : _save,
             style: FilledButton.styleFrom(
-              backgroundColor: const Color(0xFF1E293B),
+              backgroundColor: AppColors.primary,
               padding: const EdgeInsets.symmetric(vertical: 16),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),

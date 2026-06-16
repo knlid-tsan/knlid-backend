@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/api_client.dart';
+import '../theme/app_colors.dart';
 import 'home_screen.dart';
 import 'leads_created_screen.dart';
 import 'leads_assigned_screen.dart';
@@ -113,7 +114,7 @@ class _MainScreenState extends State<MainScreen> {
                 );
                 if (mounted) setState(() => _createdRevision++);
               },
-              backgroundColor: const Color(0xFF1E293B),
+              backgroundColor: AppColors.primary,
               foregroundColor: Colors.white,
               icon: const Icon(Icons.add),
               label: const Text(

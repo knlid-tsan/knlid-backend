@@ -4,6 +4,7 @@ import '../services/api_client.dart';
 import '../services/leads_service.dart';
 import '../services/phone_formatter.dart';
 import '../models/lead.dart';
+import '../theme/app_colors.dart';
 import 'payment_form_screen.dart';
 
 enum _Phase { typeAndPhone, checking, dupWarning, fullForm, submitting, success }
@@ -247,15 +248,15 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor: const Color(0xFFF8FAFC),
+        backgroundColor: AppColors.background,
         elevation: 0,
-        leading: const BackButton(color: Color(0xFF1E293B)),
+        leading: const BackButton(color: AppColors.textPrimary),
         title: const Text(
           'Новый лид',
           style: TextStyle(
-            color: Color(0xFF1E293B),
+            color: AppColors.textPrimary,
             fontWeight: FontWeight.w600,
           ),
         ),
@@ -319,7 +320,7 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
                 SizedBox(width: 10),
                 Text(
                   'Проверяем дубли...',
-                  style: TextStyle(fontSize: 13, color: Color(0xFF64748B)),
+                  style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
                 ),
               ],
             ),
@@ -349,7 +350,7 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
           if (_phase == _Phase.fullForm ||
               _phase == _Phase.submitting) ...[
             const SizedBox(height: 20),
-            const Divider(color: Color(0xFFE2E8F0)),
+            const Divider(color: AppColors.divider),
             const SizedBox(height: 20),
 
             _Label('Имя клиента'),
@@ -380,7 +381,7 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
             const SizedBox(height: 4),
             const Text(
               'Где находится объект или нужна услуга — по этому городу подбирается местный специалист',
-              style: TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
+              style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
             ),
             const SizedBox(height: 16),
 
@@ -408,7 +409,7 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
             FilledButton(
               onPressed: isSubmitting ? null : _submit,
               style: FilledButton.styleFrom(
-                backgroundColor: const Color(0xFF1E293B),
+                backgroundColor: AppColors.primary,
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12)),
@@ -431,7 +432,7 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
               const SizedBox(height: 12),
               const Text(
                 'Перед созданием потребуется указать платёжные реквизиты.',
-                style: TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
+                style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
                 textAlign: TextAlign.center,
               ),
             ],
@@ -458,7 +459,7 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
               child: const Icon(
                 Icons.check_circle_outline,
                 size: 44,
-                color: Color(0xFF22C55E),
+                color: AppColors.success,
               ),
             ),
             const SizedBox(height: 24),
@@ -467,7 +468,7 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
               style: TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF1E293B),
+                color: AppColors.textPrimary,
               ),
             ),
             const SizedBox(height: 12),
@@ -475,7 +476,7 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
               'Спасибо! Мы подберём исполнителя и уведомим вас.',
               style: TextStyle(
                 fontSize: 15,
-                color: Color(0xFF64748B),
+                color: AppColors.textSecondary,
                 height: 1.5,
               ),
               textAlign: TextAlign.center,
@@ -484,7 +485,7 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
             FilledButton(
               onPressed: () => Navigator.pop(context),
               style: FilledButton.styleFrom(
-                backgroundColor: const Color(0xFF1E293B),
+                backgroundColor: AppColors.primary,
                 padding: const EdgeInsets.symmetric(
                     horizontal: 32, vertical: 14),
                 shape: RoundedRectangleBorder(
@@ -507,28 +508,28 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
         fillColor: Colors.white,
         hintText: hint,
         hintStyle:
-            const TextStyle(fontSize: 14, color: Color(0xFFCBD5E1)),
+            const TextStyle(fontSize: 14, color: AppColors.divider),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+          borderSide: const BorderSide(color: AppColors.divider),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+          borderSide: const BorderSide(color: AppColors.divider),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide:
-              const BorderSide(color: Color(0xFF1E293B), width: 1.5),
+              const BorderSide(color: AppColors.primary, width: 1.5),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFFDC2626)),
+          borderSide: const BorderSide(color: AppColors.brand),
         ),
         focusedErrorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide:
-              const BorderSide(color: Color(0xFFDC2626), width: 1.5),
+              const BorderSide(color: AppColors.brand, width: 1.5),
         ),
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -547,7 +548,7 @@ class _Label extends StatelessWidget {
         style: const TextStyle(
           fontSize: 13,
           fontWeight: FontWeight.w500,
-          color: Color(0xFF475569),
+          color: AppColors.textSecondary,
         ),
       );
 }
@@ -566,7 +567,7 @@ class _ErrorCard extends StatelessWidget {
         ),
         child: Text(
           message,
-          style: const TextStyle(fontSize: 13, color: Color(0xFFDC2626)),
+          style: const TextStyle(fontSize: 13, color: AppColors.brand),
         ),
       );
 }

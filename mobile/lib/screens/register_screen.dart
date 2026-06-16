@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/city.dart';
 import '../services/api_client.dart';
 import '../services/auth_service.dart';
+import '../theme/app_colors.dart';
 
 class RegisterScreen extends StatefulWidget {
   final String phone;
@@ -93,14 +94,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor: const Color(0xFFF8FAFC),
+        backgroundColor: AppColors.background,
         elevation: 0,
-        leading: const BackButton(color: Color(0xFF1E293B)),
+        leading: const BackButton(color: AppColors.textPrimary),
         title: const Text(
           'Регистрация',
-          style: TextStyle(color: Color(0xFF1E293B), fontWeight: FontWeight.w600),
+          style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w600),
         ),
       ),
       body: SafeArea(
@@ -116,13 +117,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
-                    color: Color(0xFF1E293B),
+                    color: AppColors.textPrimary,
                   ),
                 ),
                 const SizedBox(height: 6),
                 Text(
                   'Номер ${widget.phone} не зарегистрирован. Заполните профиль.',
-                  style: const TextStyle(fontSize: 13, color: Color(0xFF64748B)),
+                  style: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
                 ),
                 const SizedBox(height: 28),
 
@@ -184,7 +185,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     ),
                     child: Text(
                       _error,
-                      style: const TextStyle(color: Color(0xFFDC2626), fontSize: 13),
+                      style: const TextStyle(color: AppColors.brand, fontSize: 13),
                     ),
                   ),
                 ],
@@ -193,7 +194,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 FilledButton(
                   onPressed: _submitting ? null : _submit,
                   style: FilledButton.styleFrom(
-                    backgroundColor: const Color(0xFF1E293B),
+                    backgroundColor: AppColors.primary,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -225,14 +226,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
   InputDecoration _inputDecoration(String? hint) => InputDecoration(
         hintText: hint,
         filled: true,
-        fillColor: const Color(0xFFF1F5F9),
+        fillColor: AppColors.surface,
         border: const OutlineInputBorder(
           borderRadius: BorderRadius.all(Radius.circular(12)),
           borderSide: BorderSide.none,
         ),
         focusedBorder: const OutlineInputBorder(
           borderRadius: BorderRadius.all(Radius.circular(12)),
-          borderSide: BorderSide(color: Color(0xFF1E293B), width: 1.5),
+          borderSide: BorderSide(color: AppColors.primary, width: 1.5),
         ),
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       );
@@ -248,7 +249,7 @@ class _Label extends StatelessWidget {
         style: const TextStyle(
           fontSize: 14,
           fontWeight: FontWeight.w500,
-          color: Color(0xFF475569),
+          color: AppColors.textSecondary,
         ),
       );
 }
@@ -274,7 +275,7 @@ class _SpecOption extends StatelessWidget {
         margin: const EdgeInsets.only(bottom: 8),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
-          color: selected ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
+          color: selected ? AppColors.primary : AppColors.divider,
           borderRadius: BorderRadius.circular(12),
         ),
         child: Row(
@@ -282,7 +283,7 @@ class _SpecOption extends StatelessWidget {
             Icon(
               selected ? Icons.radio_button_checked : Icons.radio_button_unchecked,
               size: 18,
-              color: selected ? Colors.white : const Color(0xFF94A3B8),
+              color: selected ? Colors.white : AppColors.textSecondary,
             ),
             const SizedBox(width: 12),
             Text(
@@ -290,7 +291,7 @@ class _SpecOption extends StatelessWidget {
               style: TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.w500,
-                color: selected ? Colors.white : const Color(0xFF1E293B),
+                color: selected ? Colors.white : AppColors.textPrimary,
               ),
             ),
           ],

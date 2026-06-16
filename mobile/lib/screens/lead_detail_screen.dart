@@ -7,6 +7,7 @@ import '../services/leads_service.dart';
 import '../services/api_client.dart';
 import '../services/phone_formatter.dart';
 import '../config.dart';
+import '../theme/app_colors.dart';
 import 'verification_screen.dart';
 
 String _fmt(String amount) {
@@ -126,7 +127,7 @@ class _LeadDetailScreenState extends State<LeadDetailScreen> {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
       content: Text(msg),
-      backgroundColor: error ? const Color(0xFFDC2626) : const Color(0xFF22C55E),
+      backgroundColor: error ? AppColors.brand : AppColors.success,
     ));
   }
 
@@ -154,7 +155,7 @@ class _LeadDetailScreenState extends State<LeadDetailScreen> {
           decoration: InputDecoration(
             hintText: hint,
             filled: true,
-            fillColor: const Color(0xFFF1F5F9),
+            fillColor: AppColors.surface,
             border: const OutlineInputBorder(
               borderRadius: BorderRadius.all(Radius.circular(12)),
               borderSide: BorderSide.none,
@@ -172,7 +173,7 @@ class _LeadDetailScreenState extends State<LeadDetailScreen> {
               if (t.isNotEmpty) Navigator.pop(ctx, t);
             },
             style: FilledButton.styleFrom(
-                backgroundColor: const Color(0xFF1E293B)),
+                backgroundColor: AppColors.primary),
             child: const Text('Отправить'),
           ),
         ],
@@ -264,7 +265,7 @@ class _LeadDetailScreenState extends State<LeadDetailScreen> {
                   );
                 },
                 style: FilledButton.styleFrom(
-                    backgroundColor: const Color(0xFF1E293B)),
+                    backgroundColor: AppColors.primary),
                 child: const Text('Пройти верификацию'),
               ),
             ],
@@ -327,7 +328,7 @@ class _LeadDetailScreenState extends State<LeadDetailScreen> {
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF1E293B),
+                  color: AppColors.textPrimary,
                 ),
               ),
               const SizedBox(height: 20),
@@ -359,7 +360,7 @@ class _LeadDetailScreenState extends State<LeadDetailScreen> {
                 const SizedBox(height: 8),
                 const Text(
                   'Сумма фиксирована — вводить комиссию не нужно',
-                  style: TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
+                  style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
                 ),
               ],
 
@@ -375,7 +376,7 @@ class _LeadDetailScreenState extends State<LeadDetailScreen> {
                     labelText: 'Ваша комиссия, ₸',
                     hintText: '0',
                     filled: true,
-                    fillColor: Color(0xFFF1F5F9),
+                    fillColor: AppColors.surface,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.all(Radius.circular(12)),
                       borderSide: BorderSide.none,
@@ -383,7 +384,7 @@ class _LeadDetailScreenState extends State<LeadDetailScreen> {
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.all(Radius.circular(12)),
                       borderSide:
-                          BorderSide(color: Color(0xFF1E293B), width: 1.5),
+                          BorderSide(color: AppColors.primary, width: 1.5),
                     ),
                     contentPadding:
                         EdgeInsets.symmetric(horizontal: 16, vertical: 16),
@@ -405,7 +406,7 @@ class _LeadDetailScreenState extends State<LeadDetailScreen> {
                   isPercent
                       ? 'Вознаграждение автору рассчитается от этой суммы'
                       : 'Укажите вашу комиссию по сделке',
-                  style: const TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
+                  style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
                 ),
               ],
 
@@ -417,7 +418,7 @@ class _LeadDetailScreenState extends State<LeadDetailScreen> {
                   }
                 },
                 style: FilledButton.styleFrom(
-                  backgroundColor: const Color(0xFF22C55E),
+                  backgroundColor: AppColors.success,
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12)),
@@ -485,17 +486,17 @@ class _LeadDetailScreenState extends State<LeadDetailScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor: const Color(0xFFF8FAFC),
+        backgroundColor: AppColors.background,
         elevation: 0,
-        leading: const BackButton(color: Color(0xFF1E293B)),
+        leading: const BackButton(color: AppColors.textPrimary),
         title: Text(
           _lead != null
               ? (leadTypeLabels[_lead!.type] ?? _lead!.type)
               : 'Лид',
           style: const TextStyle(
-              color: Color(0xFF1E293B), fontWeight: FontWeight.w600),
+              color: AppColors.textPrimary, fontWeight: FontWeight.w600),
         ),
       ),
       body: _buildBody(),
@@ -514,7 +515,7 @@ class _LeadDetailScreenState extends State<LeadDetailScreen> {
             children: [
               Text(_error!,
                   style: const TextStyle(
-                      fontSize: 13, color: Color(0xFF64748B)),
+                      fontSize: 13, color: AppColors.textSecondary),
                   textAlign: TextAlign.center),
               const SizedBox(height: 20),
               OutlinedButton.icon(
@@ -778,7 +779,7 @@ class _ActionBar extends StatelessWidget {
     return Container(
       decoration: const BoxDecoration(
         color: Colors.white,
-        border: Border(top: BorderSide(color: Color(0xFFE2E8F0))),
+        border: Border(top: BorderSide(color: AppColors.divider)),
       ),
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
       child: SafeArea(top: false, child: Padding(
@@ -815,7 +816,7 @@ class _ActionBtn extends StatelessWidget {
           onPressed: onTap,
           style: FilledButton.styleFrom(
             backgroundColor:
-                danger ? const Color(0xFFDC2626) : const Color(0xFF1E293B),
+                danger ? AppColors.brand : AppColors.primary,
             padding: EdgeInsets.symmetric(vertical: vPad),
             shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12)),
@@ -828,9 +829,9 @@ class _ActionBtn extends StatelessWidget {
     }
 
     final borderColor =
-        danger ? const Color(0xFFDC2626) : const Color(0xFFCBD5E1);
+        danger ? AppColors.brand : AppColors.divider;
     final textColor =
-        danger ? const Color(0xFFDC2626) : const Color(0xFF475569);
+        danger ? AppColors.brand : AppColors.textSecondary;
 
     return Expanded(
       child: OutlinedButton(
@@ -860,14 +861,14 @@ class _MutedCancelBtn extends StatelessWidget {
     return OutlinedButton(
       onPressed: onTap,
       style: OutlinedButton.styleFrom(
-        side: const BorderSide(color: Color(0xFFCBD5E1)),
+        side: const BorderSide(color: AppColors.divider),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
       child: const Text(
         'Отменить',
         style: TextStyle(
-          color: Color(0xFF94A3B8),
+          color: AppColors.textSecondary,
           fontWeight: FontWeight.w500,
           fontSize: 13,
         ),
@@ -886,7 +887,7 @@ class _CloseBtn extends StatelessWidget {
     return FilledButton(
       onPressed: onTap,
       style: FilledButton.styleFrom(
-        backgroundColor: const Color(0xFF1E293B),
+        backgroundColor: AppColors.success,
         padding: const EdgeInsets.symmetric(vertical: 14),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
@@ -996,7 +997,7 @@ class _Section extends StatelessWidget {
               style: const TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w600,
-                  color: Color(0xFF94A3B8),
+                  color: AppColors.textSecondary,
                   letterSpacing: 0.5)),
           const SizedBox(height: 10),
           ...rows,
@@ -1015,7 +1016,7 @@ class _Row extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final valueColor =
-        dimValue ? const Color(0xFFCBD5E1) : const Color(0xFF1E293B);
+        dimValue ? AppColors.divider : AppColors.textPrimary;
     return Padding(
       padding: const EdgeInsets.only(bottom: 6),
       child: Row(
@@ -1025,7 +1026,7 @@ class _Row extends StatelessWidget {
             width: 90,
             child: Text(label,
                 style: const TextStyle(
-                    fontSize: 13, color: Color(0xFF94A3B8))),
+                    fontSize: 13, color: AppColors.textSecondary)),
           ),
           Expanded(
             child: Text(value,
@@ -1057,13 +1058,13 @@ class _DescriptionSection extends StatelessWidget {
               style: TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w600,
-                  color: Color(0xFF94A3B8),
+                  color: AppColors.textSecondary,
                   letterSpacing: 0.5)),
           const SizedBox(height: 10),
           Text(text,
               style: const TextStyle(
                   fontSize: 14,
-                  color: Color(0xFF1E293B),
+                  color: AppColors.textPrimary,
                   height: 1.5)),
         ],
       ),
@@ -1085,7 +1086,7 @@ class _ClientPlaceholder extends StatelessWidget {
       ),
       child: Row(
         children: [
-          const Icon(Icons.lock_outline, size: 16, color: Color(0xFFCBD5E1)),
+          const Icon(Icons.lock_outline, size: 16, color: AppColors.divider),
           const SizedBox(width: 10),
           Expanded(
             child: Text(
@@ -1094,7 +1095,7 @@ class _ClientPlaceholder extends StatelessWidget {
                   : 'Клиент',
               style: const TextStyle(
                 fontSize: 13,
-                color: Color(0xFFCBD5E1),
+                color: AppColors.divider,
                 fontStyle: FontStyle.italic,
               ),
             ),
@@ -1185,7 +1186,7 @@ class _AuthorPaymentBlock extends StatelessWidget {
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
                   content: Text('Номер скопирован'),
-                  backgroundColor: Color(0xFF22C55E),
+                  backgroundColor: AppColors.success,
                   duration: Duration(seconds: 2),
                 ),
               );
@@ -1235,7 +1236,7 @@ class _HistorySection extends StatelessWidget {
               style: TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w600,
-                  color: Color(0xFF94A3B8),
+                  color: AppColors.textSecondary,
                   letterSpacing: 0.5)),
           const SizedBox(height: 12),
           ...history.map((h) => _HistoryRow(h)),
@@ -1279,12 +1280,12 @@ class _HistoryRow extends StatelessWidget {
                 RichText(
                   text: TextSpan(
                     style: const TextStyle(
-                        fontSize: 13, color: Color(0xFF1E293B)),
+                        fontSize: 13, color: AppColors.textPrimary),
                     children: [
                       TextSpan(text: fromLabel),
                       const TextSpan(
                           text: ' → ',
-                          style: TextStyle(color: Color(0xFF94A3B8))),
+                          style: TextStyle(color: AppColors.textSecondary)),
                       TextSpan(
                           text: toLabel,
                           style: TextStyle(
@@ -1296,13 +1297,13 @@ class _HistoryRow extends StatelessWidget {
                 const SizedBox(height: 2),
                 Text(formatLeadDate(item.createdAt),
                     style: const TextStyle(
-                        fontSize: 11, color: Color(0xFF94A3B8))),
+                        fontSize: 11, color: AppColors.textSecondary)),
                 if (item.comment != null) ...[
                   const SizedBox(height: 2),
                   Text(item.comment!,
                       style: const TextStyle(
                           fontSize: 12,
-                          color: Color(0xFF64748B),
+                          color: AppColors.textSecondary,
                           fontStyle: FontStyle.italic)),
                 ],
               ],
