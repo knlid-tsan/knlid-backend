@@ -62,6 +62,39 @@ export class CompaniesService {
     return { company, representative_id: rep.id };
   }
 
+  async adminCreateCompany(
+    data: { name: string; phone: string; city: string },
+    actorId: string,
+  ): Promise<{ company: Company; representative_id: string }> {
+    const existingPhone = await this.usersRepository.findOneBy({
+      phone: data.phone, status: Not(UserStatus.ARCHIVED),
+    });
+    if (existingPhone) throw new ConflictException('Этот номер телефона уже используется');
+
+    const company = await this.companiesRepository.save(
+      this.companiesRepository.create({
+        name: data.name, bin: null, phone: data.phone, city: data.city,
+        status: CompanyStatus.ACTIVE,
+      }),
+    );
+
+    const rep = await this.usersRepository.save(
+      this.usersRepository.create({
+        phone: data.phone, full_name: data.name, specialization: null,
+        city: data.city, role: UserRole.COMPANY, status: UserStatus.ACTIVE,
+        company_id: company.id,
+      }),
+    );
+
+    await this.auditService.log({
+      entityType: 'company', entityId: company.id,
+      action: AuditAction.COMPANY_CREATED_BY_MODERATOR, actorId,
+      metadata: { name: company.name, city: company.city },
+    });
+
+    return { company, representative_id: rep.id };
+  }
+
   async uploadDocument(companyId: string, actorId: string, filePath: string): Promise<Company> {
     const company = await this.companiesRepository.findOneBy({ id: companyId });
     if (!company) throw new NotFoundException('Компания не найдена');

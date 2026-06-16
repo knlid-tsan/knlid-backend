@@ -36,6 +36,7 @@ import { UsersService } from '../users/users.service';
 import { RewardsService } from '../rewards/rewards.service';
 import { LeadsService } from '../leads/leads.service';
 import { CompaniesService } from '../companies/companies.service';
+import { AdminCreateCompanyDto } from './dto/admin-create-company.dto';
 import { CitiesService } from '../cities/cities.service';
 import { SettingsService } from '../settings/settings.service';
 import { AuditService } from '../audit/audit.service';
@@ -420,6 +421,21 @@ export class AdminController {
   @Delete('banks/:id')
   deleteBank(@Param('id') id: string) {
     return this.banksService.remove(id);
+  }
+
+  // ─── Создание компании модератором/админом ────────────────────────────────
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.MODERATOR, UserRole.ADMIN)
+  @Post('companies')
+  createCompany(
+    @Body() dto: AdminCreateCompanyDto,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.companiesService.adminCreateCompany(
+      { name: dto.name, phone: dto.phone, city: dto.city },
+      req.user.sub,
+    );
   }
 
   // ─── Привязка к компании (модератор) ─────────────────────────────────────

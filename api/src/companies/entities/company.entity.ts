@@ -24,8 +24,8 @@ export class Company {
   @Column()
   name: string;
 
-  @Column({ unique: true })
-  bin: string;
+  @Column({ type: 'varchar', nullable: true })
+  bin: string | null;
 
   @Column()
   phone: string;
