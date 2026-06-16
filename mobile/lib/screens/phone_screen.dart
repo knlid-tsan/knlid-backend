@@ -10,6 +10,61 @@ class PhoneScreen extends StatefulWidget {
   State<PhoneScreen> createState() => _PhoneScreenState();
 }
 
+// ─── Logo ─────────────────────────────────────────────────────────────────────
+
+class _KnLidLogo extends StatelessWidget {
+  const _KnLidLogo();
+
+  static const _red = Color(0xFFDA251C);
+  static const _style = TextStyle(
+    fontSize: 52,
+    fontWeight: FontWeight.w700,
+    color: _red,
+    height: 1,
+    letterSpacing: -1.5,
+  );
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            const Text('kn', style: _style),
+            const SizedBox(width: 3),
+            Container(
+              width: 17,
+              height: 17,
+              decoration: const BoxDecoration(
+                color: _red,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.home, size: 11, color: Colors.white),
+            ),
+            const SizedBox(width: 3),
+            const Text('lid', style: _style),
+          ],
+        ),
+        const SizedBox(height: 10),
+        const Text(
+          'ПЕРЕДАЧА ЛИДОВ МЕЖДУ СПЕЦИАЛИСТАМИ',
+          style: TextStyle(
+            fontSize: 9,
+            fontWeight: FontWeight.w400,
+            color: Color(0xFF6B7280),
+            letterSpacing: 2.5,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ─── Screen ───────────────────────────────────────────────────────────────────
+
 class _PhoneScreenState extends State<PhoneScreen> {
   final _phoneController = TextEditingController(text: '+7 ');
   final _formKey = GlobalKey<FormState>();
@@ -61,21 +116,8 @@ class _PhoneScreenState extends State<PhoneScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const SizedBox(height: 80),
-                const Text(
-                  'KN.LID',
-                  style: TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF1E293B),
-                    letterSpacing: 1,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                const Text(
-                  'Платформа для специалистов по недвижимости',
-                  style: TextStyle(fontSize: 14, color: Color(0xFF64748B)),
-                ),
+                const SizedBox(height: 64),
+                const Center(child: _KnLidLogo()),
                 const SizedBox(height: 56),
                 const Text(
                   'Введите номер телефона',
