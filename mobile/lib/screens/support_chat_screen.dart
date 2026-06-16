@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../models/support_message.dart';
 import '../services/support_service.dart';
@@ -19,6 +20,7 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
   bool _loading = true;
   bool _sending = false;
   String? _error;
+  Timer? _pollTimer;
 
   @override
   void initState() {
@@ -28,6 +30,7 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
 
   @override
   void dispose() {
+    _pollTimer?.cancel();
     _scroll.dispose();
     _textCtrl.dispose();
     super.dispose();
@@ -47,6 +50,7 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
       });
       _scrollToBottom();
       _service.markRead().catchError((_) {});
+      _startPolling();
     } catch (e) {
       if (mounted) setState(() {
         _error = e.toString();
@@ -65,6 +69,34 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
         );
       }
     });
+  }
+
+  bool _isAtBottom() {
+    if (!_scroll.hasClients) return true;
+    return _scroll.position.pixels >= _scroll.position.maxScrollExtent - 80;
+  }
+
+  void _startPolling() {
+    _pollTimer?.cancel();
+    _pollTimer = Timer.periodic(const Duration(milliseconds: 3500), (_) => _poll());
+  }
+
+  Future<void> _poll() async {
+    if (!mounted) return;
+    try {
+      final msgs = await _service.getConversation();
+      if (!mounted) return;
+      final existingIds = _messages.map((m) => m.id).toSet();
+      final newMsgs = msgs.where((m) => !existingIds.contains(m.id)).toList();
+      if (newMsgs.isEmpty) return;
+      final wasAtBottom = _isAtBottom();
+      final hasNewSupport = newMsgs.any((m) => m.senderType == 'support');
+      if (hasNewSupport) _service.markRead().catchError((_) {});
+      setState(() => _messages.addAll(newMsgs));
+      if (wasAtBottom) _scrollToBottom();
+    } catch (_) {
+      // Silent — не прерывать UI
+    }
   }
 
   Future<void> _send() async {

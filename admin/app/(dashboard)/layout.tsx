@@ -20,6 +20,7 @@ const ADMIN_NAV: NavItem[] = [
   { href: '/clients', label: 'Клиенты' },
   { href: '/users', label: 'Пользователи' },
   { href: '/companies', label: 'Компании' },
+  { href: '/support', label: 'Поддержка' },
   { href: '/tariffs', label: 'Тарифы', adminOnly: true },
   { href: '/banks', label: 'Банки', adminOnly: true },
   { href: '/audit', label: 'Журнал' },
@@ -39,6 +40,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [roleLabel, setRoleLabel] = useState('');
   const [rawRole, setRawRole] = useState('');
   const [companyName, setCompanyName] = useState('');
+  const [supportUnread, setSupportUnread] = useState(0);
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
@@ -67,6 +69,19 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     api.get<{ name: string }>('/companies/me')
       .then((d) => setCompanyName(d.name))
       .catch(() => {});
+  }, [rawRole]);
+
+  // Poll unread support count for admin/moderator nav badge
+  useEffect(() => {
+    if (rawRole !== 'admin' && rawRole !== 'moderator') return;
+    const fetch = () => {
+      api.get<{ count: number }>('/support/admin/unread')
+        .then((d) => setSupportUnread(d.count))
+        .catch(() => {});
+    };
+    fetch();
+    const timer = setInterval(fetch, 30_000);
+    return () => clearInterval(timer);
   }, [rawRole]);
 
   // Enforce role → section boundaries
@@ -142,6 +157,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             {navItems.map((item) => {
               if (item.adminOnly && rawRole !== 'admin') return null;
               const isCurrent = pathname.startsWith(item.href);
+              const badge = item.href === '/support' && supportUnread > 0 ? supportUnread : 0;
               return (
                 <Link
                   key={item.href}
@@ -152,7 +168,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                       : 'text-slate-400 hover:text-white hover:bg-slate-800'
                   }`}
                 >
-                  {item.label}
+                  <span className="flex-1">{item.label}</span>
+                  {badge > 0 && (
+                    <span className="ml-2 bg-brand text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1 leading-none">
+                      {badge > 99 ? '99+' : badge}
+                    </span>
+                  )}
                 </Link>
               );
             })}
