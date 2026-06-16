@@ -1,8 +1,9 @@
 @import "tailwindcss";
 
+/* KN.LID brand palette — source of truth (mirrors mobile app_colors.dart) */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #F5F5F5; /* AppColors.background */
+  --foreground: #1A1A1A; /* AppColors.textPrimary */
 }
 
 @theme inline {
@@ -10,13 +11,14 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-}
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  /* brand palette */
+  --color-brand:   #DA251C; /* AppColors.brand   — logo, destructive */
+  --color-primary: #3B9CD9; /* AppColors.primary  — buttons, links, active */
+  --color-success: #52B947; /* AppColors.success  — confirm, approve */
+  --color-surface: #FFFFFF; /* AppColors.surface  — cards, modals */
+  --color-muted:   #9E9E9E; /* AppColors.textSecondary */
+  --color-divider: #ECECEC; /* AppColors.divider  — borders, separators */
 }
 
 body {

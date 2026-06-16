@@ -28,7 +28,6 @@ export default function DebtsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  // Payment flow state
   const [payingId, setPayingId] = useState<string | null>(null);
   const [proofUrl, setProofUrl] = useState('');
   const [paying, setPaying] = useState(false);
@@ -84,8 +83,8 @@ export default function DebtsPage() {
   return (
     <>
       <div className="mb-6">
-        <h1 className="text-xl font-semibold text-gray-900">Долги к покрытию</h1>
-        <p className="text-sm text-gray-500 mt-0.5">Просроченные выплаты специалистов вашей компании</p>
+        <h1 className="text-xl font-semibold text-foreground">Долги к покрытию</h1>
+        <p className="text-sm text-muted mt-0.5">Просроченные выплаты специалистов вашей компании</p>
       </div>
 
       {error && (
@@ -94,12 +93,11 @@ export default function DebtsPage() {
         </div>
       )}
 
-      {/* Pay modal */}
       {payingId !== null && (
         <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl shadow-lg p-6 w-full max-w-md mx-4">
-            <h3 className="font-semibold text-gray-900 mb-1">Покрыть долг</h3>
-            <p className="text-sm text-gray-500 mb-4">
+          <div className="bg-surface rounded-xl shadow-lg p-6 w-full max-w-md mx-4">
+            <h3 className="font-semibold text-foreground mb-1">Покрыть долг</h3>
+            <p className="text-sm text-muted mb-4">
               Укажите ссылку на документ, подтверждающий перевод средств.
             </p>
             <input
@@ -107,10 +105,10 @@ export default function DebtsPage() {
               value={proofUrl}
               onChange={(e) => setProofUrl(e.target.value)}
               placeholder="https://..."
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-400 mb-1"
+              className="w-full border border-divider rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary mb-1"
             />
             {payError && (
-              <p className="text-xs text-red-600 mb-3">{payError}</p>
+              <p className="text-xs text-brand mb-3">{payError}</p>
             )}
             {!payError && <div className="mb-3" />}
             <p className="text-xs text-amber-700 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2 mb-4">
@@ -120,14 +118,14 @@ export default function DebtsPage() {
               <button
                 onClick={cancelPay}
                 disabled={paying}
-                className="px-4 py-2 text-sm text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50"
+                className="px-4 py-2 text-sm text-muted border border-divider rounded-lg hover:bg-background disabled:opacity-50"
               >
                 Отмена
               </button>
               <button
                 onClick={confirmPay}
                 disabled={paying || !proofUrl.trim()}
-                className="px-4 py-2 text-sm font-medium bg-slate-800 hover:bg-slate-900 text-white rounded-lg disabled:opacity-50"
+                className="px-4 py-2 text-sm font-medium bg-primary hover:bg-primary/90 text-white rounded-lg disabled:opacity-50"
               >
                 {paying ? 'Обрабатываю...' : 'Подтвердить оплату'}
               </button>
@@ -136,25 +134,25 @@ export default function DebtsPage() {
         </div>
       )}
 
-      <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+      <div className="bg-surface rounded-xl border border-divider shadow-sm overflow-hidden">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-gray-100 bg-gray-50/70">
-              <th className="text-left px-5 py-3 font-medium text-gray-500">Исполнитель</th>
-              <th className="text-left px-5 py-3 font-medium text-gray-500">Автор лида</th>
-              <th className="text-left px-5 py-3 font-medium text-gray-500">Сумма</th>
-              <th className="text-left px-5 py-3 font-medium text-gray-500">Дата просрочки</th>
-              <th className="text-left px-5 py-3 font-medium text-gray-500">Лид</th>
+            <tr className="border-b border-divider bg-background/70">
+              <th className="text-left px-5 py-3 font-medium text-muted">Исполнитель</th>
+              <th className="text-left px-5 py-3 font-medium text-muted">Автор лида</th>
+              <th className="text-left px-5 py-3 font-medium text-muted">Сумма</th>
+              <th className="text-left px-5 py-3 font-medium text-muted">Дата просрочки</th>
+              <th className="text-left px-5 py-3 font-medium text-muted">Лид</th>
               <th className="px-5 py-3" />
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-50">
+          <tbody className="divide-y divide-divider">
             {loading
               ? Array.from({ length: 3 }).map((_, i) => (
                   <tr key={i} className="animate-pulse">
                     {Array.from({ length: 6 }).map((_, j) => (
                       <td key={j} className="px-5 py-3.5">
-                        <div className="h-4 bg-gray-100 rounded w-4/5" />
+                        <div className="h-4 bg-divider rounded w-4/5" />
                       </td>
                     ))}
                   </tr>
@@ -162,7 +160,7 @@ export default function DebtsPage() {
               : items.length === 0
               ? (
                 <tr>
-                  <td colSpan={6} className="px-5 py-10 text-center text-sm text-gray-400">
+                  <td colSpan={6} className="px-5 py-10 text-center text-sm text-muted">
                     Долгов нет
                   </td>
                 </tr>
@@ -170,29 +168,29 @@ export default function DebtsPage() {
               : items.map((d) => {
                   const overdue = isOverdue(d.payment_due_at);
                   return (
-                    <tr key={d.reward_id} className="hover:bg-gray-50/60 transition-colors">
-                      <td className="px-5 py-3.5 font-medium text-gray-900">
+                    <tr key={d.reward_id} className="hover:bg-background/60 transition-colors">
+                      <td className="px-5 py-3.5 font-medium text-foreground">
                         {d.executor?.full_name ?? '—'}
                       </td>
-                      <td className="px-5 py-3.5 text-gray-600">
+                      <td className="px-5 py-3.5 text-foreground">
                         {d.author?.full_name ?? '—'}
                       </td>
-                      <td className="px-5 py-3.5 font-medium text-gray-900">
+                      <td className="px-5 py-3.5 font-medium text-foreground">
                         {formatMoney(d.amount)}
                       </td>
                       <td className="px-5 py-3.5 text-xs whitespace-nowrap">
-                        <span className={overdue ? 'text-red-600 font-medium' : 'text-gray-500'}>
+                        <span className={overdue ? 'text-brand font-medium' : 'text-muted'}>
                           {fmtDate(d.payment_due_at)}
                           {overdue && ' (просрочен)'}
                         </span>
                       </td>
-                      <td className="px-5 py-3.5 font-mono text-gray-500 text-xs">
+                      <td className="px-5 py-3.5 font-mono text-muted text-xs">
                         {d.lead_id.slice(0, 8)}…
                       </td>
                       <td className="px-5 py-3.5 text-right">
                         <button
                           onClick={() => startPay(d.reward_id)}
-                          className="px-3 py-1.5 text-xs font-medium bg-slate-800 hover:bg-slate-900 text-white rounded-lg transition-colors"
+                          className="px-3 py-1.5 text-xs font-medium bg-primary hover:bg-primary/90 text-white rounded-lg transition-colors"
                         >
                           Покрыть
                         </button>

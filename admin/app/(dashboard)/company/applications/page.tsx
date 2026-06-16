@@ -71,19 +71,19 @@ export default function ApplicationsPage() {
   return (
     <>
       <div className="mb-6">
-        <h1 className="text-xl font-semibold text-gray-900">Заявки специалистов</h1>
-        <p className="text-sm text-gray-500 mt-0.5">Входящие запросы на привязку к компании</p>
+        <h1 className="text-xl font-semibold text-foreground">Заявки специалистов</h1>
+        <p className="text-sm text-muted mt-0.5">Входящие запросы на привязку к компании</p>
       </div>
 
-      <div className="flex gap-1 mb-4 border-b border-gray-200">
+      <div className="flex gap-1 mb-4 border-b border-divider">
         {TABS.map((t) => (
           <button
             key={t.value}
             onClick={() => setTab(t.value)}
             className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px ${
               tab === t.value
-                ? 'border-slate-800 text-slate-900'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                ? 'border-primary text-primary'
+                : 'border-transparent text-muted hover:text-foreground hover:border-divider'
             }`}
           >
             {t.label}
@@ -102,26 +102,26 @@ export default function ApplicationsPage() {
         </div>
       )}
 
-      <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+      <div className="bg-surface rounded-xl border border-divider shadow-sm overflow-hidden">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-gray-100 bg-gray-50/70">
-              <th className="text-left px-5 py-3 font-medium text-gray-500">Специалист</th>
-              <th className="text-left px-5 py-3 font-medium text-gray-500">Специализация</th>
-              <th className="text-left px-5 py-3 font-medium text-gray-500">Город</th>
-              <th className="text-left px-5 py-3 font-medium text-gray-500">Рейтинг</th>
-              <th className="text-left px-5 py-3 font-medium text-gray-500">Дата заявки</th>
-              <th className="text-left px-5 py-3 font-medium text-gray-500">Статус</th>
+            <tr className="border-b border-divider bg-background/70">
+              <th className="text-left px-5 py-3 font-medium text-muted">Специалист</th>
+              <th className="text-left px-5 py-3 font-medium text-muted">Специализация</th>
+              <th className="text-left px-5 py-3 font-medium text-muted">Город</th>
+              <th className="text-left px-5 py-3 font-medium text-muted">Рейтинг</th>
+              <th className="text-left px-5 py-3 font-medium text-muted">Дата заявки</th>
+              <th className="text-left px-5 py-3 font-medium text-muted">Статус</th>
               <th className="px-5 py-3" />
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-50">
+          <tbody className="divide-y divide-divider">
             {loading
               ? Array.from({ length: 3 }).map((_, i) => (
                   <tr key={i} className="animate-pulse">
                     {Array.from({ length: 7 }).map((_, j) => (
                       <td key={j} className="px-5 py-3.5">
-                        <div className="h-4 bg-gray-100 rounded w-4/5" />
+                        <div className="h-4 bg-divider rounded w-4/5" />
                       </td>
                     ))}
                   </tr>
@@ -129,26 +129,26 @@ export default function ApplicationsPage() {
               : items.length === 0
               ? (
                 <tr>
-                  <td colSpan={7} className="px-5 py-10 text-center text-sm text-gray-400">
+                  <td colSpan={7} className="px-5 py-10 text-center text-sm text-muted">
                     Заявок нет
                   </td>
                 </tr>
               )
               : items.map((item) => (
-                  <tr key={item.id} className="hover:bg-gray-50/60 transition-colors">
-                    <td className="px-5 py-3.5 font-medium text-gray-900">
+                  <tr key={item.id} className="hover:bg-background/60 transition-colors">
+                    <td className="px-5 py-3.5 font-medium text-foreground">
                       {item.user_name ?? '—'}
                     </td>
-                    <td className="px-5 py-3.5 text-gray-600">
+                    <td className="px-5 py-3.5 text-foreground">
                       {item.user_specialization
                         ? (SPEC_LABEL[item.user_specialization] ?? item.user_specialization)
                         : '—'}
                     </td>
-                    <td className="px-5 py-3.5 text-gray-600">{item.user_city ?? '—'}</td>
-                    <td className="px-5 py-3.5 text-gray-600">
+                    <td className="px-5 py-3.5 text-foreground">{item.user_city ?? '—'}</td>
+                    <td className="px-5 py-3.5 text-foreground">
                       {item.user_rating != null ? Number(item.user_rating).toFixed(1) : '—'}
                     </td>
-                    <td className="px-5 py-3.5 text-gray-500 text-xs whitespace-nowrap">
+                    <td className="px-5 py-3.5 text-muted text-xs whitespace-nowrap">
                       {fmtDate(item.created_at)}
                     </td>
                     <td className="px-5 py-3.5">
@@ -160,14 +160,14 @@ export default function ApplicationsPage() {
                           <button
                             onClick={() => handleAction(item.id, 'approve')}
                             disabled={actionLoading !== null}
-                            className="px-3 py-1.5 text-xs font-medium bg-green-600 hover:bg-green-700 text-white rounded-lg disabled:opacity-50 transition-colors"
+                            className="px-3 py-1.5 text-xs font-medium bg-success hover:bg-success/90 text-white rounded-lg disabled:opacity-50 transition-colors"
                           >
                             {actionLoading === item.id + 'approve' ? '...' : 'Подтвердить'}
                           </button>
                           <button
                             onClick={() => handleAction(item.id, 'reject')}
                             disabled={actionLoading !== null}
-                            className="px-3 py-1.5 text-xs font-medium bg-white hover:bg-red-50 text-red-600 border border-red-200 rounded-lg disabled:opacity-50 transition-colors"
+                            className="px-3 py-1.5 text-xs font-medium bg-surface hover:bg-brand/5 text-brand border border-brand/30 rounded-lg disabled:opacity-50 transition-colors"
                           >
                             {actionLoading === item.id + 'reject' ? '...' : 'Отклонить'}
                           </button>

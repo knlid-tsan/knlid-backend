@@ -66,8 +66,8 @@ export default function SpecialistsPage() {
   return (
     <>
       <div className="mb-6">
-        <h1 className="text-xl font-semibold text-gray-900">Мои специалисты</h1>
-        <p className="text-sm text-gray-500 mt-0.5">Специалисты под гарантией вашей компании</p>
+        <h1 className="text-xl font-semibold text-foreground">Мои специалисты</h1>
+        <p className="text-sm text-muted mt-0.5">Специалисты под гарантией вашей компании</p>
       </div>
 
       {error && (
@@ -81,26 +81,25 @@ export default function SpecialistsPage() {
         </div>
       )}
 
-      {/* Confirmation dialog */}
       {confirmId !== null && (
         <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl shadow-lg p-6 w-full max-w-sm mx-4">
-            <h3 className="font-semibold text-gray-900 mb-2">Отвязать специалиста?</h3>
-            <p className="text-sm text-gray-500 mb-5">
+          <div className="bg-surface rounded-xl shadow-lg p-6 w-full max-w-sm mx-4">
+            <h3 className="font-semibold text-foreground mb-2">Отвязать специалиста?</h3>
+            <p className="text-sm text-muted mb-5">
               Специалист будет удалён из-под гарантии компании. Это действие нельзя отменить.
             </p>
             <div className="flex gap-3 justify-end">
               <button
                 onClick={() => setConfirmId(null)}
                 disabled={removing}
-                className="px-4 py-2 text-sm text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50"
+                className="px-4 py-2 text-sm text-muted border border-divider rounded-lg hover:bg-background disabled:opacity-50"
               >
                 Отмена
               </button>
               <button
                 onClick={() => handleRemove(confirmId)}
                 disabled={removing}
-                className="px-4 py-2 text-sm font-medium bg-red-600 hover:bg-red-700 text-white rounded-lg disabled:opacity-50"
+                className="px-4 py-2 text-sm font-medium bg-brand hover:bg-brand/90 text-white rounded-lg disabled:opacity-50"
               >
                 {removing ? 'Отвязываю...' : 'Отвязать'}
               </button>
@@ -109,25 +108,25 @@ export default function SpecialistsPage() {
         </div>
       )}
 
-      <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+      <div className="bg-surface rounded-xl border border-divider shadow-sm overflow-hidden">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-gray-100 bg-gray-50/70">
-              <th className="text-left px-5 py-3 font-medium text-gray-500">Специалист</th>
-              <th className="text-left px-5 py-3 font-medium text-gray-500">Специализация</th>
-              <th className="text-left px-5 py-3 font-medium text-gray-500">Город</th>
-              <th className="text-left px-5 py-3 font-medium text-gray-500">Рейтинг</th>
-              <th className="text-left px-5 py-3 font-medium text-gray-500">Привязан с</th>
+            <tr className="border-b border-divider bg-background/70">
+              <th className="text-left px-5 py-3 font-medium text-muted">Специалист</th>
+              <th className="text-left px-5 py-3 font-medium text-muted">Специализация</th>
+              <th className="text-left px-5 py-3 font-medium text-muted">Город</th>
+              <th className="text-left px-5 py-3 font-medium text-muted">Рейтинг</th>
+              <th className="text-left px-5 py-3 font-medium text-muted">Привязан с</th>
               <th className="px-5 py-3" />
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-50">
+          <tbody className="divide-y divide-divider">
             {loading
               ? Array.from({ length: 3 }).map((_, i) => (
                   <tr key={i} className="animate-pulse">
                     {Array.from({ length: 6 }).map((_, j) => (
                       <td key={j} className="px-5 py-3.5">
-                        <div className="h-4 bg-gray-100 rounded w-4/5" />
+                        <div className="h-4 bg-divider rounded w-4/5" />
                       </td>
                     ))}
                   </tr>
@@ -135,32 +134,32 @@ export default function SpecialistsPage() {
               : items.length === 0
               ? (
                 <tr>
-                  <td colSpan={6} className="px-5 py-10 text-center text-sm text-gray-400">
+                  <td colSpan={6} className="px-5 py-10 text-center text-sm text-muted">
                     Нет активных специалистов
                   </td>
                 </tr>
               )
               : items.map((item) => (
-                  <tr key={item.id} className="hover:bg-gray-50/60 transition-colors">
-                    <td className="px-5 py-3.5 font-medium text-gray-900">
+                  <tr key={item.id} className="hover:bg-background/60 transition-colors">
+                    <td className="px-5 py-3.5 font-medium text-foreground">
                       {item.user_name ?? '—'}
                     </td>
-                    <td className="px-5 py-3.5 text-gray-600">
+                    <td className="px-5 py-3.5 text-foreground">
                       {item.user_specialization
                         ? (SPEC_LABEL[item.user_specialization] ?? item.user_specialization)
                         : '—'}
                     </td>
-                    <td className="px-5 py-3.5 text-gray-600">{item.user_city ?? '—'}</td>
-                    <td className="px-5 py-3.5 text-gray-600">
+                    <td className="px-5 py-3.5 text-foreground">{item.user_city ?? '—'}</td>
+                    <td className="px-5 py-3.5 text-foreground">
                       {item.user_rating != null ? Number(item.user_rating).toFixed(1) : '—'}
                     </td>
-                    <td className="px-5 py-3.5 text-gray-500 text-xs whitespace-nowrap">
+                    <td className="px-5 py-3.5 text-muted text-xs whitespace-nowrap">
                       {fmtDate(item.created_at)}
                     </td>
                     <td className="px-5 py-3.5 text-right">
                       <button
                         onClick={() => setConfirmId(item.id)}
-                        className="px-3 py-1.5 text-xs font-medium text-red-600 border border-red-200 rounded-lg hover:bg-red-50 transition-colors"
+                        className="px-3 py-1.5 text-xs font-medium text-brand border border-brand/30 rounded-lg hover:bg-brand/5 transition-colors"
                       >
                         Отвязать
                       </button>

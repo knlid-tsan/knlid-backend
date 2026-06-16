@@ -8,6 +8,20 @@ import { maskPhoneInput, stripPhone } from '@/lib/format';
 
 type Step = 'phone' | 'otp';
 
+function KnLidLogo() {
+  return (
+    <div className="flex items-center">
+      <span className="text-[42px] font-bold text-brand tracking-[-2px] leading-none">kn</span>
+      <span className="mx-1 w-[18px] h-[18px] rounded-full bg-brand flex items-center justify-center flex-shrink-0">
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="white">
+          <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z" />
+        </svg>
+      </span>
+      <span className="text-[42px] font-bold text-brand tracking-[-2px] leading-none">lid</span>
+    </div>
+  );
+}
+
 export default function LoginPage() {
   const router = useRouter();
   const [step, setStep] = useState<Step>('phone');
@@ -40,12 +54,13 @@ export default function LoginPage() {
         { phone: stripPhone(phone), code },
       );
       const payload = decodeToken(access_token);
-      if (!payload || !['admin', 'moderator'].includes(payload.role)) {
-        setError('Доступ только для модераторов и администраторов');
+      if (!payload || !['admin', 'moderator', 'company'].includes(payload.role)) {
+        setError('Нет доступа к панели');
         return;
       }
       setToken(access_token);
-      router.push('/verifications');
+      // company → own cabinet; admin/moderator → moderation section
+      router.push(payload.role === 'company' ? '/company/applications' : '/verifications');
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Неверный код');
     } finally {
@@ -54,17 +69,20 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-8 w-full max-w-sm">
+    <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="bg-surface rounded-xl shadow-sm border border-divider p-8 w-full max-w-sm">
         <div className="mb-8">
-          <h1 className="text-xl font-semibold text-gray-900">KN.LID Admin</h1>
-          <p className="text-sm text-gray-500 mt-1">Вход в панель модератора</p>
+          <KnLidLogo />
+          <p className="text-[10px] font-medium text-muted tracking-[2.5px] uppercase mt-2">
+            Передача лидов между специалистами
+          </p>
+          <p className="text-sm text-muted mt-4">Вход в панель управления</p>
         </div>
 
         {step === 'phone' ? (
           <form onSubmit={handleRequestOtp} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-foreground mb-1">
                 Номер телефона
               </label>
               <input
@@ -73,14 +91,14 @@ export default function LoginPage() {
                 onChange={(e) => setPhone(maskPhoneInput(e.target.value))}
                 placeholder="+7 700 000 00 00"
                 required
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full border border-divider rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
               />
             </div>
-            {error && <p className="text-sm text-red-600">{error}</p>}
+            {error && <p className="text-sm text-brand">{error}</p>}
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-blue-600 text-white rounded-lg px-4 py-2.5 text-sm font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="w-full bg-primary text-white rounded-lg px-4 py-2.5 text-sm font-medium hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               {loading ? 'Отправка...' : 'Получить код'}
             </button>
@@ -88,7 +106,7 @@ export default function LoginPage() {
         ) : (
           <form onSubmit={handleVerifyOtp} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-foreground mb-1">
                 Код подтверждения
               </label>
               <input
@@ -99,17 +117,17 @@ export default function LoginPage() {
                 placeholder="123456"
                 required
                 autoFocus
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full border border-divider rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
               />
-              <p className="text-xs text-gray-400 mt-1.5 bg-amber-50 border border-amber-100 rounded-md px-2.5 py-1.5">
+              <p className="text-xs text-muted mt-1.5 bg-amber-50 border border-amber-100 rounded-md px-2.5 py-1.5">
                 Код смотрите в логах сервера (консоль бэкенда)
               </p>
             </div>
-            {error && <p className="text-sm text-red-600">{error}</p>}
+            {error && <p className="text-sm text-brand">{error}</p>}
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-blue-600 text-white rounded-lg px-4 py-2.5 text-sm font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="w-full bg-primary text-white rounded-lg px-4 py-2.5 text-sm font-medium hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               {loading ? 'Проверка...' : 'Войти'}
             </button>
@@ -120,7 +138,7 @@ export default function LoginPage() {
                 setCode('');
                 setError('');
               }}
-              className="w-full text-sm text-gray-400 hover:text-gray-600 transition-colors"
+              className="w-full text-sm text-muted hover:text-foreground transition-colors"
             >
               ← Изменить номер
             </button>

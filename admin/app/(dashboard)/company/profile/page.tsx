@@ -23,6 +23,7 @@ function fmtDate(iso: string) {
   });
 }
 
+// Semantic status banners — keep original semantic colors
 const STATUS_BANNER: Record<string, { label: string; desc: string; cls: string; dot: string }> = {
   new: {
     label: 'Не подтверждена',
@@ -72,7 +73,7 @@ export default function ProfilePage() {
     return (
       <div className="animate-pulse space-y-4 max-w-xl">
         {Array.from({ length: 5 }).map((_, i) => (
-          <div key={i} className="h-10 bg-gray-100 rounded-xl" />
+          <div key={i} className="h-10 bg-divider rounded-xl" />
         ))}
       </div>
     );
@@ -91,11 +92,11 @@ export default function ProfilePage() {
   return (
     <>
       <div className="mb-6">
-        <h1 className="text-xl font-semibold text-gray-900">Профиль компании</h1>
-        <p className="text-sm text-gray-500 mt-0.5">{profile.name}</p>
+        <h1 className="text-xl font-semibold text-foreground">Профиль компании</h1>
+        <p className="text-sm text-muted mt-0.5">{profile.name}</p>
       </div>
 
-      {/* Status banner */}
+      {/* Status banner — semantic colors preserved */}
       <div className={`flex items-start gap-3 border rounded-xl p-4 mb-6 ${banner.cls}`}>
         <span className={`mt-0.5 w-2.5 h-2.5 rounded-full flex-shrink-0 ${banner.dot}`} />
         <div>
@@ -110,12 +111,11 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      {/* Company info card */}
-      <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden max-w-xl">
-        <div className="px-5 py-4 border-b border-gray-50">
-          <span className="text-xs font-medium text-gray-400 uppercase tracking-wide">Реквизиты</span>
+      <div className="bg-surface rounded-xl border border-divider shadow-sm overflow-hidden max-w-xl">
+        <div className="px-5 py-4 border-b border-divider">
+          <span className="text-xs font-medium text-muted uppercase tracking-wide">Реквизиты</span>
         </div>
-        <dl className="divide-y divide-gray-50">
+        <dl className="divide-y divide-divider">
           <Row label="Название" value={profile.name} />
           <Row label="БИН" value={<span className="font-mono tracking-wide">{profile.bin}</span>} />
           <Row label="Город" value={profile.city} />
@@ -126,7 +126,7 @@ export default function ProfilePage() {
             value={
               profile.document_url
                 ? <span className="text-green-700 font-medium">Загружен</span>
-                : <span className="text-gray-400">Не загружен</span>
+                : <span className="text-muted">Не загружен</span>
             }
           />
         </dl>
@@ -138,8 +138,8 @@ export default function ProfilePage() {
 function Row({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className="flex items-center px-5 py-3.5 gap-4">
-      <dt className="w-44 flex-shrink-0 text-sm text-gray-500">{label}</dt>
-      <dd className="text-sm text-gray-900">{value}</dd>
+      <dt className="w-44 flex-shrink-0 text-sm text-muted">{label}</dt>
+      <dd className="text-sm text-foreground">{value}</dd>
     </div>
   );
 }
