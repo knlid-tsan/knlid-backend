@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'screens/splash_screen.dart';
 import 'screens/phone_screen.dart';
 import 'screens/main_screen.dart';
+import 'theme/app_theme.dart';
 
 void main() {
   runApp(const KnlidApp());
@@ -15,12 +16,7 @@ class KnlidApp extends StatelessWidget {
     return MaterialApp(
       title: 'KN.LID',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF1E293B),
-        ),
-        useMaterial3: true,
-      ),
+      theme: AppTheme.light,
       initialRoute: '/',
       routes: {
         '/': (_) => const SplashScreen(),

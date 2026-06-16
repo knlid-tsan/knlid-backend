@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/lead.dart';
 import '../services/leads_service.dart';
 import '../services/api_client.dart';
+import '../theme/app_colors.dart';
 import 'lead_card.dart';
 import 'lead_detail_screen.dart';
 import 'create_lead_screen.dart';
@@ -96,7 +97,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: AppColors.background,
       body: SafeArea(
         child: _loading
             ? const Center(child: CircularProgressIndicator())
@@ -117,11 +118,11 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.error_outline, size: 48, color: Color(0xFFCBD5E1)),
+            const Icon(Icons.error_outline, size: 48, color: AppColors.divider),
             const SizedBox(height: 16),
             Text(
               _error!,
-              style: const TextStyle(fontSize: 13, color: Color(0xFF64748B)),
+              style: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 20),
@@ -148,7 +149,7 @@ class _HomeScreenState extends State<HomeScreen> {
             style: TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.bold,
-              color: Color(0xFF1E293B),
+              color: AppColors.textPrimary,
             ),
           ),
         ),
@@ -189,12 +190,6 @@ class _HomeScreenState extends State<HomeScreen> {
           height: 52,
           child: FilledButton.icon(
             onPressed: _openCreate,
-            style: FilledButton.styleFrom(
-              backgroundColor: const Color(0xFF1E293B),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
             icon: const Icon(Icons.add, size: 20),
             label: const Text(
               'Создать лид',
@@ -238,7 +233,7 @@ class _HomeScreenState extends State<HomeScreen> {
             style: TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w700,
-              color: Color(0xFF94A3B8),
+              color: AppColors.textSecondary,
               letterSpacing: 0.8,
             ),
           ),
@@ -255,17 +250,19 @@ class _HomeScreenState extends State<HomeScreen> {
                 value: '$sent',
                 label: 'Передано',
                 icon: Icons.send_outlined,
+                color: AppColors.primary,
               ),
               _StatCell(
                 value: '$received',
                 label: 'Принято',
                 icon: Icons.assignment_outlined,
+                color: AppColors.primary,
               ),
               _StatCell(
                 value: '$closed',
                 label: 'Закрыто',
                 icon: Icons.check_circle_outline,
-                color: const Color(0xFF22C55E),
+                color: AppColors.success,
               ),
             ],
           ),
@@ -290,7 +287,7 @@ class _SectionHeader extends StatelessWidget {
         style: const TextStyle(
           fontSize: 11,
           fontWeight: FontWeight.w700,
-          color: Color(0xFF94A3B8),
+          color: AppColors.textSecondary,
           letterSpacing: 0.8,
         ),
       ),
@@ -309,17 +306,17 @@ class _EmptyBlock extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFF1F5F9)),
+        border: Border.all(color: AppColors.divider),
       ),
       child: Row(
         children: [
-          Icon(icon, size: 18, color: const Color(0xFFCBD5E1)),
+          Icon(icon, size: 18, color: AppColors.divider),
           const SizedBox(width: 10),
           Text(
             text,
-            style: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
+            style: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
           ),
         ],
       ),
@@ -341,7 +338,7 @@ class _StatCell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final c = color ?? const Color(0xFF64748B);
+    final c = color ?? AppColors.textSecondary;
     return Expanded(
       child: Column(
         children: [
@@ -358,7 +355,7 @@ class _StatCell extends StatelessWidget {
           const SizedBox(height: 2),
           Text(
             label,
-            style: const TextStyle(fontSize: 10, color: Color(0xFF94A3B8)),
+            style: const TextStyle(fontSize: 10, color: AppColors.textSecondary),
           ),
         ],
       ),

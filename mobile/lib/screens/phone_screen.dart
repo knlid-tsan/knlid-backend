@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
 import '../services/phone_formatter.dart';
+import '../theme/app_colors.dart';
 import 'otp_screen.dart';
 
 class PhoneScreen extends StatefulWidget {
@@ -107,7 +108,7 @@ class _PhoneScreenState extends State<PhoneScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: AppColors.background,
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -124,13 +125,13 @@ class _PhoneScreenState extends State<PhoneScreen> {
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w600,
-                    color: Color(0xFF1E293B),
+                    color: AppColors.textPrimary,
                   ),
                 ),
                 const SizedBox(height: 8),
                 const Text(
                   'Вам будет отправлен код подтверждения',
-                  style: TextStyle(fontSize: 14, color: Color(0xFF64748B)),
+                  style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
                 ),
                 const SizedBox(height: 24),
                 TextFormField(
@@ -141,17 +142,6 @@ class _PhoneScreenState extends State<PhoneScreen> {
                   decoration: const InputDecoration(
                     labelText: 'Номер телефона',
                     hintText: '+7 705 000 00 00',
-                    filled: true,
-                    fillColor: Color(0xFFF1F5F9),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.all(Radius.circular(12)),
-                      borderSide: BorderSide.none,
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.all(Radius.circular(12)),
-                      borderSide: BorderSide(color: Color(0xFF1E293B), width: 1.5),
-                    ),
-                    contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 18),
                   ),
                   validator: (v) {
                     final phone = v?.trim() ?? '';
@@ -163,19 +153,15 @@ class _PhoneScreenState extends State<PhoneScreen> {
                   const SizedBox(height: 12),
                   Text(
                     _error,
-                    style: const TextStyle(color: Color(0xFFDC2626), fontSize: 13),
+                    style: const TextStyle(
+                      color: AppColors.brand,
+                      fontSize: 13,
+                    ),
                   ),
                 ],
                 const SizedBox(height: 24),
                 FilledButton(
                   onPressed: _loading ? null : () => _requestOtp(AuthMode.login),
-                  style: FilledButton.styleFrom(
-                    backgroundColor: const Color(0xFF1E293B),
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
                   child: _loading
                       ? const SizedBox(
                           height: 20,
@@ -185,26 +171,12 @@ class _PhoneScreenState extends State<PhoneScreen> {
                             color: Colors.white,
                           ),
                         )
-                      : const Text(
-                          'Войти',
-                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                        ),
+                      : const Text('Войти'),
                 ),
                 const SizedBox(height: 12),
                 OutlinedButton(
                   onPressed: _loading ? null : () => _requestOtp(AuthMode.register),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: const Color(0xFF1E293B),
-                    side: const BorderSide(color: Color(0xFF1E293B)),
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: const Text(
-                    'Зарегистрироваться',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                  ),
+                  child: const Text('Зарегистрироваться'),
                 ),
               ],
             ),
