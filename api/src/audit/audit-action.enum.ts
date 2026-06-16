@@ -30,6 +30,7 @@ export enum AuditAction {
 
   COMPANY_REGISTERED = 'company_registered',
   COMPANY_CREATED_BY_MODERATOR = 'company_created_by_moderator',
+  SPECIALIST_CREATED_BY_MODERATOR = 'specialist_created_by_moderator',
   COMPANY_DOCUMENT_UPLOADED = 'company_document_uploaded',
   COMPANY_APPROVED = 'company_approved',
   COMPANY_REJECTED = 'company_rejected',

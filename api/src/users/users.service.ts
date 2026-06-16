@@ -1,7 +1,7 @@
-import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import { Injectable, BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Not, Repository } from 'typeorm';
-import { User, UserStatus } from './user.entity';
+import { User, UserRole, UserStatus } from './user.entity';
 import { BanksService } from '../banks/banks.service';
 import { UpdatePaymentDto } from './dto/update-payment.dto';
 
@@ -81,6 +81,24 @@ export class UsersService {
       qb.andWhere('user.id != :excludeId', { excludeId: excludeUserId });
     }
     return qb.getMany();
+  }
+
+  async adminCreateSpecialist(
+    data: { full_name: string; phone: string; specialization: string; city: string },
+  ): Promise<User> {
+    const existing = await this.findActiveByPhone(data.phone);
+    if (existing) throw new ConflictException('Этот номер телефона уже используется');
+
+    const user = this.usersRepository.create({
+      phone: data.phone,
+      full_name: data.full_name,
+      specialization: data.specialization as User['specialization'],
+      city: data.city,
+      role: UserRole.USER,
+      status: UserStatus.ACTIVE,
+      verified_manually: true,
+    });
+    return this.usersRepository.save(user);
   }
 
   async updatePayment(userId: string, dto: UpdatePaymentDto): Promise<User> {

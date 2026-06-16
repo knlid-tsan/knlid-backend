@@ -33,6 +33,7 @@ interface UserDetail {
   verification_rejection_reason: string | null;
   verification_attempts: number;
   verification_blocked_until: string | null;
+  verified_manually: boolean;
   language: string;
   created_at: string;
   updated_at: string;
@@ -84,6 +85,8 @@ const ACTION_LABEL: Record<string, string> = {
   user_unblocked: 'Пользователь разблокирован',
   user_role_changed: 'Роль изменена',
   user_reverification_requested: 'Запрошена повторная верификация',
+  specialist_created_by_moderator: 'Специалист создан модератором',
+  company_created_by_moderator: 'Компания создана модератором',
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -431,6 +434,22 @@ export default function UserDetailPage() {
                 <div className="col-span-2">
                   <dt className="text-gray-400 text-xs">Причина отказа верификации</dt>
                   <dd className="text-gray-900 mt-0.5">{user.verification_rejection_reason}</dd>
+                </div>
+              )}
+              {user.status === 'active' && (
+                <div className="col-span-2">
+                  <dt className="text-gray-400 text-xs">Верификация</dt>
+                  <dd className="mt-0.5">
+                    {user.verified_manually ? (
+                      <span className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium bg-violet-100 text-violet-700">
+                        Вручную администратором
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium bg-green-100 text-green-700">
+                        По документу
+                      </span>
+                    )}
+                  </dd>
                 </div>
               )}
             </dl>

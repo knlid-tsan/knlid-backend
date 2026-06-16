@@ -97,6 +97,9 @@ export class User {
   @Column({ type: 'uuid', nullable: true })
   company_id: string | null;
 
+  @Column({ default: false })
+  verified_manually: boolean;
+
   @CreateDateColumn() // дата создания — заполняется сама
   created_at: Date;
 

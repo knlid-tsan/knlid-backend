@@ -37,6 +37,7 @@ import { RewardsService } from '../rewards/rewards.service';
 import { LeadsService } from '../leads/leads.service';
 import { CompaniesService } from '../companies/companies.service';
 import { AdminCreateCompanyDto } from './dto/admin-create-company.dto';
+import { AdminCreateSpecialistDto } from './dto/admin-create-specialist.dto';
 import { CitiesService } from '../cities/cities.service';
 import { SettingsService } from '../settings/settings.service';
 import { AuditService } from '../audit/audit.service';
@@ -421,6 +422,30 @@ export class AdminController {
   @Delete('banks/:id')
   deleteBank(@Param('id') id: string) {
     return this.banksService.remove(id);
+  }
+
+  // ─── Создание специалиста модератором/админом ────────────────────────────
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.MODERATOR, UserRole.ADMIN)
+  @Post('specialists')
+  async createSpecialist(
+    @Body() dto: AdminCreateSpecialistDto,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    const user = await this.usersService.adminCreateSpecialist({
+      full_name: dto.full_name,
+      phone: dto.phone,
+      specialization: dto.specialization,
+      city: dto.city,
+    });
+    await this.auditService.log({
+      entityType: 'user', entityId: user.id,
+      action: AuditAction.SPECIALIST_CREATED_BY_MODERATOR,
+      actorId: req.user.sub,
+      metadata: { full_name: user.full_name, phone: user.phone, specialization: user.specialization, city: user.city },
+    });
+    return user;
   }
 
   // ─── Создание компании модератором/админом ────────────────────────────────

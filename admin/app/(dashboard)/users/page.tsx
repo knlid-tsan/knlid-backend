@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { api, ApiError } from '@/lib/api';
-import { formatPhone } from '@/lib/format';
+import { formatPhone, maskPhoneInput, stripPhone } from '@/lib/format';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -25,6 +25,17 @@ interface UsersResponse {
   page: number;
   limit: number;
 }
+
+interface City {
+  id: string;
+  name: string;
+}
+
+const SPEC_OPTIONS = [
+  { value: 'realtor', label: 'Риелтор' },
+  { value: 'mortgage', label: 'Ипотечный брокер' },
+  { value: 'lawyer', label: 'Юрист' },
+] as const;
 
 // ─── Dictionaries ─────────────────────────────────────────────────────────────
 
@@ -99,6 +110,17 @@ export default function UsersPage() {
   const [loading, setLoading] = useState(true);
   const [dataError, setDataError] = useState('');
 
+  // Create specialist modal
+  const [showCreate, setShowCreate] = useState(false);
+  const [cities, setCities] = useState<City[]>([]);
+  const [formName, setFormName] = useState('');
+  const [formPhone, setFormPhone] = useState('');
+  const [formSpec, setFormSpec] = useState('');
+  const [formCity, setFormCity] = useState('');
+  const [formError, setFormError] = useState('');
+  const [formLoading, setFormLoading] = useState(false);
+  const [createToast, setCreateToast] = useState('');
+
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const load = useCallback(async (p: number, q: string, st: string, sp: string, ro: string, ci: string) => {
@@ -138,12 +160,60 @@ export default function UsersPage() {
 
   const totalPages = Math.ceil(total / LIMIT);
 
+  async function openCreate() {
+    setShowCreate(true);
+    setFormName(''); setFormPhone(''); setFormSpec(''); setFormCity('');
+    setFormError(''); setCreateToast('');
+    if (cities.length === 0) {
+      try { setCities(await api.get<City[]>('/cities')); } catch { /* fallback to text input */ }
+    }
+  }
+
+  async function handleCreate(e: React.FormEvent) {
+    e.preventDefault();
+    setFormError('');
+    const phone = stripPhone(formPhone);
+    if (!formName.trim()) { setFormError('Введите ФИО'); return; }
+    if (phone.length < 10) { setFormError('Введите корректный номер'); return; }
+    if (!formSpec) { setFormError('Выберите специализацию'); return; }
+    if (!formCity) { setFormError('Выберите город'); return; }
+
+    setFormLoading(true);
+    try {
+      const user = await api.post<{ full_name: string }>('/admin/specialists', {
+        full_name: formName.trim(), phone, specialization: formSpec, city: formCity,
+      });
+      setShowCreate(false);
+      setCreateToast(`Специалист ${user.full_name} создан и верифицирован`);
+      setTimeout(() => setCreateToast(''), 4000);
+      load(1, search, filterStatus, filterSpec, filterRole, filterCity);
+    } catch (err) {
+      setFormError(err instanceof ApiError ? err.message : 'Не удалось создать специалиста');
+    } finally {
+      setFormLoading(false);
+    }
+  }
+
   return (
     <>
-      <div className="mb-6">
-        <h1 className="text-xl font-semibold text-gray-900">Пользователи</h1>
-        <p className="text-sm text-gray-500 mt-0.5">Управление специалистами платформы</p>
+      <div className="mb-6 flex items-start justify-between">
+        <div>
+          <h1 className="text-xl font-semibold text-gray-900">Пользователи</h1>
+          <p className="text-sm text-gray-500 mt-0.5">Управление специалистами платформы</p>
+        </div>
+        <button
+          onClick={openCreate}
+          className="px-4 py-2 bg-slate-800 text-white text-sm font-medium rounded-lg hover:bg-slate-700 transition-colors"
+        >
+          + Создать специалиста
+        </button>
       </div>
+
+      {createToast && (
+        <div className="bg-green-50 border border-green-200 rounded-xl p-3 text-sm text-green-800 mb-4">
+          {createToast}
+        </div>
+      )}
 
       {/* Filters */}
       <div className="flex flex-wrap gap-2 mb-4">
@@ -315,6 +385,100 @@ export default function UsersPage() {
       )}
       {!loading && totalPages <= 1 && total > 0 && (
         <p className="mt-3 text-xs text-gray-400">{total} пользовател{total === 1 ? 'ь' : total < 5 ? 'я' : 'ей'}</p>
+      )}
+
+      {/* Create specialist modal */}
+      {showCreate && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md mx-4 p-6">
+            <div className="flex items-center justify-between mb-5">
+              <h2 className="text-lg font-semibold text-gray-900">Создать специалиста</h2>
+              <button onClick={() => setShowCreate(false)} className="text-gray-400 hover:text-gray-600 text-xl leading-none">×</button>
+            </div>
+            <form onSubmit={handleCreate} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">ФИО</label>
+                <input
+                  type="text"
+                  value={formName}
+                  onChange={(e) => setFormName(e.target.value)}
+                  placeholder="Иванов Иван Иванович"
+                  required
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Телефон</label>
+                <input
+                  type="tel"
+                  value={formPhone}
+                  onChange={(e) => setFormPhone(maskPhoneInput(e.target.value))}
+                  placeholder="+7 700 000 00 00"
+                  required
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-500"
+                />
+                <p className="text-xs text-gray-400 mt-1">По этому номеру специалист будет входить в приложение</p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Специализация</label>
+                <select
+                  value={formSpec}
+                  onChange={(e) => setFormSpec(e.target.value)}
+                  required
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-500 bg-white"
+                >
+                  <option value="">Выберите специализацию</option>
+                  {SPEC_OPTIONS.map((s) => (
+                    <option key={s.value} value={s.value}>{s.label}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Город</label>
+                {cities.length > 0 ? (
+                  <select
+                    value={formCity}
+                    onChange={(e) => setFormCity(e.target.value)}
+                    required
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-500 bg-white"
+                  >
+                    <option value="">Выберите город</option>
+                    {cities.map((c) => <option key={c.id} value={c.name}>{c.name}</option>)}
+                  </select>
+                ) : (
+                  <input
+                    type="text"
+                    value={formCity}
+                    onChange={(e) => setFormCity(e.target.value)}
+                    placeholder="Алматы"
+                    required
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-500"
+                  />
+                )}
+              </div>
+              <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+                Специалист будет создан с верификацией вручную (без загрузки документа) и сразу получит статус «Активен».
+              </p>
+              {formError && <p className="text-sm text-red-600">{formError}</p>}
+              <div className="flex gap-3 pt-1">
+                <button
+                  type="button"
+                  onClick={() => setShowCreate(false)}
+                  className="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 text-sm font-medium rounded-xl hover:bg-gray-50 transition-colors"
+                >
+                  Отмена
+                </button>
+                <button
+                  type="submit"
+                  disabled={formLoading}
+                  className="flex-1 px-4 py-2.5 bg-slate-800 text-white text-sm font-medium rounded-xl hover:bg-slate-700 disabled:opacity-50 transition-colors"
+                >
+                  {formLoading ? 'Создание...' : 'Создать'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
       )}
     </>
   );
