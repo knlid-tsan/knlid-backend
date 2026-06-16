@@ -15,6 +15,7 @@ import {
   UnauthorizedException,
   BadRequestException,
   NotFoundException,
+  ConflictException,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
@@ -25,7 +26,7 @@ import { CreateBankDto } from '../banks/dto/create-bank.dto';
 import { UpdateBankDto } from '../banks/dto/update-bank.dto';
 import { Request } from 'express';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, Repository } from 'typeorm';
+import { DataSource, Repository, Not, In } from 'typeorm';
 import { JwtAuthGuard, AuthenticatedUser } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
@@ -267,11 +268,20 @@ export class AdminController {
     @Body() dto: SetRoleDto,
     @Req() req: AuthenticatedRequest,
   ) {
-    if (id === req.user.sub) {
-      throw new BadRequestException('Нельзя изменить собственную роль');
-    }
     const user = await this.usersRepository.findOneBy({ id });
     if (!user) throw new NotFoundException('Пользователь не найден');
+
+    if (user.role === UserRole.ADMIN && dto.role !== UserRole.ADMIN) {
+      const activeAdminCount = await this.usersRepository.count({
+        where: {
+          role: UserRole.ADMIN,
+          status: Not(In([UserStatus.ARCHIVED, UserStatus.BLOCKED])),
+        },
+      });
+      if (activeAdminCount <= 1) {
+        throw new ConflictException('Нельзя снять роль с последнего администратора');
+      }
+    }
 
     const prevRole = user.role;
     user.role = dto.role;

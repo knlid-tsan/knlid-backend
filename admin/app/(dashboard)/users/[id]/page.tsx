@@ -138,6 +138,7 @@ export default function UserDetailPage() {
   const [confirmReverif, setConfirmReverif] = useState(false);
   const [roleSelectOpen, setRoleSelectOpen] = useState(false);
   const [selectedRole, setSelectedRole] = useState('');
+  const [confirmSelfRole, setConfirmSelfRole] = useState(false);
 
   // Avatar management
   const [avatarUploading, setAvatarUploading] = useState(false);
@@ -283,6 +284,7 @@ export default function UserDetailPage() {
     doAction(async () => {
       await api.post(`/admin/users/${id}/role`, { role: selectedRole });
       setRoleSelectOpen(false);
+      setConfirmSelfRole(false);
     });
   }
 
@@ -517,11 +519,8 @@ export default function UserDetailPage() {
               </div>
             )}
 
-            {isSelf ? (
-              <p className="text-xs text-gray-400 bg-gray-50 rounded-lg p-3">
-                Это ваш аккаунт — управление недоступно
-              </p>
-            ) : (
+            {/* Block / Unblock + Reverification — non-self only */}
+            {!isSelf ? (
               <div className="space-y-3">
                 {/* Block / Unblock */}
                 {user.status !== 'blocked' ? (
@@ -591,46 +590,82 @@ export default function UserDetailPage() {
                     Запросить повторную верификацию
                   </button>
                 )}
+              </div>
+            ) : !isAdmin && (
+              <p className="text-xs text-gray-400 bg-gray-50 rounded-lg p-3">
+                Это ваш аккаунт — управление недоступно
+              </p>
+            )}
 
-                {/* Role change — admin only */}
-                {isAdmin && (
-                  roleSelectOpen ? (
-                    <div className="rounded-lg border border-gray-200 p-3 space-y-2">
-                      <p className="text-xs text-gray-500 font-medium">Сменить роль</p>
-                      <select
-                        value={selectedRole}
-                        onChange={(e) => setSelectedRole(e.target.value)}
-                        className="w-full rounded-lg border border-gray-200 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-slate-400"
-                      >
-                        <option value="user">Специалист</option>
-                        <option value="moderator">Модератор</option>
-                        <option value="admin">Администратор</option>
-                      </select>
-                      <div className="flex gap-2 pt-1">
-                        <button
-                          onClick={handleRoleChange}
-                          disabled={actionLoading || selectedRole === user.role}
-                          className="text-xs font-medium text-white bg-slate-800 hover:bg-slate-700 rounded-lg px-3 py-1.5 disabled:opacity-50 transition-colors"
-                        >
-                          {actionLoading ? '...' : 'Сохранить'}
-                        </button>
-                        <button
-                          onClick={() => { setRoleSelectOpen(false); setSelectedRole(user.role); }}
-                          className="text-xs text-gray-500 hover:text-gray-700"
-                        >
-                          Отмена
-                        </button>
+            {/* Role change — admin only, available for self with confirmation */}
+            {isAdmin && (
+              <div className={!isSelf ? 'mt-3 pt-3 border-t border-gray-100' : ''}>
+                {roleSelectOpen ? (
+                  <div className="rounded-lg border border-gray-200 p-3 space-y-2">
+                    <p className="text-xs text-gray-500 font-medium">Сменить роль</p>
+                    {isSelf && (
+                      <div className="bg-amber-50 border border-amber-200 rounded-lg p-2 text-xs text-amber-700">
+                        Вы меняете свою роль — после сохранения ваши права в системе изменятся.
                       </div>
-                    </div>
-                  ) : (
-                    <button
-                      onClick={() => setRoleSelectOpen(true)}
-                      disabled={actionLoading}
-                      className="w-full text-sm font-medium text-gray-700 hover:text-gray-900 border border-gray-200 hover:border-gray-300 rounded-lg px-4 py-2 transition-colors disabled:opacity-50"
-                    >
-                      Сменить роль
-                    </button>
-                  )
+                    )}
+                    {isSelf && confirmSelfRole ? (
+                      <>
+                        <p className="text-xs text-gray-700">
+                          Подтвердите смену вашей роли на «{ROLE_LABEL[selectedRole] ?? selectedRole}».
+                        </p>
+                        <div className="flex gap-2 pt-1">
+                          <button
+                            onClick={handleRoleChange}
+                            disabled={actionLoading}
+                            className="text-xs font-medium text-white bg-amber-600 hover:bg-amber-700 rounded-lg px-3 py-1.5 disabled:opacity-50 transition-colors"
+                          >
+                            {actionLoading ? '...' : 'Изменить роль'}
+                          </button>
+                          <button
+                            onClick={() => setConfirmSelfRole(false)}
+                            className="text-xs text-gray-500 hover:text-gray-700"
+                          >
+                            Назад
+                          </button>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <select
+                          value={selectedRole}
+                          onChange={(e) => setSelectedRole(e.target.value)}
+                          className="w-full rounded-lg border border-gray-200 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-slate-400"
+                        >
+                          <option value="user">Специалист</option>
+                          <option value="moderator">Модератор</option>
+                          <option value="admin">Администратор</option>
+                        </select>
+                        <div className="flex gap-2 pt-1">
+                          <button
+                            onClick={isSelf ? () => setConfirmSelfRole(true) : handleRoleChange}
+                            disabled={actionLoading || selectedRole === user.role}
+                            className="text-xs font-medium text-white bg-slate-800 hover:bg-slate-700 rounded-lg px-3 py-1.5 disabled:opacity-50 transition-colors"
+                          >
+                            {isSelf ? 'Продолжить' : (actionLoading ? '...' : 'Сохранить')}
+                          </button>
+                          <button
+                            onClick={() => { setRoleSelectOpen(false); setSelectedRole(user.role); setConfirmSelfRole(false); }}
+                            className="text-xs text-gray-500 hover:text-gray-700"
+                          >
+                            Отмена
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => setRoleSelectOpen(true)}
+                    disabled={actionLoading}
+                    className="w-full text-sm font-medium text-gray-700 hover:text-gray-900 border border-gray-200 hover:border-gray-300 rounded-lg px-4 py-2 transition-colors disabled:opacity-50"
+                  >
+                    Сменить роль
+                  </button>
                 )}
               </div>
             )}
