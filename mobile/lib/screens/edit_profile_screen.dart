@@ -131,6 +131,32 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               children: [
                 const SizedBox(height: 12),
 
+                // ── Пояснение когда всё заблокировано ──
+                if (_isVerified && _hasActiveLead) ...[
+                  Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFF7ED),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: const Color(0xFFFED7AA)),
+                    ),
+                    child: const Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(Icons.info_outline, size: 18, color: Color(0xFFF97316)),
+                        SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            'Сейчас профиль изменить нельзя. ФИО заморожено после верификации. Специализацию и город нельзя менять, пока у вас есть лиды в работе.',
+                            style: TextStyle(fontSize: 13, color: Color(0xFF9A3412), height: 1.4),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                ],
+
                 // ── ФИО ──
                 const _Label('ФИО'),
                 const SizedBox(height: 8),
