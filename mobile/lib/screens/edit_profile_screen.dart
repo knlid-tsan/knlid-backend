@@ -147,7 +147,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         SizedBox(width: 10),
                         Expanded(
                           child: Text(
-                            'Сейчас профиль изменить нельзя. ФИО заморожено после верификации. Специализацию и город нельзя менять, пока у вас есть лиды в работе.',
+                            'Сейчас профиль изменить нельзя. Имя и фамилия заморожены после верификации. Специализацию и город нельзя менять, пока у вас есть лиды в работе.',
                             style: TextStyle(fontSize: 13, color: Color(0xFF9A3412), height: 1.4),
                           ),
                         ),
@@ -157,20 +157,20 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   const SizedBox(height: 20),
                 ],
 
-                // ── ФИО ──
-                const _Label('ФИО'),
+                // ── Имя и фамилия ──
+                const _Label('Имя и фамилия'),
                 const SizedBox(height: 8),
                 TextFormField(
                   controller: _nameController,
                   enabled: !_isVerified,
                   textCapitalization: TextCapitalization.words,
                   decoration: _inputDecoration(
-                    'Иванов Иван Иванович',
+                    'Нурлан Серіков',
                     disabled: _isVerified,
                   ),
                   validator: (v) {
                     if (_isVerified) return null;
-                    if (v == null || v.trim().isEmpty) return 'Введите ФИО';
+                    if (v == null || v.trim().isEmpty) return 'Введите имя и фамилию';
                     if (v.trim().split(' ').length < 2) return 'Введите имя и фамилию';
                     return null;
                   },
@@ -178,7 +178,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 if (_isVerified) ...[
                   const SizedBox(height: 6),
                   const Text(
-                    'ФИО нельзя изменить после верификации',
+                    'Имя и фамилию нельзя изменить после верификации',
                     style: TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
                   ),
                 ],

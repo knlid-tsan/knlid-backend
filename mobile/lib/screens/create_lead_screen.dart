@@ -358,7 +358,7 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
               controller: _nameCtrl,
               textCapitalization: TextCapitalization.words,
               enabled: !isSubmitting,
-              decoration: _inputDec(hint: 'Иван Иванов'),
+              decoration: _inputDec(hint: 'Нурлан Серіков'),
               validator: (v) =>
                   v == null || v.trim().isEmpty ? 'Введите имя клиента' : null,
             ),

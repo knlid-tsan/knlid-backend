@@ -126,15 +126,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
                 const SizedBox(height: 28),
 
-                // ФИО
-                _Label('ФИО'),
+                // Имя и фамилия
+                _Label('Имя и фамилия'),
                 const SizedBox(height: 8),
                 TextFormField(
                   controller: _nameController,
                   textCapitalization: TextCapitalization.words,
-                  decoration: _inputDecoration('Иванов Иван Иванович'),
+                  decoration: _inputDecoration('Нурлан Серіков'),
                   validator: (v) {
-                    if (v == null || v.trim().isEmpty) return 'Введите ФИО';
+                    if (v == null || v.trim().isEmpty) return 'Введите имя и фамилию';
                     if (v.trim().split(' ').length < 2) return 'Введите имя и фамилию';
                     return null;
                   },
