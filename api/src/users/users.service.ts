@@ -1,9 +1,10 @@
-import { Injectable, BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
+import { Injectable, BadRequestException, ConflictException, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Not, Repository } from 'typeorm';
 import { User, UserRole, UserStatus } from './user.entity';
 import { BanksService } from '../banks/banks.service';
 import { UpdatePaymentDto } from './dto/update-payment.dto';
+import { UpdateProfileDto } from './dto/update-profile.dto';
 
 @Injectable()
 export class UsersService {
@@ -35,14 +36,17 @@ export class UsersService {
     if (!user) return null;
 
     const [stats] = await this.usersRepository.manager.query<
-      [{ leads_sent: number; leads_received: number; leads_closed: number }]
+      [{ leads_sent: number; leads_received: number; leads_closed: number; active_execution_leads: number }]
     >(
       `SELECT
          COUNT(CASE WHEN author_id = $1 THEN 1 END)::int          AS leads_sent,
          COUNT(CASE WHEN executor_id = $1::uuid THEN 1 END)::int  AS leads_received,
          COUNT(CASE WHEN executor_id = $1::uuid
                      AND status IN ('closed_success', 'archived')
-                    THEN 1 END)::int                               AS leads_closed
+                    THEN 1 END)::int                               AS leads_closed,
+         COUNT(CASE WHEN executor_id = $1::uuid
+                     AND status IN ('in_progress', 'contract', 'deposit', 'closed_success', 'dispute')
+                    THEN 1 END)::int                               AS active_execution_leads
        FROM leads`,
       [id],
     );
@@ -50,6 +54,7 @@ export class UsersService {
     user.leads_sent     = Number(stats.leads_sent);
     user.leads_received = Number(stats.leads_received);
     user.leads_closed   = Number(stats.leads_closed);
+    (user as any).has_active_execution_leads = Number(stats.active_execution_leads) > 0;
 
     return user;
   }
@@ -98,6 +103,35 @@ export class UsersService {
       status: UserStatus.ACTIVE,
       verified_manually: true,
     });
+    return this.usersRepository.save(user);
+  }
+
+  async updateProfile(userId: string, dto: UpdateProfileDto): Promise<User> {
+    const user = await this.usersRepository.findOneBy({ id: userId });
+    if (!user) throw new NotFoundException('Пользователь не найден');
+
+    if (dto.full_name !== undefined && user.status === UserStatus.ACTIVE) {
+      throw new ForbiddenException('ФИО нельзя изменить после верификации');
+    }
+
+    if (dto.specialization !== undefined || dto.city !== undefined) {
+      const [{ cnt }] = await this.usersRepository.manager.query<[{ cnt: string }]>(
+        `SELECT COUNT(*)::int AS cnt FROM leads
+         WHERE executor_id = $1
+         AND status IN ('in_progress', 'contract', 'deposit', 'closed_success', 'dispute')`,
+        [userId],
+      );
+      if (Number(cnt) > 0) {
+        throw new ForbiddenException(
+          'Нельзя сменить специализацию/город при активных лидах в работе',
+        );
+      }
+    }
+
+    if (dto.full_name !== undefined) user.full_name = dto.full_name;
+    if (dto.specialization !== undefined) user.specialization = dto.specialization;
+    if (dto.city !== undefined) user.city = dto.city;
+
     return this.usersRepository.save(user);
   }
 

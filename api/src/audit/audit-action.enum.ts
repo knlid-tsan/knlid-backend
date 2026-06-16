@@ -52,6 +52,8 @@ export enum AuditAction {
 
   ASSIGNMENT_OVERRIDE = 'assignment_override',
 
+  PROFILE_UPDATED = 'profile_updated',
+
   REWARD_PROOF_ATTACHED = 'reward_proof_attached',
   REWARD_CONFIRMED = 'reward_confirmed',
   REWARD_AUTO_CONFIRMED = 'reward_auto_confirmed',

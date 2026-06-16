@@ -6,6 +6,7 @@ import '../services/phone_formatter.dart';
 import '../config.dart';
 import 'verification_screen.dart';
 import 'payment_form_screen.dart';
+import 'edit_profile_screen.dart';
 
 // ─── Labels ──────────────────────────────────────────────────────────────────
 
@@ -426,6 +427,29 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ],
 
           // ── Основная информация ──
+          if (isSpecialist)
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton(
+                onPressed: () async {
+                  final changed = await Navigator.push<bool>(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => EditProfileScreen(user: _user!),
+                    ),
+                  );
+                  if (changed == true) _load();
+                },
+                style: TextButton.styleFrom(
+                  foregroundColor: const Color(0xFF3B82F6),
+                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+                  textStyle: const TextStyle(fontSize: 13),
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+                child: const Text('Редактировать профиль'),
+              ),
+            ),
           _Card(children: [
             if ((user['full_name'] as String?)?.isNotEmpty == true) ...[
               _NameRow(user['full_name'] as String),

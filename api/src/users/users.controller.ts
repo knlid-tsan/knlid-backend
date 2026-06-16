@@ -22,6 +22,9 @@ import { JwtAuthGuard, AuthenticatedUser } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
 import { UpdatePaymentDto } from './dto/update-payment.dto';
+import { UpdateProfileDto } from './dto/update-profile.dto';
+import { AuditService } from '../audit/audit.service';
+import { AuditAction } from '../audit/audit-action.enum';
 
 interface AuthenticatedRequest extends Request {
   user: AuthenticatedUser;
@@ -31,13 +34,35 @@ const AVATAR_MIMES = ['image/jpeg', 'image/png'];
 
 @Controller('users')
 export class UsersController {
-  constructor(private readonly usersService: UsersService) {}
+  constructor(
+    private readonly usersService: UsersService,
+    private readonly auditService: AuditService,
+  ) {}
 
   // GET /users/me — профиль текущего пользователя (включая identity_photo_url для самого пользователя)
   @UseGuards(JwtAuthGuard)
   @Get('me')
   async getMe(@Req() req: AuthenticatedRequest) {
     return this.usersService.findOneProfile(req.user.sub);
+  }
+
+  // PATCH /users/me/profile — обновить ФИО / специализацию / город
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.USER)
+  @Patch('me/profile')
+  async updateProfile(
+    @Req() req: AuthenticatedRequest,
+    @Body() dto: UpdateProfileDto,
+  ) {
+    const updated = await this.usersService.updateProfile(req.user.sub, dto);
+    await this.auditService.log({
+      entityType: 'user',
+      entityId: req.user.sub,
+      action: AuditAction.PROFILE_UPDATED,
+      actorId: req.user.sub,
+      metadata: dto as Record<string, unknown>,
+    });
+    return updated;
   }
 
   // PATCH /users/me/payment — сохранить платёжные реквизиты
