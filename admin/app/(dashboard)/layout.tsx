@@ -31,6 +31,7 @@ const COMPANY_NAV: NavItem[] = [
   { href: '/company/specialists', label: 'Мои специалисты' },
   { href: '/company/debts', label: 'Долги' },
   { href: '/company/profile', label: 'Профиль компании' },
+  { href: '/company/support', label: 'Поддержка' },
 ];
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -41,6 +42,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [rawRole, setRawRole] = useState('');
   const [companyName, setCompanyName] = useState('');
   const [supportUnread, setSupportUnread] = useState(0);
+  const [companySupportUnread, setCompanySupportUnread] = useState(0);
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
@@ -69,6 +71,19 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     api.get<{ name: string }>('/companies/me')
       .then((d) => setCompanyName(d.name))
       .catch(() => {});
+  }, [rawRole]);
+
+  // Poll unread support count for company nav badge
+  useEffect(() => {
+    if (rawRole !== 'company') return;
+    const fetch = () => {
+      api.get<{ count: number }>('/support/unread')
+        .then((d) => setCompanySupportUnread(d.count))
+        .catch(() => {});
+    };
+    fetch();
+    const timer = setInterval(fetch, 30_000);
+    return () => clearInterval(timer);
   }, [rawRole]);
 
   // Poll unread support count for admin/moderator nav badge
@@ -130,6 +145,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <nav className="flex-1 py-3">
             {navItems.map((item) => {
               const isCurrent = pathname.startsWith(item.href);
+              const badge = item.href === '/company/support' && companySupportUnread > 0
+                ? companySupportUnread : 0;
               return (
                 <Link
                   key={item.href}
@@ -140,7 +157,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                       : 'border-transparent text-muted hover:text-foreground hover:bg-divider/50'
                   }`}
                 >
-                  {item.label}
+                  <span className="flex-1">{item.label}</span>
+                  {badge > 0 && (
+                    <span className="ml-2 bg-brand text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1 leading-none">
+                      {badge > 99 ? '99+' : badge}
+                    </span>
+                  )}
                 </Link>
               );
             })}
