@@ -107,6 +107,12 @@ function shortId(id: string) {
   return id.slice(0, 8) + '…';
 }
 
+const SYSTEM_UUID = '00000000-0000-0000-0000-000000000000';
+
+function isSystemActor(entry: AuditEntry) {
+  return !entry.actor_name || entry.actor_id === SYSTEM_UUID;
+}
+
 function actionColor(action: string): string {
   if (action === 'profile_updated') return 'bg-violet-100 text-violet-700';
   if (action === 'user_role_changed') return 'bg-slate-100 text-slate-700';
@@ -308,7 +314,9 @@ export default function AuditPage() {
 
                       {/* Кто (актор) */}
                       <td className="px-4 py-3 align-top">
-                        {entry.actor_name ? (
+                        {isSystemActor(entry) ? (
+                          <span className="text-xs text-gray-400 italic">Система</span>
+                        ) : (
                           <Link
                             href={`/users/${entry.actor_id}`}
                             className="hover:underline"
@@ -318,8 +326,6 @@ export default function AuditPage() {
                               <p className="text-xs text-gray-400 font-mono">{formatPhone(entry.actor_phone)}</p>
                             )}
                           </Link>
-                        ) : (
-                          <span className="text-xs text-gray-400 font-mono">{shortId(entry.actor_id)}</span>
                         )}
                       </td>
 

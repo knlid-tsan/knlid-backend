@@ -16,6 +16,7 @@ class MainScreen extends StatefulWidget {
 class _MainScreenState extends State<MainScreen> {
   int _currentIndex = 0;
   int _createdRevision = 0;
+  int _profileRevision = 0;
   String _role = '';
   String _userStatus = '';
   String? _rejectionReason;
@@ -91,7 +92,7 @@ class _MainScreenState extends State<MainScreen> {
               children: [
                 LeadsCreatedScreen(key: ValueKey(_createdRevision)),
                 const LeadsAssignedScreen(),
-                const ProfileScreen(),
+                ProfileScreen(key: ValueKey(_profileRevision)),
               ],
             ),
           ),
@@ -118,8 +119,10 @@ class _MainScreenState extends State<MainScreen> {
       bottomNavigationBar: NavigationBar(
         selectedIndex: _currentIndex,
         onDestinationSelected: (i) {
-          setState(() => _currentIndex = i);
-          // Refresh status when coming back to lists from profile
+          setState(() {
+            _currentIndex = i;
+            if (i == 2) _profileRevision++;
+          });
           if (i < 2) _refreshUserStatus();
         },
         destinations: const [
