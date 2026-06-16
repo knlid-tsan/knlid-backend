@@ -21,6 +21,7 @@ const ADMIN_NAV: NavItem[] = [
   { href: '/companies', label: 'Компании' },
   { href: '/tariffs', label: 'Тарифы', adminOnly: true },
   { href: '/banks', label: 'Банки', adminOnly: true },
+  { href: '/audit', label: 'Журнал' },
 ];
 
 const COMPANY_NAV: NavItem[] = [
