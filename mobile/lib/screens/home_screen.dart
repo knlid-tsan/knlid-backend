@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import '../models/lead.dart';
 import '../services/leads_service.dart';
 import '../services/api_client.dart';
+import '../services/support_service.dart';
 import '../theme/app_colors.dart';
 import 'lead_card.dart';
 import 'lead_detail_screen.dart';
 import 'create_lead_screen.dart';
+import 'support_chat_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   final VoidCallback? onLeadCreated;
@@ -20,6 +22,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   bool _loading = true;
   String? _error;
+  int _unreadCount = 0;
 
   Lead? _topCreated;
   Lead? _topAssigned;
@@ -29,6 +32,7 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _load();
+    _loadUnread();
   }
 
   Future<void> _load() async {
@@ -81,6 +85,21 @@ class _HomeScreenState extends State<HomeScreen> {
       MaterialPageRoute(builder: (_) => LeadDetailScreen(leadId: lead.id)),
     );
     if (mounted) _load();
+  }
+
+  Future<void> _loadUnread() async {
+    try {
+      final count = await SupportService().getUnread();
+      if (mounted) setState(() => _unreadCount = count);
+    } catch (_) {}
+  }
+
+  Future<void> _openChat() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const SupportChatScreen()),
+    );
+    if (mounted) _loadUnread();
   }
 
   Future<void> _openCreate() async {
@@ -141,9 +160,18 @@ class _HomeScreenState extends State<HomeScreen> {
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
       children: [
-        const Padding(
-          padding: EdgeInsets.fromLTRB(0, 24, 0, 20),
-          child: Center(child: _CompactLogo()),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(0, 24, 0, 20),
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              const _CompactLogo(),
+              Positioned(
+                right: 0,
+                child: _ChatButton(count: _unreadCount, onTap: _openChat),
+              ),
+            ],
+          ),
         ),
 
         // ── Block: Переданные ──────────────────────────────────────────────
@@ -344,6 +372,53 @@ class _EmptyBlock extends StatelessWidget {
             style: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _ChatButton extends StatelessWidget {
+  final int count;
+  final VoidCallback onTap;
+  const _ChatButton({required this.count, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: Padding(
+        padding: const EdgeInsets.all(4),
+        child: Stack(
+          clipBehavior: Clip.none,
+          children: [
+            const Icon(Icons.chat_bubble_outline,
+                size: 26, color: AppColors.textPrimary),
+            if (count > 0)
+              Positioned(
+                top: -4,
+                right: -4,
+                child: Container(
+                  width: 16,
+                  height: 16,
+                  decoration: const BoxDecoration(
+                    color: AppColors.brand,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Center(
+                    child: Text(
+                      count > 9 ? '9+' : '$count',
+                      style: const TextStyle(
+                        fontSize: 9,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }

@@ -57,4 +57,6 @@ export enum AuditAction {
   REWARD_PROOF_ATTACHED = 'reward_proof_attached',
   REWARD_CONFIRMED = 'reward_confirmed',
   REWARD_AUTO_CONFIRMED = 'reward_auto_confirmed',
+
+  SUPPORT_CONVERSATION_CREATED = 'support_conversation_created',
 }

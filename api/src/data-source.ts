@@ -13,6 +13,8 @@ import { City } from './cities/city.entity';
 import { Company } from './companies/entities/company.entity';
 import { CompanyMembership } from './companies/entities/company-membership.entity';
 import { Setting } from './settings/setting.entity';
+import { Conversation } from './support/entities/conversation.entity';
+import { Message } from './support/entities/message.entity';
 
 export const AppDataSource = new DataSource({
   type: 'postgres',
@@ -36,6 +38,8 @@ export const AppDataSource = new DataSource({
     Company,
     CompanyMembership,
     Setting,
+    Conversation,
+    Message,
   ],
   migrations: ['src/migrations/*.ts'],
   synchronize: false,

@@ -32,6 +32,9 @@ import { SettingsModule } from './settings/settings.module';
 import { GuarantorJobModule } from './guarantor-job/guarantor-job.module';
 import { BanksModule } from './banks/banks.module';
 import { Bank } from './banks/bank.entity';
+import { SupportModule } from './support/support.module';
+import { Conversation } from './support/entities/conversation.entity';
+import { Message } from './support/entities/message.entity';
 
 @Module({
   imports: [
@@ -59,6 +62,8 @@ import { Bank } from './banks/bank.entity';
         CompanyMembership,
         Setting,
         Bank,
+        Conversation,
+        Message,
       ],
       synchronize: false,
     }),
@@ -78,6 +83,7 @@ import { Bank } from './banks/bank.entity';
     SettingsModule,
     GuarantorJobModule,
     BanksModule,
+    SupportModule,
   ],
   controllers: [AppController],
   providers: [AppService],
