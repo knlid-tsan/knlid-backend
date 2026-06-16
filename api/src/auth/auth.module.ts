@@ -15,7 +15,7 @@ import { JWT_SECRET } from './constants';
     forwardRef(() => UsersModule),
     JwtModule.register({
       secret: JWT_SECRET,
-      signOptions: { expiresIn: '7d' },
+      signOptions: { expiresIn: '45d' },
     }),
   ],
   controllers: [AuthController],
