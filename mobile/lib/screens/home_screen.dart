@@ -1,0 +1,367 @@
+import 'package:flutter/material.dart';
+import '../models/lead.dart';
+import '../services/leads_service.dart';
+import '../services/api_client.dart';
+import 'lead_card.dart';
+import 'lead_detail_screen.dart';
+import 'create_lead_screen.dart';
+
+class HomeScreen extends StatefulWidget {
+  final VoidCallback? onLeadCreated;
+  const HomeScreen({super.key, this.onLeadCreated});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  final _service = LeadsService();
+
+  bool _loading = true;
+  String? _error;
+
+  Lead? _topCreated;
+  Lead? _topAssigned;
+  Map<String, dynamic>? _stats;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    try {
+      late List<Lead> created;
+      late List<Lead> assigned;
+      late Map<String, dynamic> me;
+
+      await Future.wait([
+        _service.getMyCreated().then((v) => created = v),
+        _service.getMyAssigned().then((v) => assigned = v),
+        ApiClient()
+            .dio
+            .get('/users/me')
+            .then((r) => me = r.data as Map<String, dynamic>),
+      ]);
+
+      created.sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
+      assigned.sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
+
+      // Priority for assigned: pending_acceptance first, else most recently updated
+      final pending =
+          assigned.where((l) => l.status == 'pending_acceptance').toList();
+      final topAssigned =
+          pending.isNotEmpty ? pending.first : (assigned.isEmpty ? null : assigned.first);
+
+      if (mounted) {
+        setState(() {
+          _topCreated = created.isEmpty ? null : created.first;
+          _topAssigned = topAssigned;
+          _stats = me;
+          _loading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) setState(() {
+        _error = e.toString();
+        _loading = false;
+      });
+    }
+  }
+
+  Future<void> _openLead(Lead lead) async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => LeadDetailScreen(leadId: lead.id)),
+    );
+    if (mounted) _load();
+  }
+
+  Future<void> _openCreate() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const CreateLeadScreen()),
+    );
+    if (mounted) {
+      _load();
+      widget.onLeadCreated?.call();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFFF8FAFC),
+      body: SafeArea(
+        child: _loading
+            ? const Center(child: CircularProgressIndicator())
+            : _error != null
+                ? _buildError()
+                : RefreshIndicator(
+                    onRefresh: _load,
+                    child: _buildContent(),
+                  ),
+      ),
+    );
+  }
+
+  Widget _buildError() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.error_outline, size: 48, color: Color(0xFFCBD5E1)),
+            const SizedBox(height: 16),
+            Text(
+              _error!,
+              style: const TextStyle(fontSize: 13, color: Color(0xFF64748B)),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 20),
+            OutlinedButton.icon(
+              onPressed: _load,
+              icon: const Icon(Icons.refresh, size: 16),
+              label: const Text('Повторить'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildContent() {
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
+      children: [
+        // ── Title ──────────────────────────────────────────────────────────
+        const Padding(
+          padding: EdgeInsets.fromLTRB(4, 24, 4, 20),
+          child: Text(
+            'Главная',
+            style: TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF1E293B),
+            ),
+          ),
+        ),
+
+        // ── Block: Переданные ──────────────────────────────────────────────
+        const _SectionHeader('Переданные'),
+        if (_topCreated != null)
+          LeadCard(
+            lead: _topCreated!,
+            showExecutor: true,
+            onTap: () => _openLead(_topCreated!),
+          )
+        else
+          const _EmptyBlock(
+            icon: Icons.send_outlined,
+            text: 'Вы ещё не передавали лиды',
+          ),
+        const SizedBox(height: 4),
+
+        // ── Block: Исполняю ────────────────────────────────────────────────
+        const _SectionHeader('Исполняю'),
+        if (_topAssigned != null)
+          LeadCard(
+            lead: _topAssigned!,
+            showExecutor: false,
+            onTap: () => _openLead(_topAssigned!),
+          )
+        else
+          const _EmptyBlock(
+            icon: Icons.assignment_outlined,
+            text: 'У вас нет лидов в работе',
+          ),
+        const SizedBox(height: 20),
+
+        // ── Create lead button ─────────────────────────────────────────────
+        SizedBox(
+          width: double.infinity,
+          height: 52,
+          child: FilledButton.icon(
+            onPressed: _openCreate,
+            style: FilledButton.styleFrom(
+              backgroundColor: const Color(0xFF1E293B),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            icon: const Icon(Icons.add, size: 20),
+            label: const Text(
+              'Создать лид',
+              style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+            ),
+          ),
+        ),
+        const SizedBox(height: 24),
+
+        // ── Stats block ────────────────────────────────────────────────────
+        if (_stats != null) _buildStats(),
+      ],
+    );
+  }
+
+  Widget _buildStats() {
+    final rawRating = _stats!['rating'];
+    final rating = (rawRating is num ? rawRating.toDouble() : double.tryParse('$rawRating') ?? 0.0);
+    final sent = _stats!['leads_sent'] as int? ?? 0;
+    final received = _stats!['leads_received'] as int? ?? 0;
+    final closed = _stats!['leads_closed'] as int? ?? 0;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'СТАТИСТИКА',
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              color: Color(0xFF94A3B8),
+              letterSpacing: 0.8,
+            ),
+          ),
+          const SizedBox(height: 14),
+          Row(
+            children: [
+              _StatCell(
+                value: rating.toStringAsFixed(1),
+                label: 'Рейтинг',
+                icon: Icons.star_outline,
+                color: const Color(0xFFF59E0B),
+              ),
+              _StatCell(
+                value: '$sent',
+                label: 'Передано',
+                icon: Icons.send_outlined,
+              ),
+              _StatCell(
+                value: '$received',
+                label: 'Принято',
+                icon: Icons.assignment_outlined,
+              ),
+              _StatCell(
+                value: '$closed',
+                label: 'Закрыто',
+                icon: Icons.check_circle_outline,
+                color: const Color(0xFF22C55E),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── Private widgets ──────────────────────────────────────────────────────────
+
+class _SectionHeader extends StatelessWidget {
+  final String label;
+  const _SectionHeader(this.label);
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 4, bottom: 8),
+      child: Text(
+        label.toUpperCase(),
+        style: const TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w700,
+          color: Color(0xFF94A3B8),
+          letterSpacing: 0.8,
+        ),
+      ),
+    );
+  }
+}
+
+class _EmptyBlock extends StatelessWidget {
+  final IconData icon;
+  final String text;
+  const _EmptyBlock({required this.icon, required this.text});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFF1F5F9)),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, size: 18, color: const Color(0xFFCBD5E1)),
+          const SizedBox(width: 10),
+          Text(
+            text,
+            style: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _StatCell extends StatelessWidget {
+  final String value;
+  final String label;
+  final IconData icon;
+  final Color? color;
+  const _StatCell({
+    required this.value,
+    required this.label,
+    required this.icon,
+    this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final c = color ?? const Color(0xFF64748B);
+    return Expanded(
+      child: Column(
+        children: [
+          Icon(icon, size: 20, color: c),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: c,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            label,
+            style: const TextStyle(fontSize: 10, color: Color(0xFF94A3B8)),
+          ),
+        ],
+      ),
+    );
+  }
+}

@@ -153,6 +153,7 @@ class Lead {
   // URL чека — виден автору когда rewardStatus == 'paid'
   final String? rewardProofUrl;
   final DateTime createdAt;
+  final DateTime updatedAt;
   final DateTime? closedAt;
   final LeadClient? client;
   // Only present in GET /leads/:id response
@@ -176,6 +177,7 @@ class Lead {
     this.rewardStatus,
     this.rewardProofUrl,
     required this.createdAt,
+    required this.updatedAt,
     this.closedAt,
     this.client,
     this.history,
@@ -204,6 +206,9 @@ class Lead {
       rewardStatus: j['reward_status'] as String?,
       rewardProofUrl: j['reward_proof_url'] as String?,
       createdAt: DateTime.parse(j['created_at'] as String).toLocal(),
+      updatedAt: j['updated_at'] != null
+          ? DateTime.parse(j['updated_at'] as String).toLocal()
+          : DateTime.parse(j['created_at'] as String).toLocal(),
       closedAt: j['closed_at'] != null
           ? DateTime.parse(j['closed_at'] as String).toLocal()
           : null,

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/api_client.dart';
+import 'home_screen.dart';
 import 'leads_created_screen.dart';
 import 'leads_assigned_screen.dart';
 import 'profile_screen.dart';
@@ -15,6 +16,7 @@ class MainScreen extends StatefulWidget {
 
 class _MainScreenState extends State<MainScreen> {
   int _currentIndex = 0;
+  int _homeRevision = 0;
   int _createdRevision = 0;
   int _profileRevision = 0;
   String _role = '';
@@ -73,7 +75,7 @@ class _MainScreenState extends State<MainScreen> {
   }
 
   bool get _showBanner =>
-      _role == 'user' && _userStatus.isNotEmpty && _userStatus != 'active' && _currentIndex < 2;
+      _role == 'user' && _userStatus.isNotEmpty && _userStatus != 'active' && _currentIndex < 3;
 
   @override
   Widget build(BuildContext context) {
@@ -90,6 +92,10 @@ class _MainScreenState extends State<MainScreen> {
             child: IndexedStack(
               index: _currentIndex,
               children: [
+                HomeScreen(
+                  key: ValueKey(_homeRevision),
+                  onLeadCreated: () => setState(() => _createdRevision++),
+                ),
                 LeadsCreatedScreen(key: ValueKey(_createdRevision)),
                 const LeadsAssignedScreen(),
                 ProfileScreen(key: ValueKey(_profileRevision)),
@@ -98,7 +104,7 @@ class _MainScreenState extends State<MainScreen> {
           ),
         ],
       ),
-      floatingActionButton: _role == 'user' && _currentIndex < 2
+      floatingActionButton: _role == 'user' && (_currentIndex == 1 || _currentIndex == 2)
           ? FloatingActionButton.extended(
               onPressed: () async {
                 await Navigator.push(
@@ -121,11 +127,17 @@ class _MainScreenState extends State<MainScreen> {
         onDestinationSelected: (i) {
           setState(() {
             _currentIndex = i;
-            if (i == 2) _profileRevision++;
+            if (i == 0) _homeRevision++;
+            if (i == 3) _profileRevision++;
           });
-          if (i < 2) _refreshUserStatus();
+          if (i < 3) _refreshUserStatus();
         },
         destinations: const [
+          NavigationDestination(
+            icon: Icon(Icons.home_outlined),
+            selectedIcon: Icon(Icons.home),
+            label: 'Главная',
+          ),
           NavigationDestination(
             icon: Icon(Icons.send_outlined),
             selectedIcon: Icon(Icons.send),
