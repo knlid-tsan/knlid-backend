@@ -23,6 +23,8 @@ import { ConsentType } from '../consents/consent-type.enum';
 const OTP_TTL_MINUTES = 5;
 const OTP_REQUEST_LIMIT = 3;
 const OTP_REQUEST_WINDOW_MINUTES = 10;
+const OTP_MAX_VERIFY_ATTEMPTS = 5;
+const OTP_BLOCK_MINUTES = 15;
 
 @Injectable()
 export class AuthService {
@@ -65,12 +67,22 @@ export class AuthService {
   }
 
   async verifyOtp(dto: VerifyOtpDto): Promise<{ access_token: string }> {
+    const latestOtp = await this.otpCodesRepository.findOne({
+      where: { phone: dto.phone },
+      order: { created_at: 'DESC' },
+    });
+
+    if (latestOtp) {
+      await this._checkVerifyBlock(latestOtp);
+    }
+
     const otp = await this.otpCodesRepository.findOne({
       where: { phone: dto.phone, code: dto.code },
       order: { created_at: 'DESC' },
     });
 
     if (!otp) {
+      if (latestOtp) await this._recordFailedAttempt(latestOtp);
       throw new UnauthorizedException('Неверный код');
     }
 
@@ -97,12 +109,22 @@ export class AuthService {
   }
 
   async registerUser(dto: RegisterDto): Promise<{ access_token: string }> {
+    const latestOtp = await this.otpCodesRepository.findOne({
+      where: { phone: dto.phone },
+      order: { created_at: 'DESC' },
+    });
+
+    if (latestOtp) {
+      await this._checkVerifyBlock(latestOtp);
+    }
+
     const otp = await this.otpCodesRepository.findOne({
       where: { phone: dto.phone, code: dto.code },
       order: { created_at: 'DESC' },
     });
 
     if (!otp) {
+      if (latestOtp) await this._recordFailedAttempt(latestOtp);
       throw new UnauthorizedException('Неверный код');
     }
 
@@ -150,5 +172,26 @@ export class AuthService {
     });
 
     return { access_token };
+  }
+  private async _checkVerifyBlock(otp: OtpCode): Promise<void> {
+    if (otp.verify_blocked_until && otp.verify_blocked_until > new Date()) {
+      const minutesLeft = Math.ceil(
+        (otp.verify_blocked_until.getTime() - Date.now()) / 60_000,
+      );
+      throw new HttpException(
+        `Слишком много неудачных попыток. Повторите через ${minutesLeft} мин. или запросите новый код`,
+        HttpStatus.TOO_MANY_REQUESTS,
+      );
+    }
+  }
+
+  private async _recordFailedAttempt(otp: OtpCode): Promise<void> {
+    otp.verify_attempts += 1;
+    if (otp.verify_attempts >= OTP_MAX_VERIFY_ATTEMPTS) {
+      otp.verify_blocked_until = new Date(
+        Date.now() + OTP_BLOCK_MINUTES * 60_000,
+      );
+    }
+    await this.otpCodesRepository.save(otp);
   }
 }

@@ -1,6 +1,8 @@
 import { Module } from '@nestjs/common';
+import { APP_GUARD } from '@nestjs/core';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ScheduleModule } from '@nestjs/schedule';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { UsersModule } from './users/users.module';
@@ -40,6 +42,18 @@ import { UserConsent } from './consents/user-consent.entity';
 @Module({
   imports: [
     ScheduleModule.forRoot(),
+    ThrottlerModule.forRoot([
+      {
+        name: 'default',
+        ttl: 60_000,   // 1 minute window
+        limit: 120,    // 120 req / min per IP — global flood protection
+      },
+      {
+        name: 'auth',
+        ttl: 60_000,
+        limit: 10,     // 10 req / min per IP on /auth/* routes
+      },
+    ]),
     TypeOrmModule.forRoot({
       type: 'postgres',
       host: 'localhost',
@@ -88,6 +102,9 @@ import { UserConsent } from './consents/user-consent.entity';
     SupportModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    { provide: APP_GUARD, useClass: ThrottlerGuard },
+  ],
 })
 export class AppModule {}

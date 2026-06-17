@@ -100,6 +100,7 @@ class _OtpScreenState extends State<OtpScreen> {
         _error = msg;
         _showRegisterHint = msg.contains('не найден');
       });
+      _codeController.clear();
     } finally {
       if (mounted) setState(() => _loading = false);
     }

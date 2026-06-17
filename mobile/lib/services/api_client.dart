@@ -37,7 +37,8 @@ class ApiClient {
         handler.next(options);
       },
       onError: (error, handler) async {
-        if (error.response?.statusCode == 401) {
+        final hasToken = error.requestOptions.headers.containsKey('Authorization');
+        if (error.response?.statusCode == 401 && hasToken) {
           await clearToken();
           navigatorKey.currentState
               ?.pushNamedAndRemoveUntil('/phone', (_) => false);
