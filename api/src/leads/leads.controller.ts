@@ -13,10 +13,9 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { diskStorage } from 'multer';
-import { extname } from 'path';
-import { randomUUID } from 'crypto';
+import { memoryStorage } from 'multer';
 import { Request } from 'express';
+import { StorageService } from '../storage/storage.service';
 import { JwtAuthGuard, AuthenticatedUser } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
@@ -37,7 +36,10 @@ interface AuthenticatedRequest extends Request {
 @Roles(UserRole.USER)
 @Controller('leads')
 export class LeadsController {
-  constructor(private readonly leadsService: LeadsService) {}
+  constructor(
+    private readonly leadsService: LeadsService,
+    private readonly storageService: StorageService,
+  ) {}
 
   @Post()
   create(@Body() dto: CreateLeadDto, @Req() req: AuthenticatedRequest) {
@@ -121,12 +123,7 @@ export class LeadsController {
   @Post(':id/submit-proof')
   @UseInterceptors(
     FileInterceptor('file', {
-      storage: diskStorage({
-        destination: './uploads/proofs',
-        filename: (_req, file, cb) => {
-          cb(null, `${randomUUID()}${extname(file.originalname)}`);
-        },
-      }),
+      storage: memoryStorage(),
       limits: { fileSize: 10 * 1024 * 1024 },
       fileFilter: (_req, file, cb) => {
         const allowed = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
@@ -138,13 +135,14 @@ export class LeadsController {
       },
     }),
   )
-  submitProof(
+  async submitProof(
     @Param('id') id: string,
     @UploadedFile() file: Express.Multer.File,
     @Req() req: AuthenticatedRequest,
   ) {
     if (!file) throw new BadRequestException('Файл не прикреплён');
-    return this.leadsService.submitProof(id, req.user.sub, file.path, req.ip);
+    const key = await this.storageService.upload(file, 'proofs');
+    return this.leadsService.submitProof(id, req.user.sub, key, req.ip);
   }
 
   @Post(':id/confirm-payment')

@@ -522,6 +522,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 }
 
+String _resolveFileUrl(String base, String key) {
+  if (key.startsWith('http://') || key.startsWith('https://')) return key;
+  if (key.startsWith('/')) return '$base$key';
+  return '$base/$key';
+}
+
 // ─── Avatar widget ────────────────────────────────────────────────────────────
 
 class _AvatarWidget extends StatelessWidget {
@@ -545,7 +551,7 @@ class _AvatarWidget extends StatelessWidget {
             radius: 44,
             backgroundColor: AppColors.divider,
             backgroundImage: avatarUrl != null
-                ? NetworkImage('${AppConfig.apiBaseUrl}/$avatarUrl')
+                ? NetworkImage(_resolveFileUrl(AppConfig.apiBaseUrl, avatarUrl!))
                 : null,
             child: avatarUrl == null
                 ? const Icon(Icons.person, size: 44, color: AppColors.textSecondary)

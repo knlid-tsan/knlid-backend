@@ -12,10 +12,9 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { diskStorage } from 'multer';
-import { extname } from 'path';
-import { randomUUID } from 'crypto';
+import { memoryStorage } from 'multer';
 import { Request } from 'express';
+import { StorageService } from '../storage/storage.service';
 import { UsersService } from './users.service';
 import { UserRole } from './user.entity';
 import { JwtAuthGuard, AuthenticatedUser } from '../auth/jwt-auth.guard';
@@ -37,6 +36,7 @@ export class UsersController {
   constructor(
     private readonly usersService: UsersService,
     private readonly auditService: AuditService,
+    private readonly storageService: StorageService,
   ) {}
 
   // GET /users/me — профиль текущего пользователя (включая identity_photo_url для самого пользователя)
@@ -79,12 +79,7 @@ export class UsersController {
   @Post('me/avatar')
   @UseInterceptors(
     FileInterceptor('file', {
-      storage: diskStorage({
-        destination: './uploads/avatars',
-        filename: (_req, file, cb) => {
-          cb(null, `${randomUUID()}${extname(file.originalname)}`);
-        },
-      }),
+      storage: memoryStorage(),
       limits: { fileSize: 5 * 1024 * 1024 },
       fileFilter: (_req, file, cb) => {
         if (AVATAR_MIMES.includes(file.mimetype)) {
@@ -100,7 +95,8 @@ export class UsersController {
     @Req() req: AuthenticatedRequest,
   ) {
     if (!file) throw new BadRequestException('Файл не прикреплён');
-    return this.usersService.updateAvatar(req.user.sub, file.path);
+    const key = await this.storageService.upload(file, 'avatars');
+    return this.usersService.updateAvatar(req.user.sub, key);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)

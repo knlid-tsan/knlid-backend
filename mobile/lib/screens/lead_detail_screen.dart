@@ -10,6 +10,12 @@ import '../config.dart';
 import '../theme/app_colors.dart';
 import 'verification_screen.dart';
 
+String _resolveFileUrl(String base, String key) {
+  if (key.startsWith('http://') || key.startsWith('https://')) return key;
+  if (key.startsWith('/')) return '$base$key';
+  return '$base/$key';
+}
+
 String _fmt(String amount) {
   final n = double.tryParse(amount);
   if (n == null) return amount;
@@ -1425,7 +1431,7 @@ class _ConfirmPaymentBlock extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final imageUrl = proofUrl != null
-        ? '${AppConfig.apiBaseUrl}/$proofUrl'
+        ? _resolveFileUrl(AppConfig.apiBaseUrl, proofUrl!)
         : null;
 
     return Container(

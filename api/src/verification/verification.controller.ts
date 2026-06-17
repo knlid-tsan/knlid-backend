@@ -8,15 +8,14 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { diskStorage } from 'multer';
-import { extname } from 'path';
-import { randomUUID } from 'crypto';
+import { memoryStorage } from 'multer';
 import { Request } from 'express';
 import { JwtAuthGuard, AuthenticatedUser } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
 import { UserRole } from '../users/user.entity';
 import { VerificationService } from './verification.service';
+import { StorageService } from '../storage/storage.service';
 
 const ALLOWED_MIMES = ['image/jpeg', 'image/png', 'application/pdf'];
 const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024; // 10 МБ
@@ -29,18 +28,15 @@ interface AuthenticatedRequest extends Request {
 @Roles(UserRole.USER)
 @Controller('users/me')
 export class VerificationController {
-  constructor(private verificationService: VerificationService) {}
+  constructor(
+    private verificationService: VerificationService,
+    private storageService: StorageService,
+  ) {}
 
   @Post('identity-document')
   @UseInterceptors(
     FileInterceptor('file', {
-      storage: diskStorage({
-        destination: './uploads',
-        filename: (_req, file, cb) => {
-          const unique = randomUUID();
-          cb(null, `${unique}${extname(file.originalname)}`);
-        },
-      }),
+      storage: memoryStorage(),
       limits: { fileSize: MAX_FILE_SIZE_BYTES },
       fileFilter: (_req, file, cb) => {
         if (ALLOWED_MIMES.includes(file.mimetype)) {
@@ -64,10 +60,11 @@ export class VerificationController {
       throw new BadRequestException('Файл не прикреплён');
     }
 
+    const key = await this.storageService.upload(file, 'identity');
     const ip = (req.ip ?? req.socket?.remoteAddress) || null;
     const user = await this.verificationService.uploadDocument(
       req.user.sub,
-      file.path,
+      key,
       ip,
     );
 

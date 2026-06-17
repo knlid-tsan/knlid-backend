@@ -35,6 +35,7 @@ import { AuditService } from '../audit/audit.service';
 import { AuditAction } from '../audit/audit-action.enum';
 import { NotificationsService } from '../notifications/notifications.service';
 import { SettingsService } from '../settings/settings.service';
+import { StorageService } from '../storage/storage.service';
 
 const SYSTEM_ACTOR_ID = '00000000-0000-0000-0000-000000000000';
 
@@ -101,6 +102,7 @@ export class LeadsService {
     private auditService: AuditService,
     private notificationsService: NotificationsService,
     private settingsService: SettingsService,
+    private storageService: StorageService,
   ) {}
 
   async create(dto: CreateLeadDto, authorId: string, authorRole: UserRole, ip?: string) {
@@ -651,7 +653,7 @@ export class LeadsService {
 
         // Автор видит чек (proof_url) когда исполнитель его прикрепил
         if (isAuthor && reward.status === RewardStatus.PAID) {
-          reward_proof_url = reward.proof_url;
+          reward_proof_url = await this.storageService.getUrl(reward.proof_url);
         }
       }
     }
@@ -938,7 +940,7 @@ export class LeadsService {
     return { data, total: Number(countRow.total), page, limit };
   }
 
-  async submitProof(leadId: string, userId: string, filePath: string, ip?: string) {
+  async submitProof(leadId: string, userId: string, key: string, ip?: string) {
     const lead = await this.getLeadOrFail(leadId);
 
     if (lead.executor_id !== userId) {
@@ -949,7 +951,7 @@ export class LeadsService {
     }
 
     try {
-      await this.rewardsService.attachProof(leadId, filePath);
+      await this.rewardsService.attachProof(leadId, key);
     } catch (err) {
       throw new BadRequestException((err as Error).message);
     }
@@ -960,7 +962,7 @@ export class LeadsService {
       action: AuditAction.REWARD_PROOF_ATTACHED,
       actorId: userId,
       ip: ip ?? null,
-      metadata: { proof_url: filePath },
+      metadata: { proof_url: key },
     });
 
     return this.serializeLead(lead, userId);

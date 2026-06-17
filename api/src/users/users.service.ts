@@ -5,6 +5,7 @@ import { User, UserRole, UserStatus } from './user.entity';
 import { BanksService } from '../banks/banks.service';
 import { UpdatePaymentDto } from './dto/update-payment.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
+import { StorageService } from '../storage/storage.service';
 
 @Injectable()
 export class UsersService {
@@ -12,6 +13,7 @@ export class UsersService {
     @InjectRepository(User)
     private usersRepository: Repository<User>,
     private banksService: BanksService,
+    private storageService: StorageService,
   ) {}
 
   // Создать пользователя
@@ -55,6 +57,9 @@ export class UsersService {
     user.leads_received = Number(stats.leads_received);
     user.leads_closed   = Number(stats.leads_closed);
     (user as any).has_active_execution_leads = Number(stats.active_execution_leads) > 0;
+
+    user.avatar_url = (await this.storageService.getUrl(user.avatar_url)) ?? user.avatar_url;
+    user.identity_photo_url = (await this.storageService.getUrl(user.identity_photo_url)) ?? user.identity_photo_url;
 
     return user;
   }
@@ -149,21 +154,23 @@ export class UsersService {
     return this.usersRepository.save(user);
   }
 
-  async updateAvatar(userId: string, filePath: string): Promise<{ avatar_url: string }> {
+  async updateAvatar(userId: string, key: string): Promise<{ avatar_url: string }> {
     const user = await this.usersRepository.findOneBy({ id: userId });
     if (!user) throw new NotFoundException('Пользователь не найден');
 
-    user.avatar_url = filePath;
+    user.avatar_url = key;
     await this.usersRepository.save(user);
-    return { avatar_url: filePath };
+    const url = (await this.storageService.getUrl(key)) ?? key;
+    return { avatar_url: url };
   }
 
-  async moderatorSetAvatar(userId: string, filePath: string): Promise<{ avatar_url: string }> {
+  async moderatorSetAvatar(userId: string, key: string): Promise<{ avatar_url: string }> {
     const user = await this.usersRepository.findOneBy({ id: userId });
     if (!user) throw new NotFoundException('Пользователь не найден');
-    user.avatar_url = filePath;
+    user.avatar_url = key;
     await this.usersRepository.save(user);
-    return { avatar_url: filePath };
+    const url = (await this.storageService.getUrl(key)) ?? key;
+    return { avatar_url: url };
   }
 
   async moderatorRemoveAvatar(userId: string): Promise<{ avatar_url: null }> {

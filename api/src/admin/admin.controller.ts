@@ -18,10 +18,9 @@ import {
   ConflictException,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { diskStorage } from 'multer';
-import { extname } from 'path';
-import { randomUUID } from 'crypto';
+import { memoryStorage } from 'multer';
 import { BanksService } from '../banks/banks.service';
+import { StorageService } from '../storage/storage.service';
 import { CreateBankDto } from '../banks/dto/create-bank.dto';
 import { UpdateBankDto } from '../banks/dto/update-bank.dto';
 import { Request } from 'express';
@@ -70,6 +69,7 @@ export class AdminController {
     private banksService: BanksService,
     private companiesService: CompaniesService,
     private dataSource: DataSource,
+    private storageService: StorageService,
   ) {}
 
   // POST /admin/bootstrap-admin — назначить первого админа по секретному ключу
@@ -206,8 +206,10 @@ export class AdminController {
     const recentActions = await this.auditService.findByUser(id, 20);
 
     const { identity_photo_url: _, ...userFields } = user;
+    const avatar_url = await this.storageService.getUrl(user.avatar_url);
     return {
       ...userFields,
+      avatar_url,
       stats: {
         leads_created: statsRow.leads_created,
         leads_assigned: statsRow.leads_assigned,
@@ -373,12 +375,7 @@ export class AdminController {
   @Post('users/:id/avatar')
   @UseInterceptors(
     FileInterceptor('file', {
-      storage: diskStorage({
-        destination: './uploads/avatars',
-        filename: (_req, file, cb) => {
-          cb(null, `${randomUUID()}${extname(file.originalname)}`);
-        },
-      }),
+      storage: memoryStorage(),
       limits: { fileSize: 5 * 1024 * 1024 },
       fileFilter: (_req, file, cb) => {
         if (['image/jpeg', 'image/png'].includes(file.mimetype)) {
@@ -394,7 +391,8 @@ export class AdminController {
     @UploadedFile() file: Express.Multer.File,
   ) {
     if (!file) throw new BadRequestException('Файл не прикреплён');
-    return this.usersService.moderatorSetAvatar(id, file.path);
+    const key = await this.storageService.upload(file, 'avatars');
+    return this.usersService.moderatorSetAvatar(id, key);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)

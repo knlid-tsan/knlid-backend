@@ -13,10 +13,9 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { diskStorage } from 'multer';
-import { extname } from 'path';
-import { randomUUID } from 'crypto';
+import { memoryStorage } from 'multer';
 import { Request } from 'express';
+import { StorageService } from '../storage/storage.service';
 import { JwtAuthGuard, AuthenticatedUser } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
@@ -35,7 +34,10 @@ interface AuthenticatedRequest extends Request {
 
 @Controller('companies')
 export class CompaniesController {
-  constructor(private companiesService: CompaniesService) {}
+  constructor(
+    private companiesService: CompaniesService,
+    private storageService: StorageService,
+  ) {}
 
   // ── Public ────────────────────────────────────────────────────────────────
 
@@ -59,12 +61,7 @@ export class CompaniesController {
   @Post('me/document')
   @UseInterceptors(
     FileInterceptor('file', {
-      storage: diskStorage({
-        destination: './uploads',
-        filename: (_req, file, cb) => {
-          cb(null, `company_${randomUUID()}${extname(file.originalname)}`);
-        },
-      }),
+      storage: memoryStorage(),
       limits: { fileSize: MAX_FILE_SIZE_BYTES },
       fileFilter: (_req, file, cb) => {
         if (ALLOWED_MIMES.includes(file.mimetype)) {
@@ -78,8 +75,10 @@ export class CompaniesController {
   async uploadDocument(@UploadedFile() file: Express.Multer.File, @Req() req: AuthenticatedRequest) {
     if (!file) throw new BadRequestException('Файл не прикреплён');
     if (!req.user.company_id) throw new BadRequestException('Аккаунт не привязан к компании');
-    const company = await this.companiesService.uploadDocument(req.user.company_id, req.user.sub, file.path);
-    return { message: 'Документ отправлен на модерацию', status: company.status, document_url: company.document_url };
+    const key = await this.storageService.upload(file, 'company');
+    const company = await this.companiesService.uploadDocument(req.user.company_id, req.user.sub, key);
+    const url = await this.storageService.getUrl(company.document_url);
+    return { message: 'Документ отправлен на модерацию', status: company.status, document_url: url };
   }
 
   // GET /companies/me/applications?status=pending

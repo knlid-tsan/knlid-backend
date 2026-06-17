@@ -10,7 +10,6 @@ import {
   UseGuards,
   NotFoundException,
 } from '@nestjs/common';
-import { resolve } from 'path';
 import type { Response } from 'express';
 import { Request } from 'express';
 import { JwtAuthGuard, AuthenticatedUser } from '../auth/jwt-auth.guard';
@@ -20,6 +19,7 @@ import { UserRole } from '../users/user.entity';
 import { CompaniesService } from './companies.service';
 import { RejectCompanyDto } from './dto/reject-company.dto';
 import { CompanyStatus } from './entities/company.entity';
+import { StorageService } from '../storage/storage.service';
 
 interface AuthenticatedRequest extends Request {
   user: AuthenticatedUser;
@@ -29,7 +29,10 @@ interface AuthenticatedRequest extends Request {
 @Roles(UserRole.MODERATOR, UserRole.ADMIN)
 @Controller('moderation/companies')
 export class CompaniesModerationController {
-  constructor(private companiesService: CompaniesService) {}
+  constructor(
+    private companiesService: CompaniesService,
+    private storageService: StorageService,
+  ) {}
 
   // GET /moderation/companies?status=pending
   @Get()
@@ -37,22 +40,14 @@ export class CompaniesModerationController {
     return this.companiesService.listForModeration(status);
   }
 
-  // GET /moderation/companies/:id/document — отдать файл документа юрлица
+  // GET /moderation/companies/:id/document — redirect на URL хранилища
   @Get(':id/document')
   async getDocument(@Param('id') id: string, @Res() res: Response) {
     const company = await this.companiesService.getForModeration(id);
-    if (!company.document_url) {
-      throw new NotFoundException('Документ не загружен');
-    }
-    const absolutePath = resolve(process.cwd(), company.document_url);
-    (res as unknown as { sendFile: (p: string, cb: (e?: Error) => void) => void }).sendFile(
-      absolutePath,
-      (err) => {
-        if (err) {
-          res.status(404).json({ message: 'Файл не найден на диске' });
-        }
-      },
-    );
+    if (!company.document_url) throw new NotFoundException('Документ не загружен');
+    const url = await this.storageService.getUrl(company.document_url);
+    if (!url) throw new NotFoundException('Файл не найден');
+    res.redirect(url.startsWith('http') ? url : `/${url}`);
   }
 
   // GET /moderation/companies/:id

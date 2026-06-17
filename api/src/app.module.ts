@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { StorageModule } from './storage/storage.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { AppController } from './app.controller';
@@ -84,6 +85,7 @@ import { UserConsent } from './consents/user-consent.entity';
       synchronize: false,
     }),
     // Глобальные модули регистрируем первыми
+    StorageModule,
     AuditModule,
     NotificationsModule,
     // Остальные модули
