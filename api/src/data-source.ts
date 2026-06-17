@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import { DataSource } from 'typeorm';
 import { User } from './users/user.entity';
 import { OtpCode } from './auth/otp-code.entity';
@@ -19,11 +20,11 @@ import { UserConsent } from './consents/user-consent.entity';
 
 export const AppDataSource = new DataSource({
   type: 'postgres',
-  host: 'localhost',
-  port: 5432,
-  username: 'evgenykobiliastsky',
-  password: '',
-  database: 'knlid_dev',
+  host:     process.env.DB_HOST     || 'localhost',
+  port:     Number(process.env.DB_PORT) || 5432,
+  username: process.env.DB_USERNAME || 'evgenykobiliastsky',
+  password: process.env.DB_PASSWORD || '',
+  database: process.env.DB_DATABASE || 'knlid_dev',
   entities: [
     User,
     OtpCode,
