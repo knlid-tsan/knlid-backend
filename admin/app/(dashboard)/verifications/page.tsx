@@ -64,6 +64,8 @@ export default function VerificationsPage() {
   const [docUrl, setDocUrl] = useState<string | null>(null);
   const [docLoading, setDocLoading] = useState(false);
   const [docError, setDocError] = useState('');
+  const [docLightbox, setDocLightbox] = useState(false);
+  const [docDownloading, setDocDownloading] = useState(false);
 
   const [rejecting, setRejecting] = useState(false);
   const [selectedPreset, setSelectedPreset] = useState('');
@@ -98,6 +100,18 @@ export default function VerificationsPage() {
     loadQueue();
   }, [loadQueue]);
 
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Escape') {
+        if (docLightbox) { setDocLightbox(false); return; }
+        if (selected) closeModal();
+      }
+    }
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [docLightbox, selected]);
+
   async function openUser(user: VerificationUser) {
     setSelected(user);
     setDocUrl(null);
@@ -125,7 +139,23 @@ export default function VerificationsPage() {
     if (docUrl) URL.revokeObjectURL(docUrl);
     setSelected(null);
     setDocUrl(null);
+    setDocLightbox(false);
     setConfirmRemoveAvatar(false);
+  }
+
+  async function handleDocDownload() {
+    if (!docUrl || !selected) return;
+    setDocDownloading(true);
+    try {
+      const a = document.createElement('a');
+      a.href = docUrl;
+      a.download = `doc_${selected.full_name.replace(/\s+/g, '_')}.jpg`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    } finally {
+      setDocDownloading(false);
+    }
   }
 
   function showToast(message: string) {
@@ -415,20 +445,34 @@ export default function VerificationsPage() {
                 {/* Document */}
                 <div className="space-y-2">
                   <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Документ</p>
-                  <div className="rounded-lg bg-gray-50 border border-gray-200 overflow-hidden h-44 flex items-center justify-center">
+                  <div
+                    className={`rounded-lg bg-gray-50 border border-gray-200 overflow-hidden h-44 flex items-center justify-center relative group ${docUrl ? 'cursor-zoom-in' : ''}`}
+                    onClick={() => docUrl && setDocLightbox(true)}
+                  >
                     {docLoading ? (
                       <span className="text-gray-400 text-sm">Загрузка...</span>
                     ) : docError ? (
                       <span className="text-red-500 text-sm px-4 text-center">{docError}</span>
                     ) : docUrl ? (
-                      <img
-                        src={docUrl}
-                        alt="Документ пользователя"
-                        className="max-w-full max-h-44 object-contain"
-                      />
+                      <>
+                        <img
+                          src={docUrl}
+                          alt="Документ пользователя"
+                          className="max-w-full max-h-44 object-contain"
+                        />
+                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center">
+                          <span className="opacity-0 group-hover:opacity-100 transition-opacity bg-black/60 text-white text-xs font-medium px-2.5 py-1 rounded-full">
+                            🔍 Увеличить
+                          </span>
+                        </div>
+                      </>
                     ) : null}
                   </div>
-                  <p className="text-xs text-gray-400">Только для просмотра</p>
+                  {docUrl ? (
+                    <p className="text-xs text-gray-400">Нажмите для увеличения</p>
+                  ) : (
+                    <p className="text-xs text-gray-400">Только для просмотра</p>
+                  )}
                 </div>
               </div>
 
@@ -536,6 +580,49 @@ export default function VerificationsPage() {
                 </div>
               )}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Document lightbox */}
+      {docLightbox && docUrl && (
+        <div
+          className="fixed inset-0 z-[60] flex flex-col bg-black/90"
+          onClick={(e) => e.target === e.currentTarget && setDocLightbox(false)}
+        >
+          {/* Lightbox toolbar */}
+          <div className="flex items-center justify-between px-5 py-3 flex-shrink-0">
+            <span className="text-white/70 text-sm">
+              {selected?.full_name} — документ верификации
+            </span>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={handleDocDownload}
+                disabled={docDownloading}
+                className="text-white/80 hover:text-white text-sm border border-white/20 hover:border-white/40 rounded-lg px-3 py-1.5 transition-colors disabled:opacity-50"
+              >
+                {docDownloading ? '...' : 'Скачать'}
+              </button>
+              <button
+                onClick={() => setDocLightbox(false)}
+                className="text-white/70 hover:text-white text-3xl leading-none transition-colors"
+                aria-label="Закрыть"
+              >
+                ×
+              </button>
+            </div>
+          </div>
+          {/* Image */}
+          <div
+            className="flex-1 flex items-center justify-center p-4 cursor-zoom-out"
+            onClick={() => setDocLightbox(false)}
+          >
+            <img
+              src={docUrl}
+              alt="Документ пользователя"
+              className="max-w-[90vw] max-h-[calc(100vh-3.5rem)] w-auto h-auto object-contain select-none"
+              onClick={(e) => e.stopPropagation()}
+            />
           </div>
         </div>
       )}
