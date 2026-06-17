@@ -32,6 +32,11 @@ export class NotificationsController {
     return this.notificationsService.findMy(req.user.sub, pageNum, limitNum);
   }
 
+  @Post('read-all')
+  markAllRead(@Req() req: AuthenticatedRequest) {
+    return this.notificationsService.markAllRead(req.user.sub);
+  }
+
   @Post(':id/read')
   markRead(@Param('id') id: string, @Req() req: AuthenticatedRequest) {
     return this.notificationsService.markRead(id, req.user.sub);

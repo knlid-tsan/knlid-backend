@@ -3,6 +3,7 @@ import 'screens/splash_screen.dart';
 import 'screens/phone_screen.dart';
 import 'screens/main_screen.dart';
 import 'theme/app_theme.dart';
+import 'services/navigator_key.dart';
 
 void main() {
   runApp(const KnlidApp());
@@ -14,6 +15,7 @@ class KnlidApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      navigatorKey: navigatorKey,
       title: 'KN.LID',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,

@@ -49,6 +49,13 @@ export class NotificationsService {
     return { items, total, page, limit };
   }
 
+  async markAllRead(userId: string): Promise<void> {
+    await this.notificationsRepository.update(
+      { user_id: userId, is_read: false },
+      { is_read: true },
+    );
+  }
+
   async markRead(id: string, userId: string): Promise<Notification> {
     const notification = await this.notificationsRepository.findOneBy({ id });
 

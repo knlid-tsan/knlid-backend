@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../config.dart';
+import 'navigator_key.dart';
 
 /// Singleton Dio client. Automatically attaches the JWT Bearer token to every
 /// request via an interceptor. Token is stored in the platform secure storage
@@ -34,6 +35,14 @@ class ApiClient {
           options.headers['Authorization'] = 'Bearer $token';
         }
         handler.next(options);
+      },
+      onError: (error, handler) async {
+        if (error.response?.statusCode == 401) {
+          await clearToken();
+          navigatorKey.currentState
+              ?.pushNamedAndRemoveUntil('/phone', (_) => false);
+        }
+        handler.next(error);
       },
     ));
   }

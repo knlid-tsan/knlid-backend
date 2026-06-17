@@ -3,11 +3,13 @@ import '../models/lead.dart';
 import '../services/leads_service.dart';
 import '../services/api_client.dart';
 import '../services/support_service.dart';
+import '../services/notifications_service.dart';
 import '../theme/app_colors.dart';
 import 'lead_card.dart';
 import 'lead_detail_screen.dart';
 import 'create_lead_screen.dart';
 import 'support_chat_screen.dart';
+import 'notifications_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   final VoidCallback? onLeadCreated;
@@ -23,6 +25,7 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _loading = true;
   String? _error;
   int _unreadCount = 0;
+  int _unreadNotifCount = 0;
 
   Lead? _topCreated;
   Lead? _topAssigned;
@@ -33,6 +36,7 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     _load();
     _loadUnread();
+    _loadNotifBadge();
   }
 
   Future<void> _load() async {
@@ -92,6 +96,24 @@ class _HomeScreenState extends State<HomeScreen> {
       final count = await SupportService().getUnread();
       if (mounted) setState(() => _unreadCount = count);
     } catch (_) {}
+  }
+
+  Future<void> _loadNotifBadge() async {
+    try {
+      final count = await NotificationsService().getUnreadCount();
+      if (mounted) setState(() => _unreadNotifCount = count);
+    } catch (_) {}
+  }
+
+  Future<void> _openNotifications() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const NotificationsScreen()),
+    );
+    if (!mounted) return;
+    // Give fire-and-forget markRead calls time to complete on server
+    await Future.delayed(const Duration(milliseconds: 500));
+    if (mounted) _loadNotifBadge();
   }
 
   Future<void> _openChat() async {
@@ -168,7 +190,17 @@ class _HomeScreenState extends State<HomeScreen> {
               const _CompactLogo(),
               Positioned(
                 right: 0,
-                child: _ChatButton(count: _unreadCount, onTap: _openChat),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _BellButton(
+                      count: _unreadNotifCount,
+                      onTap: _openNotifications,
+                    ),
+                    const SizedBox(width: 10),
+                    _ChatButton(count: _unreadCount, onTap: _openChat),
+                  ],
+                ),
               ),
             ],
           ),
@@ -377,6 +409,53 @@ class _EmptyBlock extends StatelessWidget {
   }
 }
 
+class _BellButton extends StatelessWidget {
+  final int count;
+  final VoidCallback onTap;
+  const _BellButton({required this.count, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
+        child: Stack(
+          clipBehavior: Clip.none,
+          children: [
+            const Icon(Icons.notifications_outlined,
+                size: 26, color: AppColors.textPrimary),
+            if (count > 0)
+              Positioned(
+                top: -4,
+                right: -4,
+                child: Container(
+                  width: 16,
+                  height: 16,
+                  decoration: const BoxDecoration(
+                    color: AppColors.brand,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Center(
+                    child: Text(
+                      count > 9 ? '9+' : '$count',
+                      style: const TextStyle(
+                        fontSize: 9,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _ChatButton extends StatelessWidget {
   final int count;
   final VoidCallback onTap;
@@ -388,7 +467,7 @@ class _ChatButton extends StatelessWidget {
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
       child: Padding(
-        padding: const EdgeInsets.all(4),
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
         child: Stack(
           clipBehavior: Clip.none,
           children: [
