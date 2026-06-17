@@ -1,8 +1,7 @@
-/// API base URL configuration.
-///
-/// iOS Simulator  → localhost resolves to Mac directly, no change needed.
-/// Android Emulator → change to http://10.0.2.2:3000
-/// Physical device  → change to http://<Mac-local-IP>:3000
+import 'package:flutter/foundation.dart';
+
 class AppConfig {
-  static const String apiBaseUrl = 'http://localhost:3000';
+  static const String apiBaseUrl = kReleaseMode
+      ? 'https://api.lid.kn.kz'
+      : 'http://localhost:3000';
 }
