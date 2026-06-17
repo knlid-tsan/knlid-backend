@@ -46,7 +46,7 @@ export class User {
   @Column({ type: 'enum', enum: Specialization, nullable: true })
   specialization: Specialization | null;
 
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   city: string | null;
 
   @Column({ type: 'enum', enum: UserStatus, default: UserStatus.NEW })
