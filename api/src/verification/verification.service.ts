@@ -11,6 +11,8 @@ import { AuditService } from '../audit/audit.service';
 import { AuditAction } from '../audit/audit-action.enum';
 import { NotificationsService } from '../notifications/notifications.service';
 import { RejectVerificationDto } from './dto/reject-verification.dto';
+import { UserConsent } from '../consents/user-consent.entity';
+import { ConsentType } from '../consents/consent-type.enum';
 
 const MAX_ATTEMPTS = 3;
 const BLOCK_HOURS = 24;
@@ -20,6 +22,8 @@ export class VerificationService {
   constructor(
     @InjectRepository(User)
     private usersRepository: Repository<User>,
+    @InjectRepository(UserConsent)
+    private userConsentsRepository: Repository<UserConsent>,
     private auditService: AuditService,
     private notificationsService: NotificationsService,
   ) {}
@@ -53,6 +57,14 @@ export class VerificationService {
     user.verification_attempts += 1;
     user.verification_rejection_reason = null;
     await this.usersRepository.save(user);
+
+    await this.userConsentsRepository.save(
+      this.userConsentsRepository.create({
+        user_id: userId,
+        consent_type: ConsentType.DOCUMENT_PROCESSING,
+        document_version: '1.0',
+      }),
+    );
 
     await this.auditService.log({
       entityType: 'user',

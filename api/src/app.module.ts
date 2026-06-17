@@ -35,6 +35,7 @@ import { Bank } from './banks/bank.entity';
 import { SupportModule } from './support/support.module';
 import { Conversation } from './support/entities/conversation.entity';
 import { Message } from './support/entities/message.entity';
+import { UserConsent } from './consents/user-consent.entity';
 
 @Module({
   imports: [
@@ -64,6 +65,7 @@ import { Message } from './support/entities/message.entity';
         Bank,
         Conversation,
         Message,
+        UserConsent,
       ],
       synchronize: false,
     }),

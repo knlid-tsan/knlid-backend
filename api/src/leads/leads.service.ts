@@ -150,6 +150,7 @@ export class LeadsService {
         status: LeadStatus.NEW,
         is_duplicate: isDuplicate,
         duplicate_of_id: isDuplicate ? duplicate!.id : null,
+        client_consent_confirmed: dto.client_consent_confirmed,
       });
       await manager.save(lead);
 

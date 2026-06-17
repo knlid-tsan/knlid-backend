@@ -17,6 +17,8 @@ import { VerifyOtpDto } from './dto/verify-otp.dto';
 import { RegisterDto } from './dto/register.dto';
 import { AuditService } from '../audit/audit.service';
 import { AuditAction } from '../audit/audit-action.enum';
+import { UserConsent } from '../consents/user-consent.entity';
+import { ConsentType } from '../consents/consent-type.enum';
 
 const OTP_TTL_MINUTES = 5;
 const OTP_REQUEST_LIMIT = 3;
@@ -29,6 +31,8 @@ export class AuthService {
   constructor(
     @InjectRepository(OtpCode)
     private otpCodesRepository: Repository<OtpCode>,
+    @InjectRepository(UserConsent)
+    private userConsentsRepository: Repository<UserConsent>,
     private usersService: UsersService,
     private jwtService: JwtService,
     private auditService: AuditService,
@@ -121,6 +125,14 @@ export class AuthService {
     });
 
     await this.otpCodesRepository.delete({ phone: dto.phone });
+
+    await this.userConsentsRepository.save(
+      this.userConsentsRepository.create({
+        user_id: user.id,
+        consent_type: ConsentType.TERMS_AND_PRIVACY,
+        document_version: '1.0',
+      }),
+    );
 
     await this.auditService.log({
       entityType: 'user',

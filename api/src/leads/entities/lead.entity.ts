@@ -52,6 +52,9 @@ export class Lead {
   @Column({ type: 'uuid', nullable: true })
   duplicate_of_id: string | null;
 
+  @Column({ default: false })
+  client_consent_confirmed: boolean;
+
   @CreateDateColumn()
   created_at: Date;
 

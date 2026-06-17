@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../models/city.dart';
 import '../services/api_client.dart';
 import '../services/auth_service.dart';
@@ -26,6 +27,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   bool _loadingCities = true;
   bool _submitting = false;
+  bool _termsAccepted = false;
   String _error = '';
 
   static const _specializations = [
@@ -190,9 +192,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                 ],
 
-                const SizedBox(height: 28),
+                const SizedBox(height: 24),
+                _TermsConsentRow(
+                  accepted: _termsAccepted,
+                  onChanged: (v) => setState(() => _termsAccepted = v ?? false),
+                ),
+                const SizedBox(height: 20),
                 FilledButton(
-                  onPressed: _submitting ? null : _submit,
+                  onPressed: _submitting || !_termsAccepted ? null : _submit,
                   style: FilledButton.styleFrom(
                     backgroundColor: AppColors.primary,
                     padding: const EdgeInsets.symmetric(vertical: 16),
@@ -237,6 +244,89 @@ class _RegisterScreenState extends State<RegisterScreen> {
         ),
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       );
+}
+
+class _TermsConsentRow extends StatelessWidget {
+  final bool accepted;
+  final ValueChanged<bool?> onChanged;
+  const _TermsConsentRow({required this.accepted, required this.onChanged});
+
+  Future<void> _open(String url) async {
+    final uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) await launchUrl(uri, mode: LaunchMode.externalApplication);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          width: 24,
+          height: 24,
+          child: Checkbox(
+            value: accepted,
+            onChanged: onChanged,
+            activeColor: AppColors.primary,
+            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          ),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: GestureDetector(
+            onTap: () => onChanged(!accepted),
+            child: RichText(
+              text: TextSpan(
+                style: const TextStyle(
+                  fontSize: 13,
+                  color: AppColors.textSecondary,
+                  height: 1.45,
+                ),
+                children: [
+                  const TextSpan(text: 'Я принимаю '),
+                  WidgetSpan(
+                    alignment: PlaceholderAlignment.baseline,
+                    baseline: TextBaseline.alphabetic,
+                    child: GestureDetector(
+                      onTap: () => _open('https://lid.kn.kz/terms'),
+                      child: const Text(
+                        'Пользовательское соглашение',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: AppColors.primary,
+                          decoration: TextDecoration.underline,
+                          decorationColor: AppColors.primary,
+                          height: 1.45,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const TextSpan(text: ' и '),
+                  WidgetSpan(
+                    alignment: PlaceholderAlignment.baseline,
+                    baseline: TextBaseline.alphabetic,
+                    child: GestureDetector(
+                      onTap: () => _open('https://lid.kn.kz/privacy'),
+                      child: const Text(
+                        'Политику конфиденциальности',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: AppColors.primary,
+                          decoration: TextDecoration.underline,
+                          decorationColor: AppColors.primary,
+                          height: 1.45,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
 }
 
 class _Label extends StatelessWidget {

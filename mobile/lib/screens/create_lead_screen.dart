@@ -54,6 +54,8 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
   String? _checkError;
   String? _submitError;
 
+  bool _clientConsentAccepted = false;
+
   @override
   void initState() {
     super.initState();
@@ -405,9 +407,18 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
               _ErrorCard(_submitError!),
             ],
 
-            const SizedBox(height: 28),
+            const SizedBox(height: 20),
+            _ConsentCheckbox(
+              value: _clientConsentAccepted,
+              onChanged: (v) =>
+                  setState(() => _clientConsentAccepted = v ?? false),
+              text: 'Я подтверждаю, что получил согласие клиента на передачу '
+                  'его контактных данных',
+            ),
+
+            const SizedBox(height: 16),
             FilledButton(
-              onPressed: isSubmitting ? null : _submit,
+              onPressed: isSubmitting || !_clientConsentAccepted ? null : _submit,
               style: FilledButton.styleFrom(
                 backgroundColor: AppColors.primary,
                 padding: const EdgeInsets.symmetric(vertical: 16),
@@ -658,6 +669,50 @@ class _DupWarning extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _ConsentCheckbox extends StatelessWidget {
+  final bool value;
+  final ValueChanged<bool?> onChanged;
+  final String text;
+  const _ConsentCheckbox({
+    required this.value,
+    required this.onChanged,
+    required this.text,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          width: 24,
+          height: 24,
+          child: Checkbox(
+            value: value,
+            onChanged: onChanged,
+            activeColor: AppColors.primary,
+            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          ),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: GestureDetector(
+            onTap: () => onChanged(!value),
+            child: Text(
+              text,
+              style: const TextStyle(
+                fontSize: 13,
+                color: AppColors.textSecondary,
+                height: 1.45,
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

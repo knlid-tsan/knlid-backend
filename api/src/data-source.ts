@@ -15,6 +15,7 @@ import { CompanyMembership } from './companies/entities/company-membership.entit
 import { Setting } from './settings/setting.entity';
 import { Conversation } from './support/entities/conversation.entity';
 import { Message } from './support/entities/message.entity';
+import { UserConsent } from './consents/user-consent.entity';
 
 export const AppDataSource = new DataSource({
   type: 'postgres',
@@ -40,6 +41,7 @@ export const AppDataSource = new DataSource({
     Setting,
     Conversation,
     Message,
+    UserConsent,
   ],
   migrations: ['src/migrations/*.ts'],
   synchronize: false,

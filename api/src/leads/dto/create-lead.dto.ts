@@ -5,6 +5,7 @@ import {
   IsEnum,
   IsOptional,
   IsBoolean,
+  Equals,
   ValidateNested,
 } from 'class-validator';
 import { LeadType } from '../enums/lead-type.enum';
@@ -38,6 +39,10 @@ export class CreateLeadDto {
   @ValidateNested()
   @Type(() => CreateLeadClientDto)
   client: CreateLeadClientDto;
+
+  @IsBoolean()
+  @Equals(true, { message: 'Необходимо подтвердить согласие клиента на передачу контактных данных' })
+  client_consent_confirmed: boolean;
 
   @IsOptional()
   @IsBoolean()

@@ -105,6 +105,7 @@ class LeadsService {
         'full_name': clientName,
         'city': clientCity,
       },
+      'client_consent_confirmed': true,
     };
     if (force) data['force'] = true;
     final response = await _dio.post('/leads', data: data);

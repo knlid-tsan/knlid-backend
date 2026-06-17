@@ -8,10 +8,11 @@ import { UsersModule } from '../users/users.module';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { RolesGuard } from './roles.guard';
 import { JWT_SECRET } from './constants';
+import { UserConsent } from '../consents/user-consent.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([OtpCode]),
+    TypeOrmModule.forFeature([OtpCode, UserConsent]),
     forwardRef(() => UsersModule),
     JwtModule.register({
       secret: JWT_SECRET,

@@ -31,6 +31,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
   String? _rejectionReason;
   bool _loading = true;
   bool _uploading = false;
+  bool _docConsentAccepted = false;
   String? _error;
 
   @override
@@ -259,12 +260,23 @@ class _VerificationScreenState extends State<VerificationScreen> {
           ),
         ],
 
-        const SizedBox(height: 28),
+        const SizedBox(height: 24),
+
+        // Согласие на обработку документа (только когда можно загрузить)
+        if (_state == _VerifState.notStarted || _state == _VerifState.rejected)
+          _ConsentCheckbox(
+            value: _docConsentAccepted,
+            onChanged: (v) => setState(() => _docConsentAccepted = v ?? false),
+            text: 'Я даю согласие на обработку изображения моего документа, '
+                'удостоверяющего личность, для целей верификации',
+          ),
+
+        const SizedBox(height: 16),
 
         // Кнопка действия
         if (_state == _VerifState.notStarted || _state == _VerifState.rejected)
           FilledButton.icon(
-            onPressed: _uploading ? null : _pickAndUpload,
+            onPressed: _uploading || !_docConsentAccepted ? null : _pickAndUpload,
             style: FilledButton.styleFrom(
               backgroundColor: AppColors.primary,
               padding: const EdgeInsets.symmetric(vertical: 16),
@@ -361,6 +373,50 @@ class _Step extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _ConsentCheckbox extends StatelessWidget {
+  final bool value;
+  final ValueChanged<bool?> onChanged;
+  final String text;
+  const _ConsentCheckbox({
+    required this.value,
+    required this.onChanged,
+    required this.text,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          width: 24,
+          height: 24,
+          child: Checkbox(
+            value: value,
+            onChanged: onChanged,
+            activeColor: AppColors.primary,
+            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          ),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: GestureDetector(
+            onTap: () => onChanged(!value),
+            child: Text(
+              text,
+              style: const TextStyle(
+                fontSize: 13,
+                color: AppColors.textSecondary,
+                height: 1.45,
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
