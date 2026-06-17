@@ -6,7 +6,7 @@ import { api, ApiError } from '@/lib/api';
 import { getToken, decodeToken } from '@/lib/auth';
 import { formatPhone } from '@/lib/format';
 
-const BASE_URL = 'http://localhost:3000';
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
