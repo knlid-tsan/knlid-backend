@@ -130,7 +130,7 @@ class _PhoneScreenState extends State<PhoneScreen> {
                 ),
                 const SizedBox(height: 8),
                 const Text(
-                  'Вам будет отправлен код подтверждения',
+                  'Вам будет отправлен код подтверждения в WhatsApp',
                   style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
                 ),
                 const SizedBox(height: 24),
