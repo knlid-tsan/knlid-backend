@@ -19,6 +19,7 @@ import { AuditService } from '../audit/audit.service';
 import { AuditAction } from '../audit/audit-action.enum';
 import { UserConsent } from '../consents/user-consent.entity';
 import { ConsentType } from '../consents/consent-type.enum';
+import { OtpSenderService } from '../otp-sender/otp-sender.service';
 
 const OTP_TTL_MINUTES = 5;
 const OTP_REQUEST_LIMIT = 3;
@@ -38,6 +39,7 @@ export class AuthService {
     private usersService: UsersService,
     private jwtService: JwtService,
     private auditService: AuditService,
+    private otpSender: OtpSenderService,
   ) {}
 
   async requestOtp(phone: string): Promise<{ message: string }> {
@@ -61,7 +63,9 @@ export class AuthService {
     const otp = this.otpCodesRepository.create({ phone, code, expires_at });
     await this.otpCodesRepository.save(otp);
 
-    this.logger.log(`OTP для ${phone}: ${code} (действует ${OTP_TTL_MINUTES} мин)`);
+    await this.otpSender.send(phone, code).catch((err: Error) =>
+      this.logger.error(`Ошибка отправки OTP для ${phone}: ${err?.message}`),
+    );
 
     return { message: 'Код отправлен' };
   }
