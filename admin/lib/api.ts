@@ -29,7 +29,8 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
     throw new ApiError(res.status, (body as { message?: string }).message ?? `Ошибка ${res.status}`);
   }
 
-  return res.json() as Promise<T>;
+  const text = await res.text();
+  return (text ? JSON.parse(text) : null) as T;
 }
 
 async function postFile<T>(path: string, file: File, fieldName = 'file'): Promise<T> {

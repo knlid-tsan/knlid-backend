@@ -298,7 +298,7 @@ export class CompaniesService {
       ],
       order: { created_at: 'DESC' },
     });
-    if (!memberships.length) return null;
+    if (!memberships.length) return [];
 
     const companyIds = [...new Set(memberships.map((m) => m.company_id))];
     const companies = await this.companiesRepository.find({ where: { id: In(companyIds) } });
