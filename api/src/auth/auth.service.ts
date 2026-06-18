@@ -70,6 +70,36 @@ export class AuthService {
     return { message: 'Код отправлен' };
   }
 
+  async confirmPhone(dto: VerifyOtpDto): Promise<{ ok: true }> {
+    const latestOtp = await this.otpCodesRepository.findOne({
+      where: { phone: dto.phone },
+      order: { created_at: 'DESC' },
+    });
+
+    if (latestOtp) {
+      await this._checkVerifyBlock(latestOtp);
+    }
+
+    const otp = await this.otpCodesRepository.findOne({
+      where: { phone: dto.phone, code: dto.code },
+      order: { created_at: 'DESC' },
+    });
+
+    if (!otp) {
+      if (latestOtp) await this._recordFailedAttempt(latestOtp);
+      throw new UnauthorizedException('Неверный код');
+    }
+
+    if (otp.expires_at.getTime() < Date.now()) {
+      throw new UnauthorizedException('Код истёк, запросите новый');
+    }
+
+    otp.expires_at = new Date(Date.now() + 25 * 60 * 1000);
+    await this.otpCodesRepository.save(otp);
+
+    return { ok: true };
+  }
+
   async verifyOtp(dto: VerifyOtpDto): Promise<{ access_token: string }> {
     const latestOtp = await this.otpCodesRepository.findOne({
       where: { phone: dto.phone },

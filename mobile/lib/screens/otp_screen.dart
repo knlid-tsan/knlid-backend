@@ -76,7 +76,24 @@ class _OtpScreenState extends State<OtpScreen> {
     if (widget.mode == AuthMode.login) {
       await _login(code);
     } else {
+      await _confirmAndRegister(code);
+    }
+  }
+
+  Future<void> _confirmAndRegister(String code) async {
+    setState(() {
+      _loading = true;
+      _error = '';
+    });
+    try {
+      await _authService.confirmPhone(phone: widget.phone, code: code);
+      if (!mounted) return;
       _goToRegister(code);
+    } catch (e) {
+      setState(() => _error = e.toString());
+      _codeController.clear();
+    } finally {
+      if (mounted) setState(() => _loading = false);
     }
   }
 
@@ -96,11 +113,12 @@ class _OtpScreenState extends State<OtpScreen> {
       Navigator.pushNamedAndRemoveUntil(context, '/home', (r) => false);
     } catch (e) {
       final msg = e.toString();
+      final isNotFound = msg.contains('не найден');
       setState(() {
         _error = msg;
-        _showRegisterHint = msg.contains('не найден');
+        _showRegisterHint = isNotFound;
       });
-      _codeController.clear();
+      if (!isNotFound) _codeController.clear();
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -227,7 +245,10 @@ class _OtpScreenState extends State<OtpScreen> {
                 if (_showRegisterHint) ...[
                   const SizedBox(height: 8),
                   TextButton(
-                    onPressed: () => _goToRegister(_codeController.text.trim()),
+                    onPressed: () async {
+                      final c = _codeController.text.trim();
+                      if (c.length == 6) await _confirmAndRegister(c);
+                    },
                     child: const Text(
                       'Зарегистрироваться с этим номером →',
                       style: TextStyle(

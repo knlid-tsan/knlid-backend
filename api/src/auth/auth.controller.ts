@@ -16,6 +16,12 @@ export class AuthController {
     return this.authService.requestOtp(dto.phone);
   }
 
+  // POST /auth/confirm-phone — проверить OTP и продлить TTL (шаг перед формой регистрации)
+  @Post('confirm-phone')
+  confirmPhone(@Body() dto: VerifyOtpDto): Promise<{ ok: true }> {
+    return this.authService.confirmPhone(dto);
+  }
+
   // POST /auth/verify-otp — войти (только существующий пользователь)
   @Post('verify-otp')
   verifyOtp(@Body() dto: VerifyOtpDto): Promise<{ access_token: string }> {

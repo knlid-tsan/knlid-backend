@@ -31,6 +31,22 @@ class AuthService {
     }
   }
 
+  /// Confirm OTP for new user (register flow).
+  /// Validates the code and extends its TTL so the register form can be filled.
+  Future<void> confirmPhone({
+    required String phone,
+    required String code,
+  }) async {
+    try {
+      await _client.dio.post('/auth/confirm-phone', data: {
+        'phone': phone,
+        'code': code,
+      });
+    } on DioException catch (e) {
+      throw _message(e);
+    }
+  }
+
   /// Register — create a new specialist account and return JWT.
   Future<String> register({
     required String phone,
