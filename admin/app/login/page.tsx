@@ -13,6 +13,7 @@ type RegisterStep = 'form' | 'otp' | 'success';
 interface City {
   id: string;
   name: string;
+  is_active: boolean;
 }
 
 interface RegisterForm {
@@ -65,8 +66,13 @@ export default function LoginPage() {
   const [cities, setCities] = useState<City[]>([]);
 
   useEffect(() => {
-    api.get<City[]>('/cities')
-      .then((data) => setCities(data))
+    const base = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+    fetch(`${base}/cities`)
+      .then((r) => {
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        return r.json() as Promise<City[]>;
+      })
+      .then((data) => setCities(data.filter((c) => c.is_active)))
       .catch(() => {});
   }, []);
 
