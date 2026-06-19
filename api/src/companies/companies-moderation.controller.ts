@@ -34,6 +34,13 @@ export class CompaniesModerationController {
     private storageService: StorageService,
   ) {}
 
+  // GET /moderation/companies/count?status=new
+  @Get('count')
+  async count(@Query('status') status?: CompanyStatus) {
+    const count = await this.companiesService.countByStatus(status ?? CompanyStatus.NEW);
+    return { count };
+  }
+
   // GET /moderation/companies?status=pending
   @Get()
   list(@Query('status') status?: CompanyStatus) {

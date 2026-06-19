@@ -4,14 +4,17 @@ import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { api, ApiError } from '@/lib/api';
 import { formatPhone } from '@/lib/format';
+import { notifyModerationChanged } from '@/lib/moderation-events';
 
 interface Company {
   id: string;
   name: string;
-  bin: string;
+  bin: string | null;
   phone: string;
   city: string;
   status: string;
+  contact_name: string | null;
+  contact_phone: string | null;
   document_url: string | null;
   rejection_reason: string | null;
   created_at: string;
@@ -19,6 +22,7 @@ interface Company {
 }
 
 const STATUS_LABEL: Record<string, string> = {
+  new: 'Новая',
   pending: 'На рассмотрении',
   active: 'Активна',
   rejected: 'Отклонена',
@@ -26,6 +30,7 @@ const STATUS_LABEL: Record<string, string> = {
 };
 
 const STATUS_CLASS: Record<string, string> = {
+  new: 'bg-blue-100 text-blue-700',
   pending: 'bg-amber-100 text-amber-700',
   active: 'bg-green-100 text-green-700',
   rejected: 'bg-red-100 text-red-700',
@@ -109,6 +114,7 @@ export default function CompanyDetailPage() {
       await api.post(`/moderation/companies/${company.id}/approve`);
       setCompany((prev) => prev ? { ...prev, status: 'active', updated_at: new Date().toISOString() } : prev);
       showToast('Компания подтверждена');
+      notifyModerationChanged();
     } catch (err) {
       setActionError(err instanceof ApiError ? err.message : 'Ошибка при подтверждении');
     } finally {
@@ -126,6 +132,7 @@ export default function CompanyDetailPage() {
       setRejecting(false);
       setRejectReason('');
       showToast('Компания отклонена');
+      notifyModerationChanged();
     } catch (err) {
       setActionError(err instanceof ApiError ? err.message : 'Ошибка при отклонении');
     } finally {
@@ -177,17 +184,31 @@ export default function CompanyDetailPage() {
 
             <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
               <div>
-                <dt className="text-gray-400 text-xs mb-0.5">БИН</dt>
-                <dd className="font-mono text-gray-800 font-medium">{company.bin}</dd>
-              </div>
-              <div>
                 <dt className="text-gray-400 text-xs mb-0.5">Город</dt>
                 <dd className="text-gray-800">{company.city}</dd>
               </div>
               <div>
-                <dt className="text-gray-400 text-xs mb-0.5">Телефон</dt>
+                <dt className="text-gray-400 text-xs mb-0.5">Телефон компании</dt>
                 <dd className="font-mono text-gray-800">{formatPhone(company.phone)}</dd>
               </div>
+              {company.contact_name && (
+                <div>
+                  <dt className="text-gray-400 text-xs mb-0.5">Контактное лицо</dt>
+                  <dd className="text-gray-800">{company.contact_name}</dd>
+                </div>
+              )}
+              {company.contact_phone && (
+                <div>
+                  <dt className="text-gray-400 text-xs mb-0.5">Тел. контактного лица</dt>
+                  <dd className="font-mono text-gray-800">{formatPhone(company.contact_phone)}</dd>
+                </div>
+              )}
+              {company.bin && (
+                <div>
+                  <dt className="text-gray-400 text-xs mb-0.5">БИН</dt>
+                  <dd className="font-mono text-gray-800 font-medium">{company.bin}</dd>
+                </div>
+              )}
               <div>
                 <dt className="text-gray-400 text-xs mb-0.5">Дата заявки</dt>
                 <dd className="text-gray-800">{fmtDateTime(company.created_at)}</dd>
@@ -214,8 +235,8 @@ export default function CompanyDetailPage() {
             )}
           </div>
 
-          {/* Moderation actions — pending only */}
-          {company.status === 'pending' && (
+          {/* Moderation actions — new and pending */}
+          {(company.status === 'new' || company.status === 'pending') && (
             <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
               <h2 className="text-sm font-semibold text-gray-700 mb-4">Решение по заявке</h2>
 
@@ -308,7 +329,7 @@ export default function CompanyDetailPage() {
           {docUrl && (
             <a
               href={docUrl}
-              download={`company_${company.bin}.pdf`}
+              download={`company_${company.bin ?? company.id}.pdf`}
               className="mt-3 inline-flex items-center text-sm text-blue-600 hover:text-blue-800 transition-colors"
             >
               Скачать документ ↓

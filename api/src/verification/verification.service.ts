@@ -85,6 +85,10 @@ export class VerificationService {
     });
   }
 
+  countPending(): Promise<number> {
+    return this.usersRepository.count({ where: { status: UserStatus.PENDING } });
+  }
+
   async getDocumentPath(userId: string): Promise<string> {
     const user = await this.getUserOrFail(userId);
 

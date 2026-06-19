@@ -12,6 +12,8 @@ interface Company {
   phone: string;
   city: string;
   status: string;
+  contact_name: string | null;
+  contact_phone: string | null;
   rejection_reason: string | null;
   created_at: string;
   updated_at: string;
@@ -23,6 +25,7 @@ interface City {
 }
 
 const STATUS_TABS = [
+  { value: 'new', label: 'Новые' },
   { value: 'pending', label: 'Ожидают' },
   { value: 'active', label: 'Активные' },
   { value: 'rejected', label: 'Отклонённые' },
@@ -31,6 +34,7 @@ const STATUS_TABS = [
 ] as const;
 
 const STATUS_LABEL: Record<string, string> = {
+  new: 'Новая',
   pending: 'На рассмотрении',
   active: 'Активна',
   rejected: 'Отклонена',
@@ -38,6 +42,7 @@ const STATUS_LABEL: Record<string, string> = {
 };
 
 const STATUS_CLASS: Record<string, string> = {
+  new: 'bg-blue-100 text-blue-700',
   pending: 'bg-amber-100 text-amber-700',
   active: 'bg-green-100 text-green-700',
   rejected: 'bg-red-100 text-red-700',
@@ -66,7 +71,7 @@ function Badge({ status }: { status: string }) {
 
 export default function CompaniesPage() {
   const router = useRouter();
-  const [tab, setTab] = useState<string>('pending');
+  const [tab, setTab] = useState<string>('new');
   const [companies, setCompanies] = useState<Company[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');

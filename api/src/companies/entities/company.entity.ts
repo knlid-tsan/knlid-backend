@@ -37,6 +37,12 @@ export class Company {
   status: CompanyStatus;
 
   @Column({ type: 'varchar', nullable: true })
+  contact_name: string | null;
+
+  @Column({ type: 'varchar', nullable: true })
+  contact_phone: string | null;
+
+  @Column({ type: 'varchar', nullable: true })
   document_url: string | null;
 
   @Column({ type: 'text', nullable: true })

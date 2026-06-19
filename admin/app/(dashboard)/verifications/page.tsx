@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { api, ApiError } from '@/lib/api';
 import { formatPhone } from '@/lib/format';
+import { notifyModerationChanged } from '@/lib/moderation-events';
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 
@@ -173,6 +174,7 @@ export default function VerificationsPage() {
       closeModal();
       setUsers((prev) => prev.filter((u) => u.id !== id));
       showToast('Верификация одобрена');
+      notifyModerationChanged();
     } catch (err) {
       setActionError(err instanceof ApiError ? err.message : 'Ошибка при одобрении');
     } finally {
@@ -194,6 +196,7 @@ export default function VerificationsPage() {
       closeModal();
       setUsers((prev) => prev.filter((u) => u.id !== id));
       showToast('Верификация отклонена');
+      notifyModerationChanged();
     } catch (err) {
       setActionError(err instanceof ApiError ? err.message : 'Ошибка при отклонении');
     } finally {

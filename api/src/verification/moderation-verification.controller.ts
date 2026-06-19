@@ -33,6 +33,12 @@ export class ModerationVerificationController {
     private storageService: StorageService,
   ) {}
 
+  @Get('count')
+  async count() {
+    const count = await this.verificationService.countPending();
+    return { count };
+  }
+
   // Очередь на проверку (по умолчанию — pending)
   @Get()
   async list(@Query('status') status?: string) {

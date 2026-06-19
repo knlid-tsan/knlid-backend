@@ -1,4 +1,4 @@
-import { IsString, Length, Matches } from 'class-validator';
+import { IsString, Length, Matches, IsNotEmpty } from 'class-validator';
 
 export class RegisterCompanyDto {
   @IsString()
@@ -6,14 +6,22 @@ export class RegisterCompanyDto {
   name: string;
 
   @IsString()
-  @Matches(/^\d{12}$/, { message: 'БИН должен содержать ровно 12 цифр' })
-  bin: string;
+  @Length(1, 100)
+  city: string;
 
   @IsString()
-  @Matches(/^\+?[0-9]{10,15}$/, { message: 'Неверный формат телефона' })
+  @Matches(/^\+7\d{10}$/, { message: 'Телефон должен быть в формате +7XXXXXXXXXX' })
   phone: string;
 
   @IsString()
-  @Length(1, 100)
-  city: string;
+  @Length(1, 200)
+  contactName: string;
+
+  @IsString()
+  @Matches(/^\+?[0-9]{10,15}$/, { message: 'Неверный формат телефона контактного лица' })
+  contactPhone: string;
+
+  @IsString()
+  @IsNotEmpty()
+  code: string;
 }

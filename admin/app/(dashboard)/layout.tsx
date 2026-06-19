@@ -43,6 +43,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [companyName, setCompanyName] = useState('');
   const [supportUnread, setSupportUnread] = useState(0);
   const [companySupportUnread, setCompanySupportUnread] = useState(0);
+  const [verificationsCount, setVerificationsCount] = useState(0);
+  const [newCompaniesCount, setNewCompaniesCount] = useState(0);
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
@@ -97,6 +99,29 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     fetch();
     const timer = setInterval(fetch, 30_000);
     return () => clearInterval(timer);
+  }, [rawRole]);
+
+  // Poll moderation badges (verifications pending + companies new)
+  useEffect(() => {
+    if (rawRole !== 'admin' && rawRole !== 'moderator') return;
+
+    const fetchCounts = () => {
+      api.get<{ count: number }>('/moderation/verifications/count')
+        .then((d) => setVerificationsCount(d.count))
+        .catch(() => {});
+      api.get<{ count: number }>('/moderation/companies/count?status=new')
+        .then((d) => setNewCompaniesCount(d.count))
+        .catch(() => {});
+    };
+
+    fetchCounts();
+    const timer = setInterval(fetchCounts, 60_000);
+
+    window.addEventListener('moderation-counts-changed', fetchCounts);
+    return () => {
+      clearInterval(timer);
+      window.removeEventListener('moderation-counts-changed', fetchCounts);
+    };
   }, [rawRole]);
 
   // Enforce role → section boundaries
@@ -179,7 +204,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             {navItems.map((item) => {
               if (item.adminOnly && rawRole !== 'admin') return null;
               const isCurrent = pathname.startsWith(item.href);
-              const badge = item.href === '/support' && supportUnread > 0 ? supportUnread : 0;
+              let badge = 0;
+              if (item.href === '/support' && supportUnread > 0) badge = supportUnread;
+              else if (item.href === '/verifications' && verificationsCount > 0) badge = verificationsCount;
+              else if (item.href === '/companies' && newCompaniesCount > 0) badge = newCompaniesCount;
               return (
                 <Link
                   key={item.href}

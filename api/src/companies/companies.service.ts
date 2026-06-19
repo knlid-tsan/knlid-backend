@@ -4,17 +4,26 @@ import {
   ForbiddenException,
   NotFoundException,
   BadRequestException,
+  UnauthorizedException,
+  HttpException,
+  HttpStatus,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Not, Repository } from 'typeorm';
 import { Company, CompanyStatus } from './entities/company.entity';
 import { CompanyMembership, MembershipStatus } from './entities/company-membership.entity';
 import { User, UserRole, UserStatus } from '../users/user.entity';
+import { OtpCode } from '../auth/otp-code.entity';
+import { UserConsent } from '../consents/user-consent.entity';
+import { ConsentType } from '../consents/consent-type.enum';
 import { AuditService } from '../audit/audit.service';
 import { AuditAction } from '../audit/audit-action.enum';
 import { RegisterCompanyDto } from './dto/register-company.dto';
 import { RejectCompanyDto } from './dto/reject-company.dto';
 import { RewardsService } from '../rewards/rewards.service';
+
+const OTP_MAX_VERIFY_ATTEMPTS = 5;
+const OTP_BLOCK_MINUTES = 15;
 
 @Injectable()
 export class CompaniesService {
@@ -25,22 +34,51 @@ export class CompaniesService {
     private membershipsRepository: Repository<CompanyMembership>,
     @InjectRepository(User)
     private usersRepository: Repository<User>,
+    @InjectRepository(OtpCode)
+    private otpCodesRepository: Repository<OtpCode>,
+    @InjectRepository(UserConsent)
+    private userConsentsRepository: Repository<UserConsent>,
     private auditService: AuditService,
     private rewardsService: RewardsService,
   ) {}
 
   // ─── Registration & profile ───────────────────────────────────────────────
 
-  async register(dto: RegisterCompanyDto): Promise<{ company: Company; representative_id: string }> {
-    const existingBin = await this.companiesRepository.findOneBy({ bin: dto.bin });
-    if (existingBin) throw new ConflictException('Компания с таким БИН уже зарегистрирована');
+  async register(dto: RegisterCompanyDto): Promise<{ message: string }> {
+    // OTP brute-force check
+    const latestOtp = await this.otpCodesRepository.findOne({
+      where: { phone: dto.phone },
+      order: { created_at: 'DESC' },
+    });
+    if (latestOtp) {
+      await this._checkOtpBlock(latestOtp);
+    }
 
-    const existingPhone = await this.usersRepository.findOneBy({ phone: dto.phone, status: Not(UserStatus.ARCHIVED) });
-    if (existingPhone) throw new ConflictException('Этот номер телефона уже используется');
+    // Verify OTP code
+    const otp = await this.otpCodesRepository.findOne({
+      where: { phone: dto.phone, code: dto.code },
+      order: { created_at: 'DESC' },
+    });
+    if (!otp) {
+      if (latestOtp) await this._recordFailedOtpAttempt(latestOtp);
+      throw new UnauthorizedException('Неверный код');
+    }
+    if (otp.expires_at.getTime() < Date.now()) {
+      throw new UnauthorizedException('Код истёк, запросите новый');
+    }
+
+    // Phone uniqueness check (both company phone and user phone)
+    const existingUser = await this.usersRepository.findOneBy({ phone: dto.phone, status: Not(UserStatus.ARCHIVED) });
+    if (existingUser) throw new ConflictException('Этот номер телефона уже зарегистрирован. Войдите');
 
     const company = await this.companiesRepository.save(
       this.companiesRepository.create({
-        name: dto.name, bin: dto.bin, phone: dto.phone, city: dto.city,
+        name: dto.name,
+        bin: null,
+        phone: dto.phone,
+        city: dto.city,
+        contact_name: dto.contactName,
+        contact_phone: dto.contactPhone,
         status: CompanyStatus.NEW,
       }),
     );
@@ -53,13 +91,41 @@ export class CompaniesService {
       }),
     );
 
+    await this.otpCodesRepository.delete({ phone: dto.phone });
+
+    await this.userConsentsRepository.save(
+      this.userConsentsRepository.create({
+        user_id: rep.id,
+        consent_type: ConsentType.TERMS_AND_PRIVACY,
+        document_version: '1.0',
+      }),
+    );
+
     await this.auditService.log({
       entityType: 'company', entityId: company.id,
       action: AuditAction.COMPANY_REGISTERED, actorId: rep.id,
-      metadata: { name: company.name, bin: company.bin, city: company.city },
+      metadata: { name: company.name, city: company.city, contact_name: company.contact_name },
     });
 
-    return { company, representative_id: rep.id };
+    return { message: 'Заявка на регистрацию отправлена. После проверки администратором вы сможете войти' };
+  }
+
+  private async _checkOtpBlock(otp: OtpCode): Promise<void> {
+    if (otp.verify_blocked_until && otp.verify_blocked_until > new Date()) {
+      const minutesLeft = Math.ceil((otp.verify_blocked_until.getTime() - Date.now()) / 60_000);
+      throw new HttpException(
+        `Слишком много неудачных попыток. Повторите через ${minutesLeft} мин. или запросите новый код`,
+        HttpStatus.TOO_MANY_REQUESTS,
+      );
+    }
+  }
+
+  private async _recordFailedOtpAttempt(otp: OtpCode): Promise<void> {
+    otp.verify_attempts += 1;
+    if (otp.verify_attempts >= OTP_MAX_VERIFY_ATTEMPTS) {
+      otp.verify_blocked_until = new Date(Date.now() + OTP_BLOCK_MINUTES * 60_000);
+    }
+    await this.otpCodesRepository.save(otp);
   }
 
   async adminCreateCompany(
@@ -380,6 +446,10 @@ export class CompaniesService {
   async listForModeration(status?: CompanyStatus): Promise<Company[]> {
     const where = status ? { status } : {};
     return this.companiesRepository.find({ where, order: { created_at: 'ASC' } });
+  }
+
+  countByStatus(status: CompanyStatus): Promise<number> {
+    return this.companiesRepository.count({ where: { status } });
   }
 
   async getForModeration(id: string): Promise<Company> {
