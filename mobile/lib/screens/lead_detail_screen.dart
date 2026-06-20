@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:dio/dio.dart';
 import 'package:image_picker/image_picker.dart';
+import '../l10n/app_localizations.dart';
+import '../l10n/lead_labels.dart';
 import '../models/lead.dart';
 import '../services/leads_service.dart';
 import '../services/api_client.dart';
@@ -88,7 +90,6 @@ class _LeadDetailScreenState extends State<LeadDetailScreen> {
     _loadAll();
   }
 
-  // Resolves userId once, then loads lead + optional tariff.
   Future<void> _loadAll() async {
     if (_userId.isEmpty) {
       final token = await ApiClient().getToken();
@@ -149,6 +150,7 @@ class _LeadDetailScreenState extends State<LeadDetailScreen> {
   }
 
   Future<String?> _showReasonDialog(String title, String hint) {
+    final l = AppLocalizations.of(context)!;
     final ctrl = TextEditingController();
     return showDialog<String>(
       context: context,
@@ -171,16 +173,15 @@ class _LeadDetailScreenState extends State<LeadDetailScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Отмена'),
+            child: Text(l.btnCancel),
           ),
           FilledButton(
             onPressed: () {
               final t = ctrl.text.trim();
               if (t.isNotEmpty) Navigator.pop(ctx, t);
             },
-            style: FilledButton.styleFrom(
-                backgroundColor: AppColors.primary),
-            child: const Text('Отправить'),
+            style: FilledButton.styleFrom(backgroundColor: AppColors.primary),
+            child: Text(l.btnSend),
           ),
         ],
       ),
@@ -188,6 +189,7 @@ class _LeadDetailScreenState extends State<LeadDetailScreen> {
   }
 
   Future<void> _pickAndUploadProof() async {
+    final l = AppLocalizations.of(context)!;
     final source = await showModalBottomSheet<ImageSource>(
       context: context,
       shape: const RoundedRectangleBorder(
@@ -199,12 +201,12 @@ class _LeadDetailScreenState extends State<LeadDetailScreen> {
           children: [
             ListTile(
               leading: const Icon(Icons.camera_alt_outlined),
-              title: const Text('Камера'),
+              title: Text(l.sourceCamera),
               onTap: () => Navigator.pop(ctx, ImageSource.camera),
             ),
             ListTile(
               leading: const Icon(Icons.photo_library_outlined),
-              title: const Text('Галерея'),
+              title: Text(l.sourceGallery),
               onTap: () => Navigator.pop(ctx, ImageSource.gallery),
             ),
           ],
@@ -220,7 +222,7 @@ class _LeadDetailScreenState extends State<LeadDetailScreen> {
     try {
       await _service.submitProof(widget.leadId, file.path);
       await _load();
-      _showSnack('Чек прикреплён — ожидаем подтверждения автора');
+      if (mounted) _showSnack(AppLocalizations.of(context)!.proofAttachedSnack);
     } catch (e) {
       _showSnack(_extractError(e), error: true);
     } finally {
@@ -232,7 +234,7 @@ class _LeadDetailScreenState extends State<LeadDetailScreen> {
     await _runAction(() async {
       await _service.confirmPayment(widget.leadId);
       await _load();
-      _showSnack('Получение подтверждено — лид переведён в архив');
+      if (mounted) _showSnack(AppLocalizations.of(context)!.paymentConfirmedSnack);
     });
   }
 
@@ -241,24 +243,22 @@ class _LeadDetailScreenState extends State<LeadDetailScreen> {
     try {
       await _service.acceptLead(widget.leadId);
       await _load();
-      _showSnack('Лид принят — телефон клиента теперь виден');
+      if (mounted) _showSnack(AppLocalizations.of(context)!.leadAcceptedSnack);
     } on DioException catch (e) {
       final msg = _extractError(e);
-      // 403 с текстом про верификацию → специальный диалог
       if (e.response?.statusCode == 403 &&
           msg.toLowerCase().contains('верификац')) {
         if (!mounted) return;
+        final l = AppLocalizations.of(context)!;
         await showDialog<void>(
           context: context,
           builder: (ctx) => AlertDialog(
-            title: const Text('Требуется верификация'),
-            content: const Text(
-              'Для принятия лидов необходимо пройти верификацию личности.',
-            ),
+            title: Text(l.verificationRequired),
+            content: Text(l.verificationRequiredBody),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(ctx),
-                child: const Text('Позже'),
+                child: Text(l.btnLater),
               ),
               FilledButton(
                 onPressed: () {
@@ -270,9 +270,8 @@ class _LeadDetailScreenState extends State<LeadDetailScreen> {
                     ),
                   );
                 },
-                style: FilledButton.styleFrom(
-                    backgroundColor: AppColors.primary),
-                child: const Text('Пройти верификацию'),
+                style: FilledButton.styleFrom(backgroundColor: AppColors.primary),
+                child: Text(l.btnGoVerify),
               ),
             ],
           ),
@@ -288,8 +287,8 @@ class _LeadDetailScreenState extends State<LeadDetailScreen> {
   }
 
   Future<void> _onDecline() async {
-    final reason =
-        await _showReasonDialog('Отклонить лид', 'Укажите причину отклонения');
+    final l = AppLocalizations.of(context)!;
+    final reason = await _showReasonDialog(l.declineLeadTitle, l.declineLeadHint);
     if (reason == null) return;
     await _runAction(() async {
       await _service.declineLead(widget.leadId, reason);
@@ -303,7 +302,8 @@ class _LeadDetailScreenState extends State<LeadDetailScreen> {
       });
 
   Future<void> _onClose() async {
-    final tariff = _tariff; // already loaded for executor in _load()
+    final l = AppLocalizations.of(context)!;
+    final tariff = _tariff;
     final isPercent = tariff?.method == 'percent';
     final isFixed = tariff?.method == 'fixed';
 
@@ -329,9 +329,9 @@ class _LeadDetailScreenState extends State<LeadDetailScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Text(
-                'Закрыть лид успешно',
-                style: TextStyle(
+              Text(
+                l.closeLeadTitle,
+                style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
                   color: AppColors.textPrimary,
@@ -339,7 +339,6 @@ class _LeadDetailScreenState extends State<LeadDetailScreen> {
               ),
               const SizedBox(height: 20),
 
-              // Fixed tariff: show info block, no input
               if (isFixed) ...[
                 Container(
                   padding: const EdgeInsets.all(14),
@@ -355,7 +354,7 @@ class _LeadDetailScreenState extends State<LeadDetailScreen> {
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
-                          'Вознаграждение автору: ${tariff!.description}',
+                          l.rewardAuthorLabel(tariff!.description),
                           style: const TextStyle(
                               fontSize: 13, color: Color(0xFF15803D)),
                         ),
@@ -364,13 +363,13 @@ class _LeadDetailScreenState extends State<LeadDetailScreen> {
                   ),
                 ),
                 const SizedBox(height: 8),
-                const Text(
-                  'Сумма фиксирована — вводить комиссию не нужно',
-                  style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                Text(
+                  l.rewardFixedHint,
+                  style: const TextStyle(
+                      fontSize: 12, color: AppColors.textSecondary),
                 ),
               ],
 
-              // Percent tariff or no tariff: show commission field
               if (!isFixed) ...[
                 TextFormField(
                   controller: commissionCtrl,
@@ -378,41 +377,36 @@ class _LeadDetailScreenState extends State<LeadDetailScreen> {
                   keyboardType:
                       const TextInputType.numberWithOptions(decimal: false),
                   inputFormatters: [_ThousandsFormatter()],
-                  decoration: const InputDecoration(
-                    labelText: 'Ваша комиссия, ₸',
+                  decoration: InputDecoration(
+                    labelText: l.commissionLabel,
                     hintText: '0',
                     filled: true,
                     fillColor: AppColors.surface,
-                    border: OutlineInputBorder(
+                    border: const OutlineInputBorder(
                       borderRadius: BorderRadius.all(Radius.circular(12)),
                       borderSide: BorderSide.none,
                     ),
-                    focusedBorder: OutlineInputBorder(
+                    focusedBorder: const OutlineInputBorder(
                       borderRadius: BorderRadius.all(Radius.circular(12)),
                       borderSide:
                           BorderSide(color: AppColors.primary, width: 1.5),
                     ),
                     contentPadding:
-                        EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                        const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                   ),
                   validator: (v) {
-                    if (v == null || v.trim().isEmpty) {
-                      return 'Обязательное поле';
-                    }
+                    if (v == null || v.trim().isEmpty) return l.fieldRequired;
                     final n = double.tryParse(
                         v.trim().replaceAll(' ', '').replaceAll(',', '.'));
-                    if (n == null || n <= 0) {
-                      return 'Введите сумму больше 0';
-                    }
+                    if (n == null || n <= 0) return l.amountPositive;
                     return null;
                   },
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  isPercent
-                      ? 'Вознаграждение автору рассчитается от этой суммы'
-                      : 'Укажите вашу комиссию по сделке',
-                  style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                  isPercent ? l.percentCommissionHint : l.commissionHint,
+                  style: const TextStyle(
+                      fontSize: 12, color: AppColors.textSecondary),
                 ),
               ],
 
@@ -429,9 +423,10 @@ class _LeadDetailScreenState extends State<LeadDetailScreen> {
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12)),
                 ),
-                child: const Text(
-                  'Подтвердить закрытие',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                child: Text(
+                  l.btnConfirmClose,
+                  style: const TextStyle(
+                      fontSize: 16, fontWeight: FontWeight.w600),
                 ),
               ),
             ],
@@ -457,33 +452,29 @@ class _LeadDetailScreenState extends State<LeadDetailScreen> {
         commissionAmount: amount,
       );
       await _load();
-      _showSnack('Лид закрыт успешно — вознаграждение начислено');
+      if (mounted) _showSnack(AppLocalizations.of(context)!.leadClosedSnack);
     });
   }
 
   Future<void> _onCancelByExecutor() async {
-    final reason = await _showReasonDialog(
-      'Отменить лид',
-      'Укажите причину отмены (обязательно)',
-    );
+    final l = AppLocalizations.of(context)!;
+    final reason = await _showReasonDialog(l.cancelLeadTitle, l.cancelLeadHint);
     if (reason == null) return;
     await _runAction(() async {
       await _service.updateStatus(widget.leadId, 'cancelled', comment: reason);
       await _load();
-      _showSnack('Лид отменён');
+      if (mounted) _showSnack(AppLocalizations.of(context)!.leadCancelledSnack);
     });
   }
 
   Future<void> _onDispute() async {
-    final reason = await _showReasonDialog(
-      'Открыть спор',
-      'Опишите причину спора подробно',
-    );
+    final l = AppLocalizations.of(context)!;
+    final reason = await _showReasonDialog(l.openDisputeTitle, l.openDisputeHint);
     if (reason == null) return;
     await _runAction(() async {
       await _service.openDispute(widget.leadId, reason);
       await _load();
-      _showSnack('Спор открыт');
+      if (mounted) _showSnack(AppLocalizations.of(context)!.disputeOpenedSnack);
     });
   }
 
@@ -491,6 +482,7 @@ class _LeadDetailScreenState extends State<LeadDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -498,9 +490,7 @@ class _LeadDetailScreenState extends State<LeadDetailScreen> {
         elevation: 0,
         leading: const BackButton(color: AppColors.textPrimary),
         title: Text(
-          _lead != null
-              ? (leadTypeLabels[_lead!.type] ?? _lead!.type)
-              : 'Лид',
+          _lead != null ? leadTypeLabel(l, _lead!.type) : l.leadDetailTitle,
           style: const TextStyle(
               color: AppColors.textPrimary, fontWeight: FontWeight.w600),
         ),
@@ -513,6 +503,7 @@ class _LeadDetailScreenState extends State<LeadDetailScreen> {
     if (_loading) return const Center(child: CircularProgressIndicator());
 
     if (_error != null) {
+      final l = AppLocalizations.of(context)!;
       return Center(
         child: Padding(
           padding: const EdgeInsets.all(24),
@@ -527,7 +518,7 @@ class _LeadDetailScreenState extends State<LeadDetailScreen> {
               OutlinedButton.icon(
                 onPressed: _load,
                 icon: const Icon(Icons.refresh, size: 16),
-                label: const Text('Повторить'),
+                label: Text(l.btnRetry),
               ),
             ],
           ),
@@ -535,6 +526,7 @@ class _LeadDetailScreenState extends State<LeadDetailScreen> {
       );
     }
 
+    final l = AppLocalizations.of(context)!;
     final lead = _lead!;
     final actionsWidget = _buildActionsBar(lead);
 
@@ -548,7 +540,6 @@ class _LeadDetailScreenState extends State<LeadDetailScreen> {
               children: [
                 _StatusBanner(lead: lead),
 
-                // Tariff banner — executor before acceptance
                 if (_tariff != null &&
                     _isExecutor &&
                     lead.status == 'pending_acceptance') ...[
@@ -556,55 +547,49 @@ class _LeadDetailScreenState extends State<LeadDetailScreen> {
                   _TariffBanner(tariff: _tariff!),
                 ],
 
-                // ── Author block (basic info + author name)
                 const SizedBox(height: 12),
-                _Section(title: 'Автор', rows: [
-                  if (lead.authorName != null) _Row('Имя', lead.authorName!),
-                  _Row('Тип лида', leadTypeLabels[lead.type] ?? lead.type),
-                  _Row('Город', lead.city),
-                  _Row('Создан', formatLeadDate(lead.createdAt)),
+                _Section(title: l.sectionAuthor, rows: [
+                  if (lead.authorName != null) _Row(l.rowName, lead.authorName!),
+                  _Row(l.rowLeadType, leadTypeLabel(l, lead.type)),
+                  _Row(l.rowCity, lead.city),
+                  _Row(l.rowCreated, formatLeadDateL(lead.createdAt, l)),
                   if (lead.closedAt != null)
-                    _Row('Закрыт', formatLeadDate(lead.closedAt!)),
+                    _Row(l.rowClosed, formatLeadDateL(lead.closedAt!, l)),
                 ]),
 
-                // ── Opposite party
-                // Author sees executor (if assigned)
                 if (_isAuthor) ...[
                   const SizedBox(height: 12),
-                  _Section(title: 'Исполнитель', rows: [
+                  _Section(title: l.sectionExecutor, rows: [
                     _Row(
-                      'Имя',
-                      lead.executorName ?? 'Не назначен',
+                      l.rowName,
+                      lead.executorName ?? l.notAssigned,
                       dimValue: lead.executorName == null,
                     ),
                   ]),
                 ],
 
-                // ── Client block (visible only after acceptance)
                 const SizedBox(height: 12),
                 if (lead.client != null && lead.client!.fullName != null)
-                  _Section(title: 'Клиент', rows: [
-                    _Row('Имя', lead.client!.fullName!),
-                    _Row('Город', lead.client!.city),
+                  _Section(title: l.sectionClient, rows: [
+                    _Row(l.rowName, lead.client!.fullName!),
+                    _Row(l.rowCity, lead.client!.city),
                     if (lead.client!.phone != null)
-                      _Row('Телефон', formatPhone(lead.client!.phone)),
+                      _Row(l.rowPhone, formatPhone(lead.client!.phone)),
                   ])
                 else
                   _ClientPlaceholder(isExecutor: _isExecutor),
 
-                // ── Description (moved below client)
                 const SizedBox(height: 12),
                 _DescriptionSection(text: lead.description),
 
                 if (lead.rewardAmount != null) ...[
                   const SizedBox(height: 12),
-                  _Section(title: 'Вознаграждение', rows: [
-                    _Row('Сумма', '${_fmt(lead.rewardAmount!)} ₸'),
-                    _Row('Оплачено', lead.rewardPaid ? 'Да' : 'Нет'),
+                  _Section(title: l.sectionReward, rows: [
+                    _Row(l.rowAmount, '${_fmt(lead.rewardAmount!)} ₸'),
+                    _Row(l.rowPaid, lead.rewardPaid ? l.yes : l.no),
                   ]),
                 ],
 
-                // ── Исполнитель: реквизиты автора + блок загрузки чека
                 if (_isExecutor &&
                     lead.status == 'closed_success' &&
                     lead.authorPayment != null) ...[
@@ -618,11 +603,10 @@ class _LeadDetailScreenState extends State<LeadDetailScreen> {
                     ),
                   ] else if (lead.rewardStatus == 'paid') ...[
                     const SizedBox(height: 12),
-                    _ReceiptSentBanner(),
+                    const _ReceiptSentBanner(),
                   ],
                 ],
 
-                // ── Автор: чек исполнителя + кнопка подтверждения
                 if (_isAuthor &&
                     lead.status == 'closed_success' &&
                     lead.rewardStatus == 'paid') ...[
@@ -634,7 +618,6 @@ class _LeadDetailScreenState extends State<LeadDetailScreen> {
                   ),
                 ],
 
-                // ── Архив: оба видят что получение подтверждено
                 if (lead.status == 'archived') ...[
                   const SizedBox(height: 12),
                   _PaymentConfirmedBanner(closedAt: lead.closedAt),
@@ -642,8 +625,8 @@ class _LeadDetailScreenState extends State<LeadDetailScreen> {
 
                 if (lead.guarantor != null && lead.guarantor!.active) ...[
                   const SizedBox(height: 12),
-                  _Section(title: 'Гарант', rows: [
-                    _Row('Компания', lead.guarantor!.companyName),
+                  _Section(title: l.sectionGuarantor, rows: [
+                    _Row(l.rowCompany, lead.guarantor!.companyName),
                   ]),
                 ],
 
@@ -675,16 +658,16 @@ class _LeadDetailScreenState extends State<LeadDetailScreen> {
       );
     }
 
+    final l = AppLocalizations.of(context)!;
     final status = lead.status;
 
     if (_isExecutor) {
       if (status == 'pending_acceptance') {
         return _ActionBar(
           child: Row(children: [
-            _ActionBtn(label: 'Принять', onTap: _onAccept, filled: true),
+            _ActionBtn(label: l.btnAccept, onTap: _onAccept, filled: true),
             const SizedBox(width: 12),
-            _ActionBtn(
-                label: 'Отклонить', onTap: _onDecline, danger: true),
+            _ActionBtn(label: l.btnDecline, onTap: _onDecline, danger: true),
           ]),
         );
       }
@@ -696,19 +679,19 @@ class _LeadDetailScreenState extends State<LeadDetailScreen> {
             children: [
               Row(children: [
                 _ActionBtn(
-                    label: '→ Договор',
+                    label: l.btnContract,
                     onTap: () => _onUpdateStatus('contract'),
                     small: true),
                 const SizedBox(width: 8),
                 _ActionBtn(
-                    label: '→ Задаток',
+                    label: l.btnDeposit,
                     onTap: () => _onUpdateStatus('deposit'),
                     small: true),
                 const SizedBox(width: 8),
                 _MutedCancelBtn(onTap: _onCancelByExecutor),
               ]),
               const SizedBox(height: 8),
-              _CloseBtn(label: '✓ Закрыть', onTap: _onClose),
+              _CloseBtn(label: l.btnClose, onTap: _onClose),
             ],
           ),
         );
@@ -721,14 +704,14 @@ class _LeadDetailScreenState extends State<LeadDetailScreen> {
             children: [
               Row(children: [
                 _ActionBtn(
-                    label: '→ Задаток',
+                    label: l.btnDeposit,
                     onTap: () => _onUpdateStatus('deposit'),
                     small: true),
                 const SizedBox(width: 8),
                 _MutedCancelBtn(onTap: _onCancelByExecutor),
               ]),
               const SizedBox(height: 8),
-              _CloseBtn(label: '✓ Закрыть', onTap: _onClose),
+              _CloseBtn(label: l.btnClose, onTap: _onClose),
             ],
           ),
         );
@@ -743,7 +726,7 @@ class _LeadDetailScreenState extends State<LeadDetailScreen> {
                 _MutedCancelBtn(onTap: _onCancelByExecutor),
               ]),
               const SizedBox(height: 8),
-              _CloseBtn(label: '✓ Закрыть сделку', onTap: _onClose),
+              _CloseBtn(label: l.btnCloseDeal, onTap: _onClose),
             ],
           ),
         );
@@ -762,7 +745,7 @@ class _LeadDetailScreenState extends State<LeadDetailScreen> {
         return _ActionBar(
           child: Row(children: [
             _ActionBtn(
-                label: 'Открыть спор',
+                label: l.btnOpenDispute,
                 onTap: _onDispute,
                 danger: true),
           ]),
@@ -821,8 +804,7 @@ class _ActionBtn extends StatelessWidget {
         child: FilledButton(
           onPressed: onTap,
           style: FilledButton.styleFrom(
-            backgroundColor:
-                danger ? AppColors.brand : AppColors.primary,
+            backgroundColor: danger ? AppColors.brand : AppColors.primary,
             padding: EdgeInsets.symmetric(vertical: vPad),
             shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12)),
@@ -834,10 +816,8 @@ class _ActionBtn extends StatelessWidget {
       );
     }
 
-    final borderColor =
-        danger ? AppColors.brand : AppColors.divider;
-    final textColor =
-        danger ? AppColors.brand : AppColors.textSecondary;
+    final borderColor = danger ? AppColors.brand : AppColors.divider;
+    final textColor = danger ? AppColors.brand : AppColors.textSecondary;
 
     return Expanded(
       child: OutlinedButton(
@@ -864,6 +844,7 @@ class _MutedCancelBtn extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     return OutlinedButton(
       onPressed: onTap,
       style: OutlinedButton.styleFrom(
@@ -871,9 +852,9 @@ class _MutedCancelBtn extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
-      child: const Text(
-        'Отменить',
-        style: TextStyle(
+      child: Text(
+        l.btnCancelAction,
+        style: const TextStyle(
           color: AppColors.textSecondary,
           fontWeight: FontWeight.w500,
           fontSize: 13,
@@ -913,6 +894,7 @@ class _StatusBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     final color = leadStatusColor(lead.status);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
@@ -929,7 +911,7 @@ class _StatusBanner extends StatelessWidget {
           ),
           const SizedBox(width: 10),
           Text(
-            leadStatusLabels[lead.status] ?? lead.status,
+            leadStatusLabel(l, lead.status),
             style: TextStyle(
                 fontWeight: FontWeight.w600, color: color, fontSize: 14),
           ),
@@ -945,6 +927,7 @@ class _TariffBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
@@ -961,16 +944,16 @@ class _TariffBanner extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Условия вознаграждения',
-                  style: TextStyle(
+                Text(
+                  l.tariffBannerTitle,
+                  style: const TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
                       color: Color(0xFF92400E)),
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Вознаграждение автору: ${tariff.description}',
+                  l.rewardAuthorLabel(tariff.description),
                   style: const TextStyle(
                       fontSize: 13, color: Color(0xFF92400E)),
                 ),
@@ -999,7 +982,7 @@ class _Section extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title,
+          Text(title.toUpperCase(),
               style: const TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w600,
@@ -1053,6 +1036,7 @@ class _DescriptionSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -1060,8 +1044,8 @@ class _DescriptionSection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('ОПИСАНИЕ',
-              style: TextStyle(
+          Text(l.sectionDescription,
+              style: const TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w600,
                   color: AppColors.textSecondary,
@@ -1084,6 +1068,7 @@ class _ClientPlaceholder extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -1096,9 +1081,7 @@ class _ClientPlaceholder extends StatelessWidget {
           const SizedBox(width: 10),
           Expanded(
             child: Text(
-              isExecutor
-                  ? 'Данные клиента откроются после принятия лида'
-                  : 'Клиент',
+              isExecutor ? l.clientDataLocked : l.sectionClient,
               style: const TextStyle(
                 fontSize: 13,
                 color: AppColors.divider,
@@ -1128,6 +1111,7 @@ class _AuthorPaymentBlock extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -1138,13 +1122,14 @@ class _AuthorPaymentBlock extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+          Row(
             children: [
-              Icon(Icons.account_balance_outlined, size: 15, color: Color(0xFF16A34A)),
-              SizedBox(width: 8),
+              const Icon(Icons.account_balance_outlined,
+                  size: 15, color: Color(0xFF16A34A)),
+              const SizedBox(width: 8),
               Text(
-                'ПЕРЕВОД АВТОРУ',
-                style: TextStyle(
+                l.paymentToAuthorTitle,
+                style: const TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w600,
                   color: Color(0xFF16A34A),
@@ -1154,12 +1139,11 @@ class _AuthorPaymentBlock extends StatelessWidget {
             ],
           ),
 
-          // Сумма — главный элемент блока
           if (payment.rewardAmount != null) ...[
             const SizedBox(height: 12),
-            const Text(
-              'Переведите автору:',
-              style: TextStyle(fontSize: 13, color: Color(0xFF15803D)),
+            Text(
+              l.paymentToAuthorPrefix,
+              style: const TextStyle(fontSize: 13, color: Color(0xFF15803D)),
             ),
             const SizedBox(height: 4),
             Text(
@@ -1174,7 +1158,6 @@ class _AuthorPaymentBlock extends StatelessWidget {
           ] else
             const SizedBox(height: 12),
 
-          // Банк
           Text(
             payment.bankName,
             style: const TextStyle(
@@ -1185,15 +1168,14 @@ class _AuthorPaymentBlock extends StatelessWidget {
           ),
           const SizedBox(height: 6),
 
-          // Номер — tap-to-copy
           GestureDetector(
             onTap: () {
               Clipboard.setData(ClipboardData(text: payment.phone));
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Номер скопирован'),
+                SnackBar(
+                  content: Text(l.phoneCopied),
                   backgroundColor: AppColors.success,
-                  duration: Duration(seconds: 2),
+                  duration: const Duration(seconds: 2),
                 ),
               );
             },
@@ -1213,9 +1195,9 @@ class _AuthorPaymentBlock extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 4),
-          const Text(
-            'Нажмите на номер, чтобы скопировать',
-            style: TextStyle(fontSize: 11, color: Color(0xFF4ADE80)),
+          Text(
+            l.copyPhoneHint,
+            style: const TextStyle(fontSize: 11, color: Color(0xFF4ADE80)),
           ),
         ],
       ),
@@ -1231,6 +1213,7 @@ class _HistorySection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -1238,8 +1221,8 @@ class _HistorySection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('ИСТОРИЯ СТАТУСОВ',
-              style: TextStyle(
+          Text(l.historyTitle,
+              style: const TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w600,
                   color: AppColors.textSecondary,
@@ -1258,11 +1241,12 @@ class _HistoryRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     final toColor = leadStatusColor(item.toStatus);
     final fromLabel = item.fromStatus != null
-        ? (leadStatusLabels[item.fromStatus] ?? item.fromStatus!)
+        ? leadStatusLabel(l, item.fromStatus!)
         : '—';
-    final toLabel = leadStatusLabels[item.toStatus] ?? item.toStatus;
+    final toLabel = leadStatusLabel(l, item.toStatus);
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
@@ -1301,7 +1285,7 @@ class _HistoryRow extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 2),
-                Text(formatLeadDate(item.createdAt),
+                Text(formatLeadDateL(item.createdAt, l),
                     style: const TextStyle(
                         fontSize: 11, color: AppColors.textSecondary)),
                 if (item.comment != null) ...[
@@ -1330,6 +1314,7 @@ class _ProofUploadBlock extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -1340,13 +1325,14 @@ class _ProofUploadBlock extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+          Row(
             children: [
-              Icon(Icons.receipt_long_outlined, size: 15, color: Color(0xFFD97706)),
-              SizedBox(width: 8),
+              const Icon(Icons.receipt_long_outlined,
+                  size: 15, color: Color(0xFFD97706)),
+              const SizedBox(width: 8),
               Text(
-                'ПОДТВЕРЖДЕНИЕ ОПЛАТЫ',
-                style: TextStyle(
+                l.proofTitle,
+                style: const TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w600,
                   color: Color(0xFFD97706),
@@ -1356,9 +1342,9 @@ class _ProofUploadBlock extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 10),
-          const Text(
-            'Переведите деньги и прикрепите скриншот или фото чека.',
-            style: TextStyle(fontSize: 13, color: Color(0xFF92400E)),
+          Text(
+            l.proofBody,
+            style: const TextStyle(fontSize: 13, color: Color(0xFF92400E)),
           ),
           const SizedBox(height: 12),
           SizedBox(
@@ -1369,14 +1355,16 @@ class _ProofUploadBlock extends StatelessWidget {
                   ? const SizedBox(
                       width: 16,
                       height: 16,
-                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                      child: CircularProgressIndicator(
+                          strokeWidth: 2, color: Colors.white),
                     )
                   : const Icon(Icons.upload_outlined, size: 18),
-              label: Text(uploading ? 'Загрузка...' : 'Прикрепить чек'),
+              label: Text(uploading ? l.uploading : l.btnAttachProof),
               style: FilledButton.styleFrom(
                 backgroundColor: const Color(0xFFD97706),
                 padding: const EdgeInsets.symmetric(vertical: 13),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10)),
               ),
             ),
           ),
@@ -1393,6 +1381,7 @@ class _ReceiptSentBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
@@ -1400,14 +1389,15 @@ class _ReceiptSentBanner extends StatelessWidget {
         border: Border.all(color: const Color(0xFF86EFAC)),
         borderRadius: BorderRadius.circular(12),
       ),
-      child: const Row(
+      child: Row(
         children: [
-          Icon(Icons.check_circle_outline, size: 18, color: Color(0xFF16A34A)),
-          SizedBox(width: 10),
+          const Icon(Icons.check_circle_outline,
+              size: 18, color: Color(0xFF16A34A)),
+          const SizedBox(width: 10),
           Expanded(
             child: Text(
-              'Чек прикреплён — ожидаем подтверждения автора',
-              style: TextStyle(fontSize: 13, color: Color(0xFF15803D)),
+              l.proofAttachedSnack,
+              style: const TextStyle(fontSize: 13, color: Color(0xFF15803D)),
             ),
           ),
         ],
@@ -1430,6 +1420,7 @@ class _ConfirmPaymentBlock extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     final imageUrl = proofUrl != null
         ? _resolveFileUrl(AppConfig.apiBaseUrl, proofUrl!)
         : null;
@@ -1444,13 +1435,14 @@ class _ConfirmPaymentBlock extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+          Row(
             children: [
-              Icon(Icons.payments_outlined, size: 15, color: Color(0xFF0284C7)),
-              SizedBox(width: 8),
+              const Icon(Icons.payments_outlined,
+                  size: 15, color: Color(0xFF0284C7)),
+              const SizedBox(width: 8),
               Text(
-                'ИСПОЛНИТЕЛЬ ОТМЕТИЛ ОПЛАТУ',
-                style: TextStyle(
+                l.paymentMarkedTitle,
+                style: const TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w600,
                   color: Color(0xFF0284C7),
@@ -1460,12 +1452,11 @@ class _ConfirmPaymentBlock extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 10),
-          const Text(
-            'Исполнитель прикрепил чек. Проверьте и подтвердите получение.',
-            style: TextStyle(fontSize: 13, color: Color(0xFF0369A1)),
+          Text(
+            l.paymentMarkedBody,
+            style: const TextStyle(fontSize: 13, color: Color(0xFF0369A1)),
           ),
 
-          // Чек (фото/документ)
           if (imageUrl != null) ...[
             const SizedBox(height: 12),
             ClipRRect(
@@ -1480,10 +1471,11 @@ class _ConfirmPaymentBlock extends StatelessWidget {
                     color: const Color(0xFFE0F2FE),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: const Center(
+                  child: Center(
                     child: Text(
-                      'Не удалось загрузить чек',
-                      style: TextStyle(fontSize: 12, color: Color(0xFF0369A1)),
+                      l.receiptLoadFailed,
+                      style: const TextStyle(
+                          fontSize: 12, color: Color(0xFF0369A1)),
                     ),
                   ),
                 ),
@@ -1499,22 +1491,24 @@ class _ConfirmPaymentBlock extends StatelessWidget {
               style: FilledButton.styleFrom(
                 backgroundColor: const Color(0xFF0284C7),
                 padding: const EdgeInsets.symmetric(vertical: 13),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10)),
               ),
               child: confirming
                   ? const SizedBox(
                       width: 16,
                       height: 16,
-                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                      child: CircularProgressIndicator(
+                          strokeWidth: 2, color: Colors.white),
                     )
-                  : const Text('Подтвердить получение',
-                      style: TextStyle(fontWeight: FontWeight.w600)),
+                  : Text(l.btnConfirmPayment,
+                      style: const TextStyle(fontWeight: FontWeight.w600)),
             ),
           ),
           const SizedBox(height: 8),
-          const Text(
-            'Если не подтвердите в течение 5 дней — подтвердится автоматически',
-            style: TextStyle(fontSize: 11, color: Color(0xFF0369A1)),
+          Text(
+            l.autoConfirmHint,
+            style: const TextStyle(fontSize: 11, color: Color(0xFF0369A1)),
             textAlign: TextAlign.center,
           ),
         ],
@@ -1531,6 +1525,7 @@ class _PaymentConfirmedBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -1547,9 +1542,9 @@ class _PaymentConfirmedBanner extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Вознаграждение получено и подтверждено',
-                  style: TextStyle(
+                Text(
+                  l.rewardConfirmedBanner,
+                  style: const TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
                     color: Color(0xFF15803D),
@@ -1558,8 +1553,9 @@ class _PaymentConfirmedBanner extends StatelessWidget {
                 if (closedAt != null) ...[
                   const SizedBox(height: 3),
                   Text(
-                    'Завершено ${formatLeadDate(closedAt!)}',
-                    style: const TextStyle(fontSize: 11, color: Color(0xFF4ADE80)),
+                    l.closedAtLabel(formatLeadDateL(closedAt!, l)),
+                    style: const TextStyle(
+                        fontSize: 11, color: Color(0xFF4ADE80)),
                   ),
                 ],
               ],

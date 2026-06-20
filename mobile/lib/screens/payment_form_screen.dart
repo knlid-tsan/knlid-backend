@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
+import '../l10n/app_localizations.dart';
 import '../services/api_client.dart';
 import '../services/phone_formatter.dart';
 import '../theme/app_colors.dart';
@@ -44,10 +45,12 @@ class _PaymentFormScreenState extends State<PaymentFormScreen> {
         _loadingBanks = false;
       });
     } catch (_) {
-      setState(() {
-        _error = 'Не удалось загрузить список банков';
-        _loadingBanks = false;
-      });
+      if (mounted) {
+        setState(() {
+          _error = AppLocalizations.of(context)!.banksLoadFailed;
+          _loadingBanks = false;
+        });
+      }
     }
   }
 
@@ -63,7 +66,9 @@ class _PaymentFormScreenState extends State<PaymentFormScreen> {
     } on DioException catch (e) {
       final data = e.response?.data;
       final msg = data is Map ? data['message'] : null;
-      setState(() => _error = msg is String ? msg : 'Ошибка сохранения');
+      if (mounted) {
+        setState(() => _error = msg is String ? msg : AppLocalizations.of(context)!.saveError);
+      }
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -71,12 +76,13 @@ class _PaymentFormScreenState extends State<PaymentFormScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text(
-          'Платёжные реквизиты',
-          style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600),
+        title: Text(
+          l.paymentDetailsTitle,
+          style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w600),
         ),
         backgroundColor: Colors.white,
         foregroundColor: AppColors.textPrimary,
@@ -85,11 +91,11 @@ class _PaymentFormScreenState extends State<PaymentFormScreen> {
       ),
       body: _loadingBanks
           ? const Center(child: CircularProgressIndicator())
-          : _buildForm(),
+          : _buildForm(l),
     );
   }
 
-  Widget _buildForm() {
+  Widget _buildForm(AppLocalizations l) {
     return Form(
       key: _formKey,
       child: ListView(
@@ -102,15 +108,15 @@ class _PaymentFormScreenState extends State<PaymentFormScreen> {
               border: Border.all(color: AppColors.divider),
               borderRadius: BorderRadius.circular(10),
             ),
-            child: const Row(
+            child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(Icons.info_outline, size: 16, color: AppColors.primary),
-                SizedBox(width: 8),
+                const Icon(Icons.info_outline, size: 16, color: AppColors.primary),
+                const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'Укажите реквизиты, на которые вы получаете вознаграждение за переданные лиды.',
-                    style: TextStyle(fontSize: 13, color: AppColors.primary),
+                    l.paymentFormHint,
+                    style: const TextStyle(fontSize: 13, color: AppColors.primary),
                   ),
                 ),
               ],
@@ -118,9 +124,9 @@ class _PaymentFormScreenState extends State<PaymentFormScreen> {
           ),
           const SizedBox(height: 24),
 
-          const Text(
-            'Банк',
-            style: TextStyle(
+          Text(
+            l.labelBank,
+            style: const TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w500,
               color: AppColors.textSecondary,
@@ -149,7 +155,7 @@ class _PaymentFormScreenState extends State<PaymentFormScreen> {
                 borderSide: const BorderSide(color: AppColors.brand),
               ),
               contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-              hintText: 'Выберите банк',
+              hintText: l.bankPickerHint,
             ),
             items: _banks
                 .map((b) => DropdownMenuItem<String>(
@@ -158,13 +164,13 @@ class _PaymentFormScreenState extends State<PaymentFormScreen> {
                     ))
                 .toList(),
             onChanged: (v) => setState(() => _selectedBankId = v),
-            validator: (v) => v == null ? 'Выберите банк' : null,
+            validator: (v) => v == null ? l.bankRequired : null,
           ),
           const SizedBox(height: 20),
 
-          const Text(
-            'Номер для перевода',
-            style: TextStyle(
+          Text(
+            l.labelPaymentPhone,
+            style: const TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w500,
               color: AppColors.textSecondary,
@@ -195,19 +201,19 @@ class _PaymentFormScreenState extends State<PaymentFormScreen> {
                 borderSide: const BorderSide(color: AppColors.brand),
               ),
               contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-              hintText: '+7 XXX XXX XX XX',
+              hintText: l.paymentPhoneHint,
             ),
             validator: (v) {
-              if (v == null || v.trim().isEmpty) return 'Введите номер';
+              if (v == null || v.trim().isEmpty) return l.phoneRequired;
               final digits = v.replaceAll(RegExp(r'\D'), '');
-              if (digits.length != 11) return 'Введите полный номер телефона';
+              if (digits.length != 11) return l.phoneValidationFull;
               return null;
             },
           ),
           const SizedBox(height: 6),
-          const Text(
-            'По умолчанию подставлен ваш номер входа. Можно изменить.',
-            style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+          Text(
+            l.paymentFormHint,
+            style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
           ),
 
           if (_error != null) ...[
@@ -240,9 +246,9 @@ class _PaymentFormScreenState extends State<PaymentFormScreen> {
                     height: 20,
                     child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                   )
-                : const Text(
-                    'Сохранить',
-                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+                : Text(
+                    l.btnSave,
+                    style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
                   ),
           ),
         ],

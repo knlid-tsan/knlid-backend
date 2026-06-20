@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../l10n/app_localizations.dart';
 import '../services/api_client.dart';
 import '../theme/app_colors.dart';
 import 'home_screen.dart';
@@ -81,6 +82,7 @@ class _MainScreenState extends State<MainScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     return Scaffold(
       body: Column(
         children: [
@@ -119,9 +121,9 @@ class _MainScreenState extends State<MainScreen> {
               backgroundColor: AppColors.primary,
               foregroundColor: Colors.white,
               icon: const Icon(Icons.add),
-              label: const Text(
-                'Создать лид',
-                style: TextStyle(fontWeight: FontWeight.w600),
+              label: Text(
+                l.btnCreateLead,
+                style: const TextStyle(fontWeight: FontWeight.w600),
               ),
             )
           : null,
@@ -135,31 +137,31 @@ class _MainScreenState extends State<MainScreen> {
           });
           if (i < 3) _refreshUserStatus();
         },
-        destinations: const [
+        destinations: [
           NavigationDestination(
-            icon: Icon(Icons.home_outlined),
-            selectedIcon: Icon(Icons.home),
-            label: 'Главная',
+            icon: const Icon(Icons.home_outlined),
+            selectedIcon: const Icon(Icons.home),
+            label: l.navHome,
           ),
           NavigationDestination(
-            icon: Icon(Icons.send_outlined),
-            selectedIcon: Icon(Icons.send),
-            label: 'Переданные',
+            icon: const Icon(Icons.send_outlined),
+            selectedIcon: const Icon(Icons.send),
+            label: l.navCreatedShort,
           ),
           NavigationDestination(
-            icon: Icon(Icons.assignment_outlined),
-            selectedIcon: Icon(Icons.assignment),
-            label: 'Исполняю',
+            icon: const Icon(Icons.assignment_outlined),
+            selectedIcon: const Icon(Icons.assignment),
+            label: l.navAssignedShort,
           ),
           NavigationDestination(
-            icon: Icon(Icons.percent_outlined),
-            selectedIcon: Icon(Icons.percent),
-            label: 'Тарифы',
+            icon: const Icon(Icons.percent_outlined),
+            selectedIcon: const Icon(Icons.percent),
+            label: l.navTariffs,
           ),
           NavigationDestination(
-            icon: Icon(Icons.person_outline),
-            selectedIcon: Icon(Icons.person),
-            label: 'Профиль',
+            icon: const Icon(Icons.person_outline),
+            selectedIcon: const Icon(Icons.person),
+            label: l.navProfile,
           ),
         ],
       ),
@@ -182,6 +184,7 @@ class _VerificationBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     final topPadding = MediaQuery.of(context).padding.top;
     final isRejected = status == 'new' && rejectionReason != null;
     final isPending = status == 'pending';
@@ -196,20 +199,20 @@ class _VerificationBanner extends StatelessWidget {
       bgColor = const Color(0xFFFEF3C7);
       iconColor = const Color(0xFFF59E0B);
       textColor = const Color(0xFF92400E);
-      message = 'Верификация на проверке. Пока вы не можете принимать лиды';
+      message = l.bannerPending;
       cta = null;
     } else if (isRejected) {
       bgColor = const Color(0xFFFEF2F2);
       iconColor = const Color(0xFFDC2626);
       textColor = const Color(0xFF991B1B);
-      message = 'Верификация отклонена. Загрузите фото заново';
+      message = l.bannerRejected;
       cta = '→';
     } else {
       bgColor = const Color(0xFFFFF7ED);
       iconColor = const Color(0xFFF59E0B);
       textColor = const Color(0xFF92400E);
-      message = 'Вы не верифицированы — не можете принимать лиды';
-      cta = 'Пройти →';
+      message = l.bannerNotVerified;
+      cta = l.bannerCta;
     }
 
     return GestureDetector(

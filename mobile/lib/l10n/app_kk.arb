@@ -1,0 +1,376 @@
+{
+  "@@locale": "kk",
+
+  "appSubtitle": "МАМАНДАР АРАСЫНДА ЛИДТЕРДІ БЕРУ",
+
+  "btnLogin": "Кіру",
+  "btnRegister": "Тіркелу",
+  "btnContinue": "Жалғастыру",
+  "btnSave": "Сақтау",
+  "btnEdit": "Өзгерту",
+  "btnCancel": "Болдырмау",
+  "btnSend": "Жіберу",
+  "btnLater": "Кейінірек",
+  "btnAccept": "Қабылдау",
+  "btnDecline": "Қабылдамау",
+  "btnLogout": "Шығу",
+  "btnCancelAction": "Бас тарту",
+  "btnRetry": "Қайталау",
+  "btnCreateLead": "Лид құру",
+  "btnClose": "✓ Жабу",
+  "btnCloseDeal": "✓ Мәмілені жабу",
+  "btnOpenDispute": "Дау ашу",
+  "btnGoVerify": "Верификациядан өту",
+  "btnContract": "→ Шарт",
+  "btnDeposit": "→ Кепілпұл",
+  "btnConfirmClose": "Жабуды растау",
+  "btnConfirmPayment": "Алынғанын растау",
+  "btnAttachProof": "Түбіртек тіркеу",
+  "btnAddPhoto": "Фото қосу",
+  "btnEditProfile": "Профильді өңдеу",
+  "btnSelectCompany": "Компанияны таңдау",
+  "btnChangeCompany": "Компанияны ауыстыру",
+  "btnRevokeChange": "Ауыстыру өтінімін қайтару",
+  "btnRevokeApplication": "Өтінімді қайтару",
+  "btnViewLeads": "Лидтерді көру",
+  "btnUploadPhoto": "Фото жүктеу",
+  "btnCreateAnyway": "Бәрібір құру",
+  "btnGoVerification": "Верификациядан өту →",
+  "btnReupload": "Қайта жүктеу →",
+
+  "yes": "Иә",
+  "no": "Жоқ",
+  "uploading": "Жүктелуде...",
+  "uploadingPhoto": "Жүктеудеміз...",
+  "sourceCamera": "Камера",
+  "sourceGallery": "Галерея",
+
+  "phoneTitle": "Телефон нөмірін енгізіңіз",
+  "phoneHint": "Сізге WhatsApp арқылы растау коды жіберіледі",
+  "phoneLabel": "Телефон нөмірі",
+  "phoneInvalid": "Дұрыс нөмір енгізіңіз",
+
+  "otpTitleLogin": "Кодты енгізіңіз",
+  "otpTitleRegister": "Нөмірді растаңыз",
+  "otpHint": "WhatsApp арқылы {phone} нөміріне код жіберілді",
+  "@otpHint": {
+    "placeholders": {
+      "phone": { "type": "String" }
+    }
+  },
+  "otpDevHint": "Әзірлеу режимі: кодты бэкенд логтарынан қараңыз (npm run start)",
+  "otpCodeInvalid": "6 таңбалы кодты енгізіңіз",
+  "otpResendTimer": "{seconds} с кейін қайта жіберу",
+  "@otpResendTimer": {
+    "placeholders": {
+      "seconds": { "type": "int" }
+    }
+  },
+  "otpResend": "Қайта жіберу",
+  "otpRegisterHint": "Осы нөмірмен тіркелу →",
+
+  "registerTitle": "Өзіңіз туралы айтыңыз",
+  "registerSubtitle": "{phone} нөмірі тіркелмеген. Профильді толтырыңыз.",
+  "@registerSubtitle": {
+    "placeholders": {
+      "phone": { "type": "String" }
+    }
+  },
+  "labelFullName": "Аты-жөні",
+  "fullNameRequired": "Аты-жөніңізді енгізіңіз",
+  "labelSpecialization": "Мамандық",
+  "specRequired": "Мамандықты таңдаңыз",
+  "specRealtor": "Риелтор",
+  "specMortgage": "Ипотекалық брокер",
+  "specLawyer": "Заңгер",
+  "labelCity": "Қала",
+  "cityPickerHint": "Қаланы таңдаңыз",
+  "cityRequired": "Қаланы таңдаңыз",
+  "citiesLoadError": "Қалаларды жүктеу мүмкін болмады",
+  "consentIAccept": "Мен қабылдаймын",
+  "consentAnd": "және",
+  "consentTerms": "Пайдаланушы келісімін",
+  "consentPrivacy": "Құпиялылық саясатын",
+
+  "navHome": "Басты",
+  "navCreated": "Берілгендер",
+  "navCreatedShort": "Берілген",
+  "navAssigned": "Орындаудамын",
+  "navAssignedShort": "Жұмыста",
+  "navTariffs": "Тарифтер",
+  "navProfile": "Профиль",
+
+  "bannerPending": "Верификация тексерілуде. Әзірге лидтерді қабылдай алмайсыз",
+  "bannerRejected": "Верификация қабылданбады. Фотоны қайта жүктеңіз",
+  "bannerNotVerified": "Сіз верификациядан өтпегенсіз — лидтерді қабылдай алмайсыз",
+  "bannerCta": "Өту →",
+
+  "statsTitle": "СТАТИСТИКА",
+  "statRating": "Рейтинг",
+  "statSent": "Берілді",
+  "statReceived": "Қабылданды",
+  "statClosed": "Жабылды",
+  "homeNoCreatedLeads": "Сіз әлі лид берген жоқсыз",
+  "homeNoAssignedLeads": "Сізде жұмыстағы лидтер жоқ",
+
+  "filterActive": "Белсенді",
+  "filterDone": "Аяқталған",
+  "createdEmptyDoneTitle": "Аяқталған лидтер жоқ",
+  "createdEmptyActiveTitle": "Белсенді лидтер жоқ",
+  "createdEmptyDoneHint": "Аяқталған лидтер осында пайда болады",
+  "createdEmptyActiveHint": "Алғашқы лидті беру үшін «Лид құру» түймесін басыңыз",
+  "assignedEmptyActiveTitle": "Жұмыста белсенді лидтер жоқ",
+  "assignedEmptyActiveHint": "Сізге тағайындалған лидтер осында пайда болады",
+  "noExecutor": "Орындаушы тағайындалмаған",
+
+  "leadTypeOwner": "Сату",
+  "leadTypeBuyer": "Сатып алу",
+  "leadTypeMortgage": "Ипотека",
+  "leadTypeLegal": "Заң қызметі",
+
+  "leadStatusNew": "Таңдауды күтуде",
+  "leadStatusPendingAcceptance": "Қабылдауды күтуде",
+  "leadStatusInProgress": "Жұмыста",
+  "leadStatusContract": "Шарт",
+  "leadStatusDeposit": "Кепілпұл",
+  "leadStatusClosedSuccess": "Сәтті жабылды",
+  "leadStatusCancelled": "Бас тартылды",
+  "leadStatusDispute": "Дау",
+  "leadStatusArchived": "Мұрағат",
+
+  "leadDetailTitle": "Лид",
+  "sectionAuthor": "Автор",
+  "sectionExecutor": "Орындаушы",
+  "sectionClient": "Клиент",
+  "sectionReward": "Сыйақы",
+  "sectionGuarantor": "Кепілгер",
+  "sectionDescription": "СИПАТТАМА",
+  "rowName": "Аты",
+  "rowLeadType": "Лид түрі",
+  "rowCity": "Қала",
+  "rowCreated": "Құрылды",
+  "rowClosed": "Жабылды",
+  "rowPhone": "Телефон",
+  "rowAmount": "Сома",
+  "rowPaid": "Төленді",
+  "rowCompany": "Компания",
+  "notAssigned": "Тағайындалмаған",
+  "clientDataLocked": "Клиент деректері лид қабылданғаннан кейін ашылады",
+  "historyTitle": "МӘРТЕБЕЛЕР ТАРИХЫ",
+
+  "tariffBannerTitle": "Сыйақы шарттары",
+  "rewardAuthorLabel": "Авторға сыйақы: {description}",
+  "@rewardAuthorLabel": {
+    "placeholders": {
+      "description": { "type": "String" }
+    }
+  },
+
+  "closeLeadTitle": "Лидті сәтті жабу",
+  "rewardFixedHint": "Сома бекітілген — комиссияны енгізудің қажеті жоқ",
+  "commissionLabel": "Сіздің комиссияңыз, ₸",
+  "commissionHint": "Мәміле бойынша комиссияңызды көрсетіңіз",
+  "percentCommissionHint": "Авторға сыйақы осы сомадан есептеледі",
+  "fieldRequired": "Міндетті өріс",
+  "amountPositive": "0-ден үлкен соманы енгізіңіз",
+
+  "declineLeadTitle": "Лидті қабылдамау",
+  "declineLeadHint": "Қабылдамау себебін көрсетіңіз",
+  "cancelLeadTitle": "Лидті болдырмау",
+  "cancelLeadHint": "Болдырмау себебін көрсетіңіз (міндетті)",
+  "openDisputeTitle": "Дау ашу",
+  "openDisputeHint": "Дау себебін толық сипаттаңыз",
+  "verificationRequired": "Верификация қажет",
+  "verificationRequiredBody": "Лидтерді қабылдау үшін жеке басты верификациядан өткізу қажет.",
+
+  "proofAttachedSnack": "Түбіртек тіркелді — автордың растауын күтудеміз",
+  "paymentConfirmedSnack": "Алынғаны расталды — лид мұрағатқа жіберілді",
+  "leadAcceptedSnack": "Лид қабылданды — клиент телефоны енді көрінеді",
+  "leadClosedSnack": "Лид сәтті жабылды — сыйақы есептелді",
+  "leadCancelledSnack": "Лид болдырылмады",
+  "disputeOpenedSnack": "Дау ашылды",
+
+  "paymentToAuthorTitle": "АВТОРҒА АУДАРУ",
+  "paymentToAuthorPrefix": "Авторға аударыңыз:",
+  "phoneCopied": "Нөмір көшірілді",
+  "copyPhoneHint": "Көшіру үшін нөмірді басыңыз",
+
+  "proofTitle": "ТӨЛЕМДІ РАСТАУ",
+  "proofBody": "Ақшаны аударып, скриншот немесе түбіртек фотосын тіркеңіз.",
+  "receiptLoadFailed": "Түбіртекті жүктеу мүмкін болмады",
+  "autoConfirmHint": "5 күн ішінде растамасаңыз — автоматты түрде расталады",
+
+  "paymentMarkedTitle": "ОРЫНДАУШЫ ТӨЛЕМДІ БЕЛГІЛЕДІ",
+  "paymentMarkedBody": "Орындаушы түбіртек тіркеді. Тексеріп, алынғанын растаңыз.",
+
+  "createLeadTitle": "Жаңа лид",
+  "labelLeadType": "Лид түрі",
+  "typePickerHint": "Түрін таңдаңыз",
+  "typeRequired": "Лид түрін таңдаңыз",
+  "labelClientPhone": "Клиент телефоны",
+  "phoneValidationFull": "Толық телефон нөмірін енгізіңіз",
+  "checkingDuplicates": "Қайталануларды тексереміз...",
+  "checkError": "Тексеру қатесі. Қайталаңыз.",
+  "createLeadError": "Лид құру қатесі",
+  "dupWarningTitle": "Ықтимал қайталану",
+  "dupWarningBody": "Бұл нөмірге «{type}» түріндегі белсенді лид бұрыннан бар{statusPart}.",
+  "@dupWarningBody": {
+    "placeholders": {
+      "type": { "type": "String" },
+      "statusPart": { "type": "String" }
+    }
+  },
+  "dupWarningStatusPart": " ({status})",
+  "@dupWarningStatusPart": {
+    "placeholders": {
+      "status": { "type": "String" }
+    }
+  },
+  "labelClientName": "Клиент аты",
+  "clientNameRequired": "Клиент атын енгізіңіз",
+  "labelServiceCity": "Қызмет қажет қала",
+  "serviceCityHint": "Нысан қай жерде немесе қызмет қай қалада қажет — осы қала бойынша жергілікті маман таңдалады",
+  "labelDescription": "Сипаттама / сұраныс мәні",
+  "descriptionPlaceholder": "Клиент тапсырмасын толық сипаттаңыз: нақты не қажет, шарттар, тілектер…",
+  "descriptionRequired": "Сипаттама қосыңыз",
+  "clientConsentText": "Клиенттің байланыс деректерін беруге оның келісімін алғанымды растаймын",
+  "noPaymentHint": "Құру алдында төлем деректемелерін көрсету қажет болады.",
+  "leadCreatedSuccess": "Лид құрылды!",
+  "leadCreatedSuccessHint": "Рахмет! Біз орындаушыны таңдап, сізге хабарлаймыз.",
+
+  "labelRole": "Рөл",
+  "roleSpecialist": "Маман",
+  "roleAdmin": "Әкімші",
+  "roleModerator": "Модератор",
+  "roleCompany": "Компания",
+  "paymentDetailsTitle": "Төлем деректемелері",
+  "notSpecified": "Көрсетілмеген",
+  "verifiedStatus": "Верификацияланған ✓",
+  "pendingVerifStatus": "Фото тексерілуде",
+  "rejectedVerifStatus": "Верификация қабылданбады",
+  "notVerifiedStatus": "Верификацияланбаған",
+  "reasonPrefix": "Себебі: {reason}",
+  "@reasonPrefix": {
+    "placeholders": {
+      "reason": { "type": "String" }
+    }
+  },
+  "pendingVerifHint": "Тексеру нәтижесі туралы хабарлаймыз.",
+  "guarantorCompanyTitle": "Кепілгер компания",
+  "currentGuarantor": "Ағымдағы кепілгер",
+  "membershipActive": "Белсенді",
+  "membershipPending": "Өтінім қаралуда",
+  "membershipChangeHint": "Ауыстыру өтінімі қаралуда:",
+  "noCompany": "Сіз компанияға байланбағансыз",
+  "verifyFirst": "Алдымен верификациядан өтіңіз",
+  "pickCompanyTitle": "Компанияны таңдаңыз",
+  "companiesLoadFailed": "Компаниялар тізімін жүктеу мүмкін болмады",
+  "noCompaniesAvailable": "Қолжетімді компаниялар жоқ",
+  "applicationSent": "«{name}» компаниясына өтінім жіберілді",
+  "@applicationSent": {
+    "placeholders": {
+      "name": { "type": "String" }
+    }
+  },
+  "applicationRevoked": "Өтінім қайтарылды",
+  "applicationError": "Өтінім жіберу қатесі",
+  "avatarUploadError": "Фото жүктеу қатесі",
+  "avatarNoPermission": "Аватар жүктеуге рұқсат жоқ",
+
+  "editProfileTitle": "Профильді өңдеу",
+  "editProfileLocked": "Қазір профильді өзгерту мүмкін емес. Аты-жөні верификациядан кейін бекітілген. Жұмыста лидтер болғанда мамандық пен қаланы өзгертуге болмайды.",
+  "nameLockedHint": "Аты-жөнін верификациядан кейін өзгертуге болмайды",
+  "lockedLeadsHint": "Қолжетімсіз: сізде жұмыста лидтер бар",
+  "saveError": "Сақтау қатесі",
+
+  "labelBank": "Банк",
+  "bankPickerHint": "Банкті таңдаңыз",
+  "bankRequired": "Банкті таңдаңыз",
+  "labelPaymentPhone": "Аудару нөмірі",
+  "paymentPhoneHint": "Әдепкі бойынша кіру нөміріңіз қойылған. Өзгертуге болады.",
+  "phoneRequired": "Нөмірді енгізіңіз",
+  "paymentFormHint": "Берілген лидтер үшін сыйақы алатын деректемелерді көрсетіңіз.",
+  "banksLoadFailed": "Банктер тізімін жүктеу мүмкін болмады",
+
+  "verificationTitle": "Верификация",
+  "verificationStepsTitle": "Верификациядан қалай өту керек",
+  "verificationStep1": "Жеке куәлігіңізді алыңыз",
+  "verificationStep2": "Бет-әлпетіңіз бен құжат көрінетіндей етіп қасында суретке түсіңіз",
+  "verificationStep3": "Фотоны жүктеңіз — модератор оны 24 сағат ішінде тексереді",
+  "verificationConsentText": "Верификация мақсатында жеке басымды куәландыратын құжат бейнесін өңдеуге келісім беремін",
+  "uploadError": "Файл жүктеу қатесі",
+  "verifActiveTitle": "Сіз верификациядан өттіңіз",
+  "verifPendingTitle": "Фото тексерілуде",
+  "verifRejectedTitle": "Верификация қабылданбады",
+  "verifNotStartedTitle": "Жеке басыңызды растаңыз",
+  "verifActiveSubtitle": "Аккаунтыңыз расталды — сіз лидтерді қабылдай аласыз.",
+  "verifPendingSubtitle": "Фото модераторға тексеруге жіберілді. Күтіңіз — нәтиже туралы хабарлаймыз.",
+  "verifRejectedSubtitle": "Жеке куәлігіңізбен жаңа фото жүктеңіз.",
+  "verifNotStartedSubtitle": "Лидтерді қабылдау үшін жеке басыңызды растаңыз: куәлігіңіздің қасында суретке түсіңіз.",
+
+  "notificationsTitle": "Хабарландырулар",
+  "noNotifications": "Әзірге хабарландырулар жоқ",
+  "relTimeJustNow": "жаңа ғана",
+  "relTimeMinutes": "{n} мин. бұрын",
+  "@relTimeMinutes": {
+    "placeholders": {
+      "n": { "type": "int" }
+    }
+  },
+  "relTimeHours": "{n} сағ. бұрын",
+  "@relTimeHours": {
+    "placeholders": {
+      "n": { "type": "int" }
+    }
+  },
+  "relTimeYesterday": "кеше",
+  "relTimeDays": "{n} күн бұрын",
+  "@relTimeDays": {
+    "placeholders": {
+      "n": { "type": "int" }
+    }
+  },
+
+  "supportTitle": "Қолдау",
+  "supportEmpty": "Бізге жазыңыз — біз көмектесеміз",
+  "messageSendFailed": "Хабарламаны жіберу мүмкін болмады",
+  "messageHint": "Хабарлама...",
+
+  "tariffsTitle": "Тарифтер",
+  "tariffsLoadError": "Тарифтерді жүктеу мүмкін болмады",
+  "tariffsExplanation": "Сыйақы тек мәміле жасалған лид үшін есептеледі. Егер серіктес шартты жаппаса — төлем жоқ.",
+  "tariffsCalculatorTitle": "КАЛЬКУЛЯТОР",
+  "tariffBaseCityHint": "Базалық тариф (кез келген қала)",
+  "tariffBaseCityLabel": "Базалық тариф",
+  "priceOnRequest": "Баға нақтыланады",
+  "priceOnRequestHint": "Шарттарды нақтылау үшін әкімшіге хабарласыңыз.",
+  "fixedRewardLabel": "лид үшін бекітілген сыйақы",
+  "percentRewardLabel": "мәміле комиссиясынан",
+
+  "settingsLanguage": "Тіл",
+  "langRussian": "Русский",
+  "langKazakh": "Қазақша",
+
+  "monthJan": "қаң",
+  "monthFeb": "ақп",
+  "monthMar": "нау",
+  "monthApr": "сәу",
+  "monthMay": "мам",
+  "monthJun": "мау",
+  "monthJul": "шіл",
+  "monthAug": "там",
+  "monthSep": "қыр",
+  "monthOct": "қаз",
+  "monthNov": "қар",
+  "monthDec": "желт",
+
+  "registerAppBarTitle": "Тіркелу",
+  "rewardConfirmedBanner": "Сыйақы алынды және расталды",
+  "closedAtLabel": "{date} аяқталды",
+  "@closedAtLabel": {
+    "placeholders": {
+      "date": { "type": "String" }
+    }
+  },
+  "statsCardTitle": "Статистика"
+}

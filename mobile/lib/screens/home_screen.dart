@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../l10n/app_localizations.dart';
 import '../models/lead.dart';
 import '../services/leads_service.dart';
 import '../services/api_client.dart';
@@ -153,6 +154,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildError() {
+    final l = AppLocalizations.of(context)!;
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(24),
@@ -170,7 +172,7 @@ class _HomeScreenState extends State<HomeScreen> {
             OutlinedButton.icon(
               onPressed: _load,
               icon: const Icon(Icons.refresh, size: 16),
-              label: const Text('Повторить'),
+              label: Text(l.btnRetry),
             ),
           ],
         ),
@@ -179,6 +181,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildContent() {
+    final l = AppLocalizations.of(context)!;
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
       children: [
@@ -207,7 +210,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
 
         // ── Block: Переданные ──────────────────────────────────────────────
-        const _SectionHeader('Переданные'),
+        _SectionHeader(l.navCreated),
         if (_topCreated != null)
           LeadCard(
             lead: _topCreated!,
@@ -215,14 +218,14 @@ class _HomeScreenState extends State<HomeScreen> {
             onTap: () => _openLead(_topCreated!),
           )
         else
-          const _EmptyBlock(
+          _EmptyBlock(
             icon: Icons.send_outlined,
-            text: 'Вы ещё не передавали лиды',
+            text: l.homeNoCreatedLeads,
           ),
         const SizedBox(height: 4),
 
         // ── Block: Исполняю ────────────────────────────────────────────────
-        const _SectionHeader('Исполняю'),
+        _SectionHeader(l.navAssigned),
         if (_topAssigned != null)
           LeadCard(
             lead: _topAssigned!,
@@ -230,9 +233,9 @@ class _HomeScreenState extends State<HomeScreen> {
             onTap: () => _openLead(_topAssigned!),
           )
         else
-          const _EmptyBlock(
+          _EmptyBlock(
             icon: Icons.assignment_outlined,
-            text: 'У вас нет лидов в работе',
+            text: l.homeNoAssignedLeads,
           ),
         const SizedBox(height: 20),
 
@@ -243,21 +246,21 @@ class _HomeScreenState extends State<HomeScreen> {
           child: FilledButton.icon(
             onPressed: _openCreate,
             icon: const Icon(Icons.add, size: 20),
-            label: const Text(
-              'Создать лид',
-              style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+            label: Text(
+              l.btnCreateLead,
+              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
             ),
           ),
         ),
         const SizedBox(height: 24),
 
         // ── Stats block ────────────────────────────────────────────────────
-        if (_stats != null) _buildStats(),
+        if (_stats != null) _buildStats(l),
       ],
     );
   }
 
-  Widget _buildStats() {
+  Widget _buildStats(AppLocalizations l) {
     final rawRating = _stats!['rating'];
     final rating = (rawRating is num ? rawRating.toDouble() : double.tryParse('$rawRating') ?? 0.0);
     final sent = _stats!['leads_sent'] as int? ?? 0;
@@ -280,9 +283,9 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'СТАТИСТИКА',
-            style: TextStyle(
+          Text(
+            l.statsTitle,
+            style: const TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w700,
               color: AppColors.textSecondary,
@@ -294,25 +297,25 @@ class _HomeScreenState extends State<HomeScreen> {
             children: [
               _StatCell(
                 value: rating.toStringAsFixed(1),
-                label: 'Рейтинг',
+                label: l.statRating,
                 icon: Icons.star_outline,
                 color: const Color(0xFFF59E0B),
               ),
               _StatCell(
                 value: '$sent',
-                label: 'Передано',
+                label: l.statSent,
                 icon: Icons.send_outlined,
                 color: AppColors.primary,
               ),
               _StatCell(
                 value: '$received',
-                label: 'Принято',
+                label: l.statReceived,
                 icon: Icons.assignment_outlined,
                 color: AppColors.primary,
               ),
               _StatCell(
                 value: '$closed',
-                label: 'Закрыто',
+                label: l.statClosed,
                 icon: Icons.check_circle_outline,
                 color: AppColors.success,
               ),

@@ -1,20 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
+import '../l10n/app_localizations.dart';
+import '../l10n/lead_labels.dart';
 import '../services/api_client.dart';
 import '../services/leads_service.dart';
 import '../services/phone_formatter.dart';
-import '../models/lead.dart';
 import '../theme/app_colors.dart';
 import 'payment_form_screen.dart';
 
 enum _Phase { typeAndPhone, checking, dupWarning, fullForm, submitting, success }
-
-const _typeValues = {
-  'owner': 'Продажа',
-  'buyer': 'Покупка',
-  'mortgage': 'Ипотека',
-  'legal': 'Юр. услуга',
-};
 
 class CreateLeadScreen extends StatefulWidget {
   const CreateLeadScreen({super.key});
@@ -154,7 +148,7 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
       if (mounted) {
         setState(() {
           _phase = _Phase.typeAndPhone;
-          _checkError = 'Ошибка проверки. Повторите.';
+          _checkError = AppLocalizations.of(context)!.checkError;
         });
       }
     }
@@ -203,9 +197,10 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
       if (mounted) setState(() => _phase = _Phase.success);
     } on DioException catch (e) {
       if (!mounted) return;
+      final l = AppLocalizations.of(context)!;
       final data = e.response?.data;
       final msg = data is Map ? data['message'] : null;
-      final msgStr = msg is String ? msg : 'Ошибка создания лида';
+      final msgStr = msg is String ? msg : l.createLeadError;
 
       if (e.response?.statusCode == 403 &&
           msgStr.toLowerCase().contains('реквизит')) {
@@ -239,7 +234,7 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
       if (mounted) {
         setState(() {
           _phase = _Phase.fullForm;
-          _submitError = 'Ошибка создания лида';
+          _submitError = AppLocalizations.of(context)!.createLeadError;
         });
       }
     }
@@ -249,15 +244,16 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
         backgroundColor: AppColors.background,
         elevation: 0,
         leading: const BackButton(color: AppColors.textPrimary),
-        title: const Text(
-          'Новый лид',
-          style: TextStyle(
+        title: Text(
+          l.createLeadTitle,
+          style: const TextStyle(
             color: AppColors.textPrimary,
             fontWeight: FontWeight.w600,
           ),
@@ -272,6 +268,7 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
   }
 
   Widget _buildForm() {
+    final l = AppLocalizations.of(context)!;
     final isSubmitting = _phase == _Phase.submitting;
 
     return Form(
@@ -279,22 +276,22 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
       child: ListView(
         padding: const EdgeInsets.fromLTRB(20, 8, 20, 40),
         children: [
-          // ── ФАЗА 1: Тип + Телефон ─────────────────────────────────────────
+          // ── Phase 1: Type + Phone ─────────────────────────────────────────
 
-          _Label('Тип лида'),
+          _Label(l.labelLeadType),
           const SizedBox(height: 6),
           DropdownButtonFormField<String>(
             value: _type,
-            decoration: _inputDec(hint: 'Выберите тип'),
-            items: _typeValues.entries
-                .map((e) => DropdownMenuItem(value: e.key, child: Text(e.value)))
+            decoration: _inputDec(hint: l.typePickerHint),
+            items: ['owner', 'buyer', 'mortgage', 'legal']
+                .map((k) => DropdownMenuItem(value: k, child: Text(leadTypeLabel(l, k))))
                 .toList(),
             onChanged: isSubmitting ? null : _onTypeChanged,
-            validator: (v) => v == null ? 'Выберите тип лида' : null,
+            validator: (v) => v == null ? l.typeRequired : null,
           ),
           const SizedBox(height: 16),
 
-          _Label('Телефон клиента'),
+          _Label(l.labelClientPhone),
           const SizedBox(height: 6),
           TextFormField(
             controller: _phoneCtrl,
@@ -304,37 +301,34 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
             decoration: _inputDec(hint: '+7 XXX XXX XX XX'),
             validator: (v) {
               final d = v?.replaceAll(RegExp(r'\D'), '') ?? '';
-              if (d.length != 11) return 'Введите полный номер телефона';
+              if (d.length != 11) return l.phoneValidationFull;
               return null;
             },
           ),
 
-          // ── Индикатор проверки ─────────────────────────────────────────────
+          // ── Checking indicator ─────────────────────────────────────────────
           if (_phase == _Phase.checking) ...[
             const SizedBox(height: 16),
-            const Row(
+            Row(
               children: [
-                SizedBox(
-                  width: 16,
-                  height: 16,
+                const SizedBox(
+                  width: 16, height: 16,
                   child: CircularProgressIndicator(strokeWidth: 2),
                 ),
-                SizedBox(width: 10),
+                const SizedBox(width: 10),
                 Text(
-                  'Проверяем дубли...',
-                  style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
+                  l.checkingDuplicates,
+                  style: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
                 ),
               ],
             ),
           ],
 
-          // ── Ошибка проверки ────────────────────────────────────────────────
           if (_checkError != null) ...[
             const SizedBox(height: 12),
             _ErrorCard(_checkError!),
           ],
 
-          // ── Предупреждение о дубле ─────────────────────────────────────────
           if (_phase == _Phase.dupWarning) ...[
             const SizedBox(height: 16),
             _DupWarning(
@@ -348,14 +342,13 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
             ),
           ],
 
-          // ── ФАЗА 2: Имя + Город + Описание ────────────────────────────────
-          if (_phase == _Phase.fullForm ||
-              _phase == _Phase.submitting) ...[
+          // ── Phase 2: Name + City + Description ────────────────────────────
+          if (_phase == _Phase.fullForm || _phase == _Phase.submitting) ...[
             const SizedBox(height: 20),
             const Divider(color: AppColors.divider),
             const SizedBox(height: 20),
 
-            _Label('Имя клиента'),
+            _Label(l.labelClientName),
             const SizedBox(height: 6),
             TextFormField(
               controller: _nameCtrl,
@@ -363,31 +356,31 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
               enabled: !isSubmitting,
               decoration: _inputDec(hint: 'Нурлан Серіков'),
               validator: (v) =>
-                  v == null || v.trim().isEmpty ? 'Введите имя клиента' : null,
+                  v == null || v.trim().isEmpty ? l.clientNameRequired : null,
             ),
             const SizedBox(height: 16),
 
-            _Label('Город, где нужна услуга'),
+            _Label(l.labelServiceCity),
             const SizedBox(height: 6),
             DropdownButtonFormField<String>(
               value: _selectedCity,
-              decoration: _inputDec(hint: 'Выберите город'),
+              decoration: _inputDec(hint: l.cityPickerHint),
               items: _cities
                   .map((c) => DropdownMenuItem(value: c, child: Text(c)))
                   .toList(),
               onChanged: isSubmitting
                   ? null
                   : (v) => setState(() => _selectedCity = v),
-              validator: (v) => v == null ? 'Выберите город' : null,
+              validator: (v) => v == null ? l.cityRequired : null,
             ),
             const SizedBox(height: 4),
-            const Text(
-              'Где находится объект или нужна услуга — по этому городу подбирается местный специалист',
-              style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
+            Text(
+              l.serviceCityHint,
+              style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
             ),
             const SizedBox(height: 16),
 
-            _Label('Описание / суть запроса'),
+            _Label(l.labelDescription),
             const SizedBox(height: 6),
             TextFormField(
               controller: _descCtrl,
@@ -395,11 +388,9 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
               minLines: 3,
               enabled: !isSubmitting,
               textCapitalization: TextCapitalization.sentences,
-              decoration: _inputDec(
-                hint: 'Опишите задачу клиента подробно: что именно нужно, условия, пожелания…',
-              ),
+              decoration: _inputDec(hint: l.descriptionPlaceholder),
               validator: (v) =>
-                  v == null || v.trim().isEmpty ? 'Добавьте описание' : null,
+                  v == null || v.trim().isEmpty ? l.descriptionRequired : null,
             ),
 
             if (_submitError != null) ...[
@@ -412,8 +403,7 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
               value: _clientConsentAccepted,
               onChanged: (v) =>
                   setState(() => _clientConsentAccepted = v ?? false),
-              text: 'Я подтверждаю, что получил согласие клиента на передачу '
-                  'его контактных данных',
+              text: l.clientConsentText,
             ),
 
             const SizedBox(height: 16),
@@ -427,23 +417,20 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
               ),
               child: isSubmitting
                   ? const SizedBox(
-                      width: 22,
-                      height: 22,
-                      child: CircularProgressIndicator(
-                          strokeWidth: 2, color: Colors.white),
+                      width: 22, height: 22,
+                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                     )
-                  : const Text(
-                      'Создать лид',
-                      style: TextStyle(
-                          fontSize: 15, fontWeight: FontWeight.w600),
+                  : Text(
+                      l.btnCreateLead,
+                      style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
                     ),
             ),
 
             if (!_hasPayment) ...[
               const SizedBox(height: 12),
-              const Text(
-                'Перед созданием потребуется указать платёжные реквизиты.',
-                style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+              Text(
+                l.noPaymentHint,
+                style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
                 textAlign: TextAlign.center,
               ),
             ],
@@ -454,6 +441,7 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
   }
 
   Widget _buildSuccess() {
+    final l = AppLocalizations.of(context)!;
     return Center(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 36),
@@ -461,8 +449,7 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              width: 80,
-              height: 80,
+              width: 80, height: 80,
               decoration: const BoxDecoration(
                 color: Color(0xFFF0FDF4),
                 shape: BoxShape.circle,
@@ -474,21 +461,18 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
               ),
             ),
             const SizedBox(height: 24),
-            const Text(
-              'Лид создан!',
-              style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
+            Text(
+              l.leadCreatedSuccess,
+              style: const TextStyle(
+                fontSize: 22, fontWeight: FontWeight.bold,
                 color: AppColors.textPrimary,
               ),
             ),
             const SizedBox(height: 12),
-            const Text(
-              'Спасибо! Мы подберём исполнителя и уведомим вас.',
-              style: TextStyle(
-                fontSize: 15,
-                color: AppColors.textSecondary,
-                height: 1.5,
+            Text(
+              l.leadCreatedSuccessHint,
+              style: const TextStyle(
+                fontSize: 15, color: AppColors.textSecondary, height: 1.5,
               ),
               textAlign: TextAlign.center,
             ),
@@ -497,15 +481,12 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
               onPressed: () => Navigator.pop(context),
               style: FilledButton.styleFrom(
                 backgroundColor: AppColors.primary,
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 32, vertical: 14),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12)),
+                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
-              child: const Text(
-                'Посмотреть лиды',
-                style:
-                    TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+              child: Text(
+                l.btnViewLeads,
+                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
               ),
             ),
           ],
@@ -518,8 +499,7 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
         filled: true,
         fillColor: Colors.white,
         hintText: hint,
-        hintStyle:
-            const TextStyle(fontSize: 14, color: AppColors.divider),
+        hintStyle: const TextStyle(fontSize: 14, color: AppColors.divider),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: const BorderSide(color: AppColors.divider),
@@ -530,8 +510,7 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide:
-              const BorderSide(color: AppColors.primary, width: 1.5),
+          borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
@@ -539,11 +518,9 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
         ),
         focusedErrorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide:
-              const BorderSide(color: AppColors.brand, width: 1.5),
+          borderSide: const BorderSide(color: AppColors.brand, width: 1.5),
         ),
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       );
 }
 
@@ -557,8 +534,7 @@ class _Label extends StatelessWidget {
   Widget build(BuildContext context) => Text(
         text,
         style: const TextStyle(
-          fontSize: 13,
-          fontWeight: FontWeight.w500,
+          fontSize: 13, fontWeight: FontWeight.w500,
           color: AppColors.textSecondary,
         ),
       );
@@ -596,11 +572,12 @@ class _DupWarning extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final type = dupLead != null
-        ? (leadTypeLabels[dupLead!['type']] ?? dupLead!['type'] as String)
-        : 'неизвестного типа';
-    final status = dupLead != null
-        ? (leadStatusLabels[dupLead!['status']] ?? dupLead!['status'] as String)
+    final l = AppLocalizations.of(context)!;
+    final typeLabel = dupLead != null
+        ? leadTypeLabel(l, dupLead!['type'] as String? ?? '')
+        : '';
+    final statusLabel = dupLead != null
+        ? leadStatusLabel(l, dupLead!['status'] as String? ?? '')
         : '';
 
     return Container(
@@ -613,16 +590,15 @@ class _DupWarning extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+          Row(
             children: [
-              Icon(Icons.warning_amber_outlined,
+              const Icon(Icons.warning_amber_outlined,
                   size: 16, color: Color(0xFF92400E)),
-              SizedBox(width: 8),
+              const SizedBox(width: 8),
               Text(
-                'Возможный дубль',
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
+                l.dupWarningTitle,
+                style: const TextStyle(
+                  fontSize: 13, fontWeight: FontWeight.w600,
                   color: Color(0xFF92400E),
                 ),
               ),
@@ -630,8 +606,10 @@ class _DupWarning extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            'На этот номер уже есть активный лид типа «$type»'
-            '${status.isNotEmpty ? " ($status)" : ""}.',
+            l.dupWarningBody(
+              typeLabel,
+              statusLabel.isNotEmpty ? l.dupWarningStatusPart(statusLabel) : '',
+            ),
             style: const TextStyle(fontSize: 13, color: Color(0xFF78350F)),
           ),
           const SizedBox(height: 12),
@@ -647,8 +625,8 @@ class _DupWarning extends StatelessWidget {
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8)),
                   ),
-                  child: const Text('Отмена',
-                      style: TextStyle(fontSize: 13)),
+                  child: Text(l.btnCancel,
+                      style: const TextStyle(fontSize: 13)),
                 ),
               ),
               const SizedBox(width: 10),
@@ -661,8 +639,8 @@ class _DupWarning extends StatelessWidget {
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8)),
                   ),
-                  child: const Text('Создать всё равно',
-                      style: TextStyle(fontSize: 13)),
+                  child: Text(l.btnCreateAnyway,
+                      style: const TextStyle(fontSize: 13)),
                 ),
               ),
             ],
@@ -689,8 +667,7 @@ class _ConsentCheckbox extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         SizedBox(
-          width: 24,
-          height: 24,
+          width: 24, height: 24,
           child: Checkbox(
             value: value,
             onChanged: onChanged,
@@ -705,9 +682,7 @@ class _ConsentCheckbox extends StatelessWidget {
             child: Text(
               text,
               style: const TextStyle(
-                fontSize: 13,
-                color: AppColors.textSecondary,
-                height: 1.45,
+                fontSize: 13, color: AppColors.textSecondary, height: 1.45,
               ),
             ),
           ),

@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import 'package:image_picker/image_picker.dart';
+import '../l10n/app_localizations.dart';
 import '../services/api_client.dart';
 import '../theme/app_colors.dart';
 
-// Состояния верификации, производные от status + rejection_reason
 enum _VerifState { notStarted, pending, rejected, active }
 
 _VerifState _parseState(String status, String? rejectionReason) {
@@ -54,7 +54,9 @@ class _VerificationScreenState extends State<VerificationScreen> {
     } on DioException catch (e) {
       final data = e.response?.data;
       final msg = data is Map ? data['message'] : null;
-      setState(() => _error = msg is String ? msg : 'Ошибка загрузки статуса');
+      if (mounted) {
+        setState(() => _error = msg is String ? msg : AppLocalizations.of(context)!.uploadError);
+      }
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -74,26 +76,27 @@ class _VerificationScreenState extends State<VerificationScreen> {
     setState(() { _uploading = true; _error = null; });
     try {
       final formData = FormData.fromMap({
-        'file': await MultipartFile.fromFile(file.path,
-            filename: file.name),
+        'file': await MultipartFile.fromFile(file.path, filename: file.name),
       });
       await _client.dio.post(
         '/users/me/identity-document',
         data: formData,
         options: Options(contentType: 'multipart/form-data'),
       );
-      // После успешной загрузки — обновляем статус (теперь должен быть pending)
       await _loadStatus();
     } on DioException catch (e) {
       final data = e.response?.data;
       final msg = data is Map ? data['message'] : null;
-      setState(() => _error = msg is String ? msg : 'Ошибка загрузки файла');
+      if (mounted) {
+        setState(() => _error = msg is String ? msg : AppLocalizations.of(context)!.uploadError);
+      }
     } finally {
       if (mounted) setState(() => _uploading = false);
     }
   }
 
   Future<ImageSource?> _showSourceSheet() async {
+    final l = AppLocalizations.of(context)!;
     return showModalBottomSheet<ImageSource>(
       context: context,
       shape: const RoundedRectangleBorder(
@@ -114,12 +117,12 @@ class _VerificationScreenState extends State<VerificationScreen> {
             const SizedBox(height: 16),
             ListTile(
               leading: const Icon(Icons.camera_alt_outlined),
-              title: const Text('Камера'),
+              title: Text(l.sourceCamera),
               onTap: () => Navigator.pop(ctx, ImageSource.camera),
             ),
             ListTile(
               leading: const Icon(Icons.photo_library_outlined),
-              title: const Text('Галерея'),
+              title: Text(l.sourceGallery),
               onTap: () => Navigator.pop(ctx, ImageSource.gallery),
             ),
             const SizedBox(height: 8),
@@ -131,12 +134,13 @@ class _VerificationScreenState extends State<VerificationScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text(
-          'Верификация',
-          style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600),
+        title: Text(
+          l.verificationTitle,
+          style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w600),
         ),
         backgroundColor: Colors.white,
         foregroundColor: AppColors.textPrimary,
@@ -145,15 +149,14 @@ class _VerificationScreenState extends State<VerificationScreen> {
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
-          : _buildContent(),
+          : _buildContent(l),
     );
   }
 
-  Widget _buildContent() {
+  Widget _buildContent(AppLocalizations l) {
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 24, 20, 40),
       children: [
-        // Иконка-иллюстрация
         Center(
           child: Container(
             width: 80, height: 80,
@@ -166,9 +169,8 @@ class _VerificationScreenState extends State<VerificationScreen> {
         ),
         const SizedBox(height: 20),
 
-        // Заголовок и описание
         Text(
-          _stateTitle(),
+          _stateTitle(l),
           style: const TextStyle(
             fontSize: 20, fontWeight: FontWeight.bold,
             color: AppColors.textPrimary,
@@ -177,12 +179,11 @@ class _VerificationScreenState extends State<VerificationScreen> {
         ),
         const SizedBox(height: 8),
         Text(
-          _stateSubtitle(),
+          _stateSubtitle(l),
           style: const TextStyle(fontSize: 14, color: AppColors.textSecondary, height: 1.5),
           textAlign: TextAlign.center,
         ),
 
-        // Причина отклонения
         if (_state == _VerifState.rejected && _rejectionReason != null) ...[
           const SizedBox(height: 16),
           Container(
@@ -199,7 +200,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'Причина: $_rejectionReason',
+                    l.reasonPrefix(_rejectionReason!),
                     style: const TextStyle(fontSize: 13, color: AppColors.brand),
                   ),
                 ),
@@ -208,7 +209,6 @@ class _VerificationScreenState extends State<VerificationScreen> {
           ),
         ],
 
-        // Пояснение (только для not_started и rejected)
         if (_state == _VerifState.notStarted || _state == _VerifState.rejected) ...[
           const SizedBox(height: 20),
           Container(
@@ -227,23 +227,22 @@ class _VerificationScreenState extends State<VerificationScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Как пройти верификацию',
-                  style: TextStyle(
+                Text(
+                  l.verificationStepsTitle,
+                  style: const TextStyle(
                     fontSize: 14, fontWeight: FontWeight.w600,
                     color: AppColors.textPrimary,
                   ),
                 ),
                 const SizedBox(height: 10),
-                _Step(number: '1', text: 'Возьмите удостоверение личности'),
-                _Step(number: '2', text: 'Сфотографируйтесь рядом с ним так, чтобы было видно лицо и документ'),
-                _Step(number: '3', text: 'Загрузите фото — модератор проверит его в течение 24 часов'),
+                _Step(number: '1', text: l.verificationStep1),
+                _Step(number: '2', text: l.verificationStep2),
+                _Step(number: '3', text: l.verificationStep3),
               ],
             ),
           ),
         ],
 
-        // Ошибка загрузки
         if (_error != null) ...[
           const SizedBox(height: 16),
           Container(
@@ -262,18 +261,15 @@ class _VerificationScreenState extends State<VerificationScreen> {
 
         const SizedBox(height: 24),
 
-        // Согласие на обработку документа (только когда можно загрузить)
         if (_state == _VerifState.notStarted || _state == _VerifState.rejected)
           _ConsentCheckbox(
             value: _docConsentAccepted,
             onChanged: (v) => setState(() => _docConsentAccepted = v ?? false),
-            text: 'Я даю согласие на обработку изображения моего документа, '
-                'удостоверяющего личность, для целей верификации',
+            text: l.verificationConsentText,
           ),
 
         const SizedBox(height: 16),
 
-        // Кнопка действия
         if (_state == _VerifState.notStarted || _state == _VerifState.rejected)
           FilledButton.icon(
             onPressed: _uploading || !_docConsentAccepted ? null : _pickAndUpload,
@@ -289,7 +285,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
                   )
                 : const Icon(Icons.camera_alt_outlined),
             label: Text(
-              _uploading ? 'Загружаем...' : 'Загрузить фото',
+              _uploading ? l.uploadingPhoto : l.btnUploadPhoto,
               style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
             ),
           ),
@@ -315,25 +311,21 @@ class _VerificationScreenState extends State<VerificationScreen> {
     }
   }
 
-  String _stateTitle() {
+  String _stateTitle(AppLocalizations l) {
     switch (_state) {
-      case _VerifState.active:   return 'Вы верифицированы';
-      case _VerifState.pending:  return 'Фото на проверке';
-      case _VerifState.rejected: return 'Верификация отклонена';
-      case _VerifState.notStarted: return 'Подтвердите личность';
+      case _VerifState.active:   return l.verifActiveTitle;
+      case _VerifState.pending:  return l.verifPendingTitle;
+      case _VerifState.rejected: return l.verifRejectedTitle;
+      case _VerifState.notStarted: return l.verifNotStartedTitle;
     }
   }
 
-  String _stateSubtitle() {
+  String _stateSubtitle(AppLocalizations l) {
     switch (_state) {
-      case _VerifState.active:
-        return 'Ваш аккаунт подтверждён — вы можете принимать лиды.';
-      case _VerifState.pending:
-        return 'Фото отправлено на проверку модератору.\nОжидайте — мы уведомим вас о результате.';
-      case _VerifState.rejected:
-        return 'Загрузите новое фото с удостоверением личности.';
-      case _VerifState.notStarted:
-        return 'Чтобы принимать лиды, подтвердите личность: сфотографируйтесь рядом с удостоверением.';
+      case _VerifState.active:   return l.verifActiveSubtitle;
+      case _VerifState.pending:  return l.verifPendingSubtitle;
+      case _VerifState.rejected: return l.verifRejectedSubtitle;
+      case _VerifState.notStarted: return l.verifNotStartedSubtitle;
     }
   }
 }

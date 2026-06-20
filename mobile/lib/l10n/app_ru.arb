@@ -1,0 +1,376 @@
+{
+  "@@locale": "ru",
+
+  "appSubtitle": "ПЕРЕДАЧА ЛИДОВ МЕЖДУ СПЕЦИАЛИСТАМИ",
+
+  "btnLogin": "Войти",
+  "btnRegister": "Зарегистрироваться",
+  "btnContinue": "Продолжить",
+  "btnSave": "Сохранить",
+  "btnEdit": "Изменить",
+  "btnCancel": "Отмена",
+  "btnSend": "Отправить",
+  "btnLater": "Позже",
+  "btnAccept": "Принять",
+  "btnDecline": "Отклонить",
+  "btnLogout": "Выйти",
+  "btnCancelAction": "Отменить",
+  "btnRetry": "Повторить",
+  "btnCreateLead": "Создать лид",
+  "btnClose": "✓ Закрыть",
+  "btnCloseDeal": "✓ Закрыть сделку",
+  "btnOpenDispute": "Открыть спор",
+  "btnGoVerify": "Пройти верификацию",
+  "btnContract": "→ Договор",
+  "btnDeposit": "→ Задаток",
+  "btnConfirmClose": "Подтвердить закрытие",
+  "btnConfirmPayment": "Подтвердить получение",
+  "btnAttachProof": "Прикрепить чек",
+  "btnAddPhoto": "Добавить фото",
+  "btnEditProfile": "Редактировать профиль",
+  "btnSelectCompany": "Выбрать компанию",
+  "btnChangeCompany": "Сменить компанию",
+  "btnRevokeChange": "Отозвать заявку на смену",
+  "btnRevokeApplication": "Отозвать заявку",
+  "btnViewLeads": "Посмотреть лиды",
+  "btnUploadPhoto": "Загрузить фото",
+  "btnCreateAnyway": "Создать всё равно",
+  "btnGoVerification": "Пройти верификацию →",
+  "btnReupload": "Загрузить заново →",
+
+  "yes": "Да",
+  "no": "Нет",
+  "uploading": "Загрузка...",
+  "uploadingPhoto": "Загружаем...",
+  "sourceCamera": "Камера",
+  "sourceGallery": "Галерея",
+
+  "phoneTitle": "Введите номер телефона",
+  "phoneHint": "Вам будет отправлен код подтверждения в WhatsApp",
+  "phoneLabel": "Номер телефона",
+  "phoneInvalid": "Введите корректный номер",
+
+  "otpTitleLogin": "Введите код",
+  "otpTitleRegister": "Подтвердите номер",
+  "otpHint": "Код отправлен в WhatsApp на номер {phone}",
+  "@otpHint": {
+    "placeholders": {
+      "phone": { "type": "String" }
+    }
+  },
+  "otpDevHint": "Режим разработки: код смотрите в логах бэкенда (npm run start)",
+  "otpCodeInvalid": "Введите 6-значный код",
+  "otpResendTimer": "Отправить повторно через {seconds} с",
+  "@otpResendTimer": {
+    "placeholders": {
+      "seconds": { "type": "int" }
+    }
+  },
+  "otpResend": "Отправить повторно",
+  "otpRegisterHint": "Зарегистрироваться с этим номером →",
+
+  "registerTitle": "Расскажите о себе",
+  "registerSubtitle": "Номер {phone} не зарегистрирован. Заполните профиль.",
+  "@registerSubtitle": {
+    "placeholders": {
+      "phone": { "type": "String" }
+    }
+  },
+  "labelFullName": "Имя и фамилия",
+  "fullNameRequired": "Введите имя и фамилию",
+  "labelSpecialization": "Специализация",
+  "specRequired": "Выберите специализацию",
+  "specRealtor": "Риелтор",
+  "specMortgage": "Ипотечный брокер",
+  "specLawyer": "Юрист",
+  "labelCity": "Город",
+  "cityPickerHint": "Выберите город",
+  "cityRequired": "Выберите город",
+  "citiesLoadError": "Не удалось загрузить города",
+  "consentIAccept": "Я принимаю",
+  "consentAnd": "и",
+  "consentTerms": "Пользовательское соглашение",
+  "consentPrivacy": "Политику конфиденциальности",
+
+  "navHome": "Главная",
+  "navCreated": "Переданные",
+  "navCreatedShort": "Переданные",
+  "navAssigned": "Исполняю",
+  "navAssignedShort": "Исполняю",
+  "navTariffs": "Тарифы",
+  "navProfile": "Профиль",
+
+  "bannerPending": "Верификация на проверке. Пока вы не можете принимать лиды",
+  "bannerRejected": "Верификация отклонена. Загрузите фото заново",
+  "bannerNotVerified": "Вы не верифицированы — не можете принимать лиды",
+  "bannerCta": "Пройти →",
+
+  "statsTitle": "СТАТИСТИКА",
+  "statRating": "Рейтинг",
+  "statSent": "Передано",
+  "statReceived": "Принято",
+  "statClosed": "Закрыто",
+  "homeNoCreatedLeads": "Вы ещё не передавали лиды",
+  "homeNoAssignedLeads": "У вас нет лидов в работе",
+
+  "filterActive": "Активные",
+  "filterDone": "Завершённые",
+  "createdEmptyDoneTitle": "Нет завершённых лидов",
+  "createdEmptyActiveTitle": "Нет активных лидов",
+  "createdEmptyDoneHint": "Завершённые лиды появятся здесь",
+  "createdEmptyActiveHint": "Нажмите «Создать лид», чтобы передать первый",
+  "assignedEmptyActiveTitle": "Нет активных лидов в работе",
+  "assignedEmptyActiveHint": "Здесь появятся лиды, назначенные вам",
+  "noExecutor": "Исполнитель не назначен",
+
+  "leadTypeOwner": "Продажа",
+  "leadTypeBuyer": "Покупка",
+  "leadTypeMortgage": "Ипотека",
+  "leadTypeLegal": "Юр. услуга",
+
+  "leadStatusNew": "Ожидает подбора",
+  "leadStatusPendingAcceptance": "Ожидает принятия",
+  "leadStatusInProgress": "В работе",
+  "leadStatusContract": "Договор",
+  "leadStatusDeposit": "Задаток",
+  "leadStatusClosedSuccess": "Закрыт успешно",
+  "leadStatusCancelled": "Отменён",
+  "leadStatusDispute": "Спор",
+  "leadStatusArchived": "Архив",
+
+  "leadDetailTitle": "Лид",
+  "sectionAuthor": "Автор",
+  "sectionExecutor": "Исполнитель",
+  "sectionClient": "Клиент",
+  "sectionReward": "Вознаграждение",
+  "sectionGuarantor": "Гарант",
+  "sectionDescription": "ОПИСАНИЕ",
+  "rowName": "Имя",
+  "rowLeadType": "Тип лида",
+  "rowCity": "Город",
+  "rowCreated": "Создан",
+  "rowClosed": "Закрыт",
+  "rowPhone": "Телефон",
+  "rowAmount": "Сумма",
+  "rowPaid": "Оплачено",
+  "rowCompany": "Компания",
+  "notAssigned": "Не назначен",
+  "clientDataLocked": "Данные клиента откроются после принятия лида",
+  "historyTitle": "ИСТОРИЯ СТАТУСОВ",
+
+  "tariffBannerTitle": "Условия вознаграждения",
+  "rewardAuthorLabel": "Вознаграждение автору: {description}",
+  "@rewardAuthorLabel": {
+    "placeholders": {
+      "description": { "type": "String" }
+    }
+  },
+
+  "closeLeadTitle": "Закрыть лид успешно",
+  "rewardFixedHint": "Сумма фиксирована — вводить комиссию не нужно",
+  "commissionLabel": "Ваша комиссия, ₸",
+  "commissionHint": "Укажите вашу комиссию по сделке",
+  "percentCommissionHint": "Вознаграждение автору рассчитается от этой суммы",
+  "fieldRequired": "Обязательное поле",
+  "amountPositive": "Введите сумму больше 0",
+
+  "declineLeadTitle": "Отклонить лид",
+  "declineLeadHint": "Укажите причину отклонения",
+  "cancelLeadTitle": "Отменить лид",
+  "cancelLeadHint": "Укажите причину отмены (обязательно)",
+  "openDisputeTitle": "Открыть спор",
+  "openDisputeHint": "Опишите причину спора подробно",
+  "verificationRequired": "Требуется верификация",
+  "verificationRequiredBody": "Для принятия лидов необходимо пройти верификацию личности.",
+
+  "proofAttachedSnack": "Чек прикреплён — ожидаем подтверждения автора",
+  "paymentConfirmedSnack": "Получение подтверждено — лид переведён в архив",
+  "leadAcceptedSnack": "Лид принят — телефон клиента теперь виден",
+  "leadClosedSnack": "Лид закрыт успешно — вознаграждение начислено",
+  "leadCancelledSnack": "Лид отменён",
+  "disputeOpenedSnack": "Спор открыт",
+
+  "paymentToAuthorTitle": "ПЕРЕВОД АВТОРУ",
+  "paymentToAuthorPrefix": "Переведите автору:",
+  "phoneCopied": "Номер скопирован",
+  "copyPhoneHint": "Нажмите на номер, чтобы скопировать",
+
+  "proofTitle": "ПОДТВЕРЖДЕНИЕ ОПЛАТЫ",
+  "proofBody": "Переведите деньги и прикрепите скриншот или фото чека.",
+  "receiptLoadFailed": "Не удалось загрузить чек",
+  "autoConfirmHint": "Если не подтвердите в течение 5 дней — подтвердится автоматически",
+
+  "paymentMarkedTitle": "ИСПОЛНИТЕЛЬ ОТМЕТИЛ ОПЛАТУ",
+  "paymentMarkedBody": "Исполнитель прикрепил чек. Проверьте и подтвердите получение.",
+
+  "createLeadTitle": "Новый лид",
+  "labelLeadType": "Тип лида",
+  "typePickerHint": "Выберите тип",
+  "typeRequired": "Выберите тип лида",
+  "labelClientPhone": "Телефон клиента",
+  "phoneValidationFull": "Введите полный номер телефона",
+  "checkingDuplicates": "Проверяем дубли...",
+  "checkError": "Ошибка проверки. Повторите.",
+  "createLeadError": "Ошибка создания лида",
+  "dupWarningTitle": "Возможный дубль",
+  "dupWarningBody": "На этот номер уже есть активный лид типа «{type}»{statusPart}.",
+  "@dupWarningBody": {
+    "placeholders": {
+      "type": { "type": "String" },
+      "statusPart": { "type": "String" }
+    }
+  },
+  "dupWarningStatusPart": " ({status})",
+  "@dupWarningStatusPart": {
+    "placeholders": {
+      "status": { "type": "String" }
+    }
+  },
+  "labelClientName": "Имя клиента",
+  "clientNameRequired": "Введите имя клиента",
+  "labelServiceCity": "Город, где нужна услуга",
+  "serviceCityHint": "Где находится объект или нужна услуга — по этому городу подбирается местный специалист",
+  "labelDescription": "Описание / суть запроса",
+  "descriptionPlaceholder": "Опишите задачу клиента подробно: что именно нужно, условия, пожелания…",
+  "descriptionRequired": "Добавьте описание",
+  "clientConsentText": "Я подтверждаю, что получил согласие клиента на передачу его контактных данных",
+  "noPaymentHint": "Перед созданием потребуется указать платёжные реквизиты.",
+  "leadCreatedSuccess": "Лид создан!",
+  "leadCreatedSuccessHint": "Спасибо! Мы подберём исполнителя и уведомим вас.",
+
+  "labelRole": "Роль",
+  "roleSpecialist": "Специалист",
+  "roleAdmin": "Администратор",
+  "roleModerator": "Модератор",
+  "roleCompany": "Компания",
+  "paymentDetailsTitle": "Платёжные реквизиты",
+  "notSpecified": "Не указаны",
+  "verifiedStatus": "Верифицированы ✓",
+  "pendingVerifStatus": "Фото на проверке",
+  "rejectedVerifStatus": "Верификация отклонена",
+  "notVerifiedStatus": "Не верифицированы",
+  "reasonPrefix": "Причина: {reason}",
+  "@reasonPrefix": {
+    "placeholders": {
+      "reason": { "type": "String" }
+    }
+  },
+  "pendingVerifHint": "Мы уведомим вас о результате проверки.",
+  "guarantorCompanyTitle": "Компания-гарант",
+  "currentGuarantor": "Текущий гарант",
+  "membershipActive": "Активен",
+  "membershipPending": "Заявка на рассмотрении",
+  "membershipChangeHint": "Заявка на смену на рассмотрении:",
+  "noCompany": "Вы не привязаны к компании",
+  "verifyFirst": "Сначала пройдите верификацию",
+  "pickCompanyTitle": "Выберите компанию",
+  "companiesLoadFailed": "Не удалось загрузить список компаний",
+  "noCompaniesAvailable": "Нет доступных компаний",
+  "applicationSent": "Заявка в «{name}» отправлена",
+  "@applicationSent": {
+    "placeholders": {
+      "name": { "type": "String" }
+    }
+  },
+  "applicationRevoked": "Заявка отозвана",
+  "applicationError": "Ошибка отправки заявки",
+  "avatarUploadError": "Ошибка загрузки фото",
+  "avatarNoPermission": "Нет прав для загрузки аватара",
+
+  "editProfileTitle": "Редактировать профиль",
+  "editProfileLocked": "Сейчас профиль изменить нельзя. Имя и фамилия заморожены после верификации. Специализацию и город нельзя менять, пока у вас есть лиды в работе.",
+  "nameLockedHint": "Имя и фамилию нельзя изменить после верификации",
+  "lockedLeadsHint": "Недоступно: у вас есть лиды в работе",
+  "saveError": "Ошибка сохранения",
+
+  "labelBank": "Банк",
+  "bankPickerHint": "Выберите банк",
+  "bankRequired": "Выберите банк",
+  "labelPaymentPhone": "Номер для перевода",
+  "paymentPhoneHint": "По умолчанию подставлен ваш номер входа. Можно изменить.",
+  "phoneRequired": "Введите номер",
+  "paymentFormHint": "Укажите реквизиты, на которые вы получаете вознаграждение за переданные лиды.",
+  "banksLoadFailed": "Не удалось загрузить список банков",
+
+  "verificationTitle": "Верификация",
+  "verificationStepsTitle": "Как пройти верификацию",
+  "verificationStep1": "Возьмите удостоверение личности",
+  "verificationStep2": "Сфотографируйтесь рядом с ним так, чтобы было видно лицо и документ",
+  "verificationStep3": "Загрузите фото — модератор проверит его в течение 24 часов",
+  "verificationConsentText": "Я даю согласие на обработку изображения моего документа, удостоверяющего личность, для целей верификации",
+  "uploadError": "Ошибка загрузки файла",
+  "verifActiveTitle": "Вы верифицированы",
+  "verifPendingTitle": "Фото на проверке",
+  "verifRejectedTitle": "Верификация отклонена",
+  "verifNotStartedTitle": "Подтвердите личность",
+  "verifActiveSubtitle": "Ваш аккаунт подтверждён — вы можете принимать лиды.",
+  "verifPendingSubtitle": "Фото отправлено на проверку модератору.\nОжидайте — мы уведомим вас о результате.",
+  "verifRejectedSubtitle": "Загрузите новое фото с удостоверением личности.",
+  "verifNotStartedSubtitle": "Чтобы принимать лиды, подтвердите личность: сфотографируйтесь рядом с удостоверением.",
+
+  "notificationsTitle": "Уведомления",
+  "noNotifications": "Уведомлений пока нет",
+  "relTimeJustNow": "только что",
+  "relTimeMinutes": "{n} мин. назад",
+  "@relTimeMinutes": {
+    "placeholders": {
+      "n": { "type": "int" }
+    }
+  },
+  "relTimeHours": "{n} ч. назад",
+  "@relTimeHours": {
+    "placeholders": {
+      "n": { "type": "int" }
+    }
+  },
+  "relTimeYesterday": "вчера",
+  "relTimeDays": "{n} дн. назад",
+  "@relTimeDays": {
+    "placeholders": {
+      "n": { "type": "int" }
+    }
+  },
+
+  "supportTitle": "Поддержка",
+  "supportEmpty": "Напишите нам — мы поможем",
+  "messageSendFailed": "Не удалось отправить сообщение",
+  "messageHint": "Сообщение...",
+
+  "tariffsTitle": "Тарифы",
+  "tariffsLoadError": "Не удалось загрузить тарифы",
+  "tariffsExplanation": "Вознаграждение начисляется только за лид, по которому состоялась сделка. Если партнёр не закрыл договор — выплаты нет.",
+  "tariffsCalculatorTitle": "КАЛЬКУЛЯТОР",
+  "tariffBaseCityHint": "Базовый тариф (любой город)",
+  "tariffBaseCityLabel": "Базовый тариф",
+  "priceOnRequest": "Цена уточняется",
+  "priceOnRequestHint": "Обратитесь к администратору для уточнения условий.",
+  "fixedRewardLabel": "фиксированное вознаграждение за лид",
+  "percentRewardLabel": "от комиссии по сделке",
+
+  "settingsLanguage": "Язык",
+  "langRussian": "Русский",
+  "langKazakh": "Қазақша",
+
+  "monthJan": "янв",
+  "monthFeb": "фев",
+  "monthMar": "мар",
+  "monthApr": "апр",
+  "monthMay": "май",
+  "monthJun": "июн",
+  "monthJul": "июл",
+  "monthAug": "авг",
+  "monthSep": "сен",
+  "monthOct": "окт",
+  "monthNov": "ноя",
+  "monthDec": "дек",
+
+  "registerAppBarTitle": "Регистрация",
+  "rewardConfirmedBanner": "Вознаграждение получено и подтверждено",
+  "closedAtLabel": "Завершено {date}",
+  "@closedAtLabel": {
+    "placeholders": {
+      "date": { "type": "String" }
+    }
+  },
+  "statsCardTitle": "Статистика"
+}

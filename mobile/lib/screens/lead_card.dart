@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../l10n/app_localizations.dart';
+import '../l10n/lead_labels.dart';
 import '../models/lead.dart';
 import '../theme/app_colors.dart';
 
@@ -31,9 +33,10 @@ class LeadCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     final color = leadStatusColor(lead.status);
-    final statusLabel = leadStatusLabels[lead.status] ?? lead.status;
-    final typeLabel = leadTypeLabels[lead.type] ?? lead.type;
+    final statusLabel = leadStatusLabel(l, lead.status);
+    final typeLabel = leadTypeLabel(l, lead.type);
 
     // Client name is visible only when backend returned it (not null)
     final clientName = lead.client?.fullName;
@@ -98,7 +101,7 @@ class LeadCard extends StatelessWidget {
                 const SizedBox(height: 4),
                 _InfoLine(
                   Icons.person_outline,
-                  lead.executorName ?? 'Исполнитель не назначен',
+                  lead.executorName ?? l.noExecutor,
                   dim: lead.executorName == null,
                 ),
               ],

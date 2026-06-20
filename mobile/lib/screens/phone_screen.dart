@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../l10n/app_localizations.dart';
 import '../services/auth_service.dart';
 import '../services/phone_formatter.dart';
 import '../theme/app_colors.dart';
@@ -27,6 +28,7 @@ class _KnLidLogo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -50,9 +52,9 @@ class _KnLidLogo extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 10),
-        const Text(
-          'ПЕРЕДАЧА ЛИДОВ МЕЖДУ СПЕЦИАЛИСТАМИ',
-          style: TextStyle(
+        Text(
+          l.appSubtitle,
+          style: const TextStyle(
             fontSize: 9,
             fontWeight: FontWeight.w400,
             color: Color(0xFF6B7280),
@@ -107,6 +109,7 @@ class _PhoneScreenState extends State<PhoneScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
@@ -120,18 +123,18 @@ class _PhoneScreenState extends State<PhoneScreen> {
                 const SizedBox(height: 64),
                 const Center(child: _KnLidLogo()),
                 const SizedBox(height: 56),
-                const Text(
-                  'Введите номер телефона',
-                  style: TextStyle(
+                Text(
+                  l.phoneTitle,
+                  style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w600,
                     color: AppColors.textPrimary,
                   ),
                 ),
                 const SizedBox(height: 8),
-                const Text(
-                  'Вам будет отправлен код подтверждения в WhatsApp',
-                  style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
+                Text(
+                  l.phoneHint,
+                  style: const TextStyle(fontSize: 14, color: AppColors.textSecondary),
                 ),
                 const SizedBox(height: 24),
                 TextFormField(
@@ -139,13 +142,13 @@ class _PhoneScreenState extends State<PhoneScreen> {
                   keyboardType: TextInputType.phone,
                   inputFormatters: [PhoneMaskFormatter()],
                   style: const TextStyle(fontSize: 18, letterSpacing: 1),
-                  decoration: const InputDecoration(
-                    labelText: 'Номер телефона',
+                  decoration: InputDecoration(
+                    labelText: l.phoneLabel,
                     hintText: '+7 705 000 00 00',
                   ),
                   validator: (v) {
                     final phone = v?.trim() ?? '';
-                    if (phone.length < 10) return 'Введите корректный номер';
+                    if (phone.length < 10) return l.phoneInvalid;
                     return null;
                   },
                 ),
@@ -171,12 +174,12 @@ class _PhoneScreenState extends State<PhoneScreen> {
                             color: Colors.white,
                           ),
                         )
-                      : const Text('Войти'),
+                      : Text(l.btnLogin),
                 ),
                 const SizedBox(height: 12),
                 OutlinedButton(
                   onPressed: _loading ? null : () => _requestOtp(AuthMode.register),
-                  child: const Text('Зарегистрироваться'),
+                  child: Text(l.btnRegister),
                 ),
               ],
             ),

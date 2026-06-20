@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import 'package:image_picker/image_picker.dart';
+import '../l10n/app_localizations.dart';
+import '../l10n/lead_labels.dart';
+import '../main.dart';
 import '../services/api_client.dart';
 import '../services/phone_formatter.dart';
 import '../config.dart';
@@ -8,21 +11,6 @@ import '../theme/app_colors.dart';
 import 'verification_screen.dart';
 import 'payment_form_screen.dart';
 import 'edit_profile_screen.dart';
-
-// ─── Labels ──────────────────────────────────────────────────────────────────
-
-const _specializationLabels = {
-  'realtor': 'Риелтор',
-  'mortgage': 'Ипотечный брокер',
-  'lawyer': 'Юрист',
-};
-
-const _roleLabels = {
-  'user': 'Специалист',
-  'admin': 'Администратор',
-  'moderator': 'Модератор',
-  'company': 'Компания',
-};
 
 // ─── Screen ──────────────────────────────────────────────────────────────────
 
@@ -100,6 +88,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _showCompanyPicker() async {
+    final l = AppLocalizations.of(context)!;
     List<Map<String, dynamic>> companies = [];
     try {
       final res = await _client.dio.get('/companies');
@@ -107,14 +96,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Не удалось загрузить список компаний')),
+        SnackBar(content: Text(l.companiesLoadFailed)),
       );
       return;
     }
     if (companies.isEmpty) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Нет доступных компаний')),
+        SnackBar(content: Text(l.noCompaniesAvailable)),
       );
       return;
     }
@@ -140,11 +129,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
               child: Align(
                 alignment: Alignment.centerLeft,
-                child: Text('Выберите компанию', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                child: Text(
+                  l.pickCompanyTitle,
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                ),
               ),
             ),
             const Divider(height: 1),
@@ -174,37 +166,43 @@ class _ProfileScreenState extends State<ProfileScreen> {
       await _client.dio.post('/companies/${selected['id']}/apply');
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Заявка в «${selected['name']}» отправлена')),
+        SnackBar(content: Text(l.applicationSent(selected["name"] as String))),
       );
       await _load();
     } on DioException catch (e) {
       if (!mounted) return;
-      final msg = (e.response?.data is Map ? e.response?.data['message'] : null) ?? 'Ошибка отправки заявки';
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg is String ? msg : 'Ошибка')));
+      final msg = (e.response?.data is Map ? e.response?.data['message'] : null);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(msg is String ? msg : l.applicationError)),
+      );
     } finally {
       if (mounted) setState(() => _membershipActionLoading = false);
     }
   }
 
   Future<void> _leaveMembership(String membershipId) async {
+    final l = AppLocalizations.of(context)!;
     setState(() => _membershipActionLoading = true);
     try {
       await _client.dio.post('/memberships/$membershipId/leave');
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Заявка отозвана')),
+        SnackBar(content: Text(l.applicationRevoked)),
       );
       await _load();
     } on DioException catch (e) {
       if (!mounted) return;
-      final msg = (e.response?.data is Map ? e.response?.data['message'] : null) ?? 'Ошибка';
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg is String ? msg : 'Ошибка')));
+      final msg = (e.response?.data is Map ? e.response?.data['message'] : null);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(msg is String ? msg : l.applicationError)),
+      );
     } finally {
       if (mounted) setState(() => _membershipActionLoading = false);
     }
   }
 
   Future<void> _pickAvatar() async {
+    final l = AppLocalizations.of(context)!;
     final choice = await showModalBottomSheet<ImageSource>(
       context: context,
       shape: const RoundedRectangleBorder(
@@ -225,12 +223,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
             const SizedBox(height: 16),
             ListTile(
               leading: const Icon(Icons.camera_alt_outlined),
-              title: const Text('Камера'),
+              title: Text(l.sourceCamera),
               onTap: () => Navigator.pop(ctx, ImageSource.camera),
             ),
             ListTile(
               leading: const Icon(Icons.photo_library_outlined),
-              title: const Text('Галерея'),
+              title: Text(l.sourceGallery),
               onTap: () => Navigator.pop(ctx, ImageSource.gallery),
             ),
             const SizedBox(height: 8),
@@ -256,7 +254,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
         '/users/me/avatar',
         data: formData,
       );
-      // Update avatar URL directly from server response, then refresh full profile
       if (mounted && response.data != null) {
         final avatarUrl = response.data!['avatar_url'] as String?;
         if (avatarUrl != null) {
@@ -266,13 +263,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
       await _load();
     } catch (e) {
       if (!mounted) return;
-      String msg = 'Ошибка загрузки фото';
+      final l2 = AppLocalizations.of(context)!;
+      String msg = l2.avatarUploadError;
       if (e is DioException) {
         final data = e.response?.data;
         if (data is Map && data['message'] is String) {
           msg = data['message'] as String;
         } else if (e.response?.statusCode == 403) {
-          msg = 'Нет прав для загрузки аватара';
+          msg = l2.avatarNoPermission;
         }
       }
       ScaffoldMessenger.of(context).showSnackBar(
@@ -301,6 +299,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (_loading) return const Center(child: CircularProgressIndicator());
 
     if (_error != null) {
+      final l = AppLocalizations.of(context)!;
       return Center(
         child: Padding(
           padding: const EdgeInsets.all(24),
@@ -314,7 +313,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               OutlinedButton.icon(
                 onPressed: _load,
                 icon: const Icon(Icons.refresh, size: 16),
-                label: const Text('Повторить'),
+                label: Text(l.btnRetry),
               ),
             ],
           ),
@@ -322,6 +321,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       );
     }
 
+    final l = AppLocalizations.of(context)!;
     final user = _user!;
     final role = user['role'] as String? ?? '';
     final isSpecialist = role == 'user';
@@ -333,15 +333,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
       child: ListView(
         padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
         children: [
-          const Text(
-            'Профиль',
-            style: TextStyle(
+          Text(
+            l.navProfile,
+            style: const TextStyle(
               fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.textPrimary,
             ),
           ),
           const SizedBox(height: 20),
 
-          // ── Визитка: аватар + имя + специализация + город ──
+          // ── Визитка ──
           Center(
             child: Column(
               children: [
@@ -355,8 +355,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   Text(
                     user['full_name'] as String,
                     style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
+                      fontSize: 20, fontWeight: FontWeight.bold,
                       color: AppColors.textPrimary,
                     ),
                     textAlign: TextAlign.center,
@@ -365,12 +364,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     (user['specialization'] as String?)?.isNotEmpty == true) ...[
                   const SizedBox(height: 4),
                   Text(
-                    _specializationLabels[user['specialization']] ??
-                        user['specialization'] as String,
+                    specializationLabel(l, user['specialization'] as String),
                     style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                      color: AppColors.primary,
+                      fontSize: 14, fontWeight: FontWeight.w500, color: AppColors.primary,
                     ),
                     textAlign: TextAlign.center,
                   ),
@@ -379,10 +375,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   const SizedBox(height: 2),
                   Text(
                     user['city'] as String,
-                    style: const TextStyle(
-                      fontSize: 13,
-                      color: AppColors.textSecondary,
-                    ),
+                    style: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
                     textAlign: TextAlign.center,
                   ),
                 ],
@@ -393,9 +386,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     style: TextButton.styleFrom(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                     ),
-                    child: const Text(
-                      'Добавить фото',
-                      style: TextStyle(fontSize: 13, color: AppColors.primary),
+                    child: Text(
+                      l.btnAddPhoto,
+                      style: const TextStyle(fontSize: 13, color: AppColors.primary),
                     ),
                   ),
                 ],
@@ -404,7 +397,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
           const SizedBox(height: 16),
 
-          // ── Блок верификации (только для специалистов) ──
+          // ── Верификация (только для специалистов) ──
           if (isSpecialist) ...[
             _VerificationBlock(
               status: status,
@@ -412,9 +405,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               onGoToVerification: () async {
                 await Navigator.push(
                   context,
-                  MaterialPageRoute(
-                    builder: (_) => const VerificationScreen(),
-                  ),
+                  MaterialPageRoute(builder: (_) => const VerificationScreen()),
                 );
                 _load();
               },
@@ -450,7 +441,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   minimumSize: Size.zero,
                   tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 ),
-                child: const Text('Редактировать профиль'),
+                child: Text(l.btnEditProfile),
               ),
             ),
           _Card(children: [
@@ -462,15 +453,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 user['specialization'] != null &&
                 (user['specialization'] as String).isNotEmpty)
               _InfoRow(
-                'Специализация',
-                _specializationLabels[user['specialization']] ??
-                    user['specialization'] as String,
+                l.labelSpecialization,
+                specializationLabel(l, user['specialization'] as String),
               ),
             if (!isSpecialist)
-              _InfoRow('Роль', _roleLabels[role] ?? role),
+              _InfoRow(l.labelRole, roleLabel(l, role)),
             if ((user['city'] as String?)?.isNotEmpty == true)
-              _InfoRow('Город', user['city'] as String),
-            _InfoRow('Телефон', formatPhone(user['phone'] as String?)),
+              _InfoRow(l.labelCity, user['city'] as String),
+            _InfoRow(l.rowPhone, formatPhone(user['phone'] as String?)),
           ]),
 
           // ── Компания-гарант ──
@@ -497,7 +487,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
           ],
 
-          const SizedBox(height: 28),
+          const SizedBox(height: 16),
+          const _LanguageSwitcher(),
+
+          const SizedBox(height: 16),
           OutlinedButton(
             onPressed: _logout,
             style: OutlinedButton.styleFrom(
@@ -505,9 +498,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
               padding: const EdgeInsets.symmetric(vertical: 14),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
-            child: const Text(
-              'Выйти',
-              style: TextStyle(color: AppColors.textSecondary, fontWeight: FontWeight.w500),
+            child: Text(
+              l.btnLogout,
+              style: const TextStyle(color: AppColors.textSecondary, fontWeight: FontWeight.w500),
             ),
           ),
         ],
@@ -526,6 +519,47 @@ String _resolveFileUrl(String base, String key) {
   if (key.startsWith('http://') || key.startsWith('https://')) return key;
   if (key.startsWith('/')) return '$base$key';
   return '$base/$key';
+}
+
+// ─── Language switcher ────────────────────────────────────────────────────────
+
+class _LanguageSwitcher extends StatelessWidget {
+  const _LanguageSwitcher();
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
+    final currentLocale = Localizations.localeOf(context).languageCode;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.divider),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.language, size: 18, color: AppColors.textSecondary),
+          const SizedBox(width: 10),
+          Text(
+            l.settingsLanguage,
+            style: const TextStyle(fontSize: 14, color: AppColors.textPrimary),
+          ),
+          const Spacer(),
+          SegmentedButton<String>(
+            segments: [
+              ButtonSegment(value: 'ru', label: Text(l.langRussian)),
+              ButtonSegment(value: 'kk', label: Text(l.langKazakh)),
+            ],
+            selected: {currentLocale},
+            onSelectionChanged: (set) {
+              KnlidApp.of(context)?.setLocale(Locale(set.first));
+            },
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 // ─── Avatar widget ────────────────────────────────────────────────────────────
@@ -605,6 +639,7 @@ class _VerificationBlock extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     final isRejected = status == 'new' && rejectionReason != null;
     final isNotStarted = status == 'new' && rejectionReason == null;
     final isPending = status == 'pending';
@@ -617,19 +652,19 @@ class _VerificationBlock extends StatelessWidget {
     if (isActive) {
       color = AppColors.success;
       icon = Icons.verified_outlined;
-      label = 'Верифицированы ✓';
+      label = l.verifiedStatus;
     } else if (isPending) {
       color = const Color(0xFFF59E0B);
       icon = Icons.hourglass_top_outlined;
-      label = 'Фото на проверке';
+      label = l.pendingVerifStatus;
     } else if (isRejected) {
       color = AppColors.brand;
       icon = Icons.cancel_outlined;
-      label = 'Верификация отклонена';
+      label = l.rejectedVerifStatus;
     } else {
       color = AppColors.textSecondary;
       icon = Icons.badge_outlined;
-      label = 'Не верифицированы';
+      label = l.notVerifiedStatus;
     }
 
     return Container(
@@ -655,16 +690,14 @@ class _VerificationBlock extends StatelessWidget {
             ],
           ),
 
-          // Причина отклонения
           if (isRejected && rejectionReason != null) ...[
             const SizedBox(height: 6),
             Text(
-              'Причина: $rejectionReason',
+              l.reasonPrefix(rejectionReason!),
               style: const TextStyle(fontSize: 12, color: AppColors.brand),
             ),
           ],
 
-          // CTA-кнопка
           if (isNotStarted || isRejected) ...[
             const SizedBox(height: 10),
             SizedBox(
@@ -675,24 +708,21 @@ class _VerificationBlock extends StatelessWidget {
                   side: BorderSide(color: color),
                   foregroundColor: color,
                   padding: const EdgeInsets.symmetric(vertical: 10),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                 ),
                 child: Text(
-                  isRejected ? 'Загрузить заново →' : 'Пройти верификацию →',
+                  isRejected ? l.btnReupload : l.btnGoVerification,
                   style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
                 ),
               ),
             ),
           ],
 
-          // Подсказка для pending
           if (isPending) ...[
             const SizedBox(height: 6),
-            const Text(
-              'Мы уведомим вас о результате проверки.',
-              style: TextStyle(fontSize: 12, color: Color(0xFF92400E)),
+            Text(
+              l.pendingVerifHint,
+              style: const TextStyle(fontSize: 12, color: Color(0xFF92400E)),
             ),
           ],
         ],
@@ -718,6 +748,7 @@ class _PaymentBlock extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     final hasDetails = bankName != null && paymentPhone != null;
     return Container(
       padding: const EdgeInsets.all(14),
@@ -740,12 +771,11 @@ class _PaymentBlock extends StatelessWidget {
               const Icon(Icons.account_balance_outlined,
                   size: 16, color: AppColors.textSecondary),
               const SizedBox(width: 8),
-              const Expanded(
+              Expanded(
                 child: Text(
-                  'Платёжные реквизиты',
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
+                  l.paymentDetailsTitle,
+                  style: const TextStyle(
+                    fontSize: 13, fontWeight: FontWeight.w600,
                     color: AppColors.textSecondary,
                   ),
                 ),
@@ -755,21 +785,19 @@ class _PaymentBlock extends StatelessWidget {
                   final saved = await Navigator.push<bool>(
                     context,
                     MaterialPageRoute(
-                      builder: (_) =>
-                          PaymentFormScreen(initialPhone: userPhone),
+                      builder: (_) => PaymentFormScreen(initialPhone: userPhone),
                     ),
                   );
                   if (saved == true) onSaved();
                 },
                 style: TextButton.styleFrom(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   minimumSize: Size.zero,
                   tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 ),
-                child: const Text(
-                  'Изменить',
-                  style: TextStyle(fontSize: 13, color: AppColors.primary),
+                child: Text(
+                  l.btnEdit,
+                  style: const TextStyle(fontSize: 13, color: AppColors.primary),
                 ),
               ),
             ],
@@ -779,8 +807,7 @@ class _PaymentBlock extends StatelessWidget {
             Text(
               bankName!,
               style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
+                fontSize: 14, fontWeight: FontWeight.w500,
                 color: AppColors.textPrimary,
               ),
             ),
@@ -790,11 +817,10 @@ class _PaymentBlock extends StatelessWidget {
               style: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
             ),
           ] else
-            const Text(
-              'Не указаны',
-              style: TextStyle(
-                fontSize: 13,
-                color: AppColors.divider,
+            Text(
+              l.notSpecified,
+              style: const TextStyle(
+                fontSize: 13, color: AppColors.divider,
                 fontStyle: FontStyle.italic,
               ),
             ),
@@ -895,6 +921,7 @@ class _StatsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -911,9 +938,9 @@ class _StatsCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Статистика',
-            style: TextStyle(
+          Text(
+            l.statsCardTitle,
+            style: const TextStyle(
               fontSize: 11, fontWeight: FontWeight.w600,
               color: AppColors.textSecondary, letterSpacing: 0.5,
             ),
@@ -923,15 +950,15 @@ class _StatsCard extends StatelessWidget {
             children: [
               _Stat(
                 value: rating.toStringAsFixed(1),
-                label: 'Рейтинг',
+                label: l.statRating,
                 icon: Icons.star_outline,
                 color: const Color(0xFFF59E0B),
               ),
-              _Stat(value: '$sent', label: 'Передано', icon: Icons.send_outlined),
-              _Stat(value: '$received', label: 'Принято', icon: Icons.assignment_outlined),
+              _Stat(value: '$sent', label: l.statSent, icon: Icons.send_outlined),
+              _Stat(value: '$received', label: l.statReceived, icon: Icons.assignment_outlined),
               _Stat(
                 value: '$closed',
-                label: 'Закрыто',
+                label: l.statClosed,
                 icon: Icons.check_circle_outline,
                 color: AppColors.success,
               ),
@@ -996,6 +1023,7 @@ class _CompanyBlock extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
@@ -1007,14 +1035,14 @@ class _CompanyBlock extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Компания-гарант',
-            style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600,
+          Text(
+            l.guarantorCompanyTitle,
+            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600,
                 color: AppColors.textSecondary, letterSpacing: 0.5),
           ),
           const SizedBox(height: 10),
           if (activeMembership != null && pendingMembership != null) ...[
-            // State 4: active + pending (смена в процессе)
+            // State 4: active + pending
             Text(
               activeMembership!['company_name'] as String? ?? '',
               style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600,
@@ -1027,8 +1055,8 @@ class _CompanyBlock extends StatelessWidget {
                 color: const Color(0xFFDCFCE7),
                 borderRadius: BorderRadius.circular(20),
               ),
-              child: const Text('Текущий гарант',
-                  style: TextStyle(fontSize: 12, color: Color(0xFF16A34A),
+              child: Text(l.currentGuarantor,
+                  style: const TextStyle(fontSize: 12, color: Color(0xFF16A34A),
                       fontWeight: FontWeight.w500)),
             ),
             const SizedBox(height: 12),
@@ -1043,8 +1071,8 @@ class _CompanyBlock extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Заявка на смену на рассмотрении:',
-                      style: TextStyle(fontSize: 11, color: Color(0xFF92400E))),
+                  Text(l.membershipChangeHint,
+                      style: const TextStyle(fontSize: 11, color: Color(0xFF92400E))),
                   const SizedBox(height: 2),
                   Text(
                     pendingMembership!['company_name'] as String? ?? '',
@@ -1066,8 +1094,8 @@ class _CompanyBlock extends StatelessWidget {
                 ),
                 child: actionLoading
                     ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
-                    : const Text('Отозвать заявку на смену',
-                        style: TextStyle(fontSize: 14, color: AppColors.brand)),
+                    : Text(l.btnRevokeChange,
+                        style: const TextStyle(fontSize: 14, color: AppColors.brand)),
               ),
             ),
           ] else if (activeMembership != null) ...[
@@ -1084,8 +1112,8 @@ class _CompanyBlock extends StatelessWidget {
                 color: const Color(0xFFDCFCE7),
                 borderRadius: BorderRadius.circular(20),
               ),
-              child: const Text('Активен',
-                  style: TextStyle(fontSize: 12, color: Color(0xFF16A34A),
+              child: Text(l.membershipActive,
+                  style: const TextStyle(fontSize: 12, color: Color(0xFF16A34A),
                       fontWeight: FontWeight.w500)),
             ),
             const SizedBox(height: 12),
@@ -1100,8 +1128,8 @@ class _CompanyBlock extends StatelessWidget {
                 ),
                 child: actionLoading
                     ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
-                    : const Text('Сменить компанию',
-                        style: TextStyle(fontSize: 14, color: AppColors.textSecondary)),
+                    : Text(l.btnChangeCompany,
+                        style: const TextStyle(fontSize: 14, color: AppColors.textSecondary)),
               ),
             ),
           ] else if (pendingMembership != null) ...[
@@ -1118,8 +1146,8 @@ class _CompanyBlock extends StatelessWidget {
                 color: const Color(0xFFFEF9C3),
                 borderRadius: BorderRadius.circular(20),
               ),
-              child: const Text('Заявка на рассмотрении',
-                  style: TextStyle(fontSize: 12, color: Color(0xFFB45309),
+              child: Text(l.membershipPending,
+                  style: const TextStyle(fontSize: 12, color: Color(0xFFB45309),
                       fontWeight: FontWeight.w500)),
             ),
             const SizedBox(height: 12),
@@ -1134,21 +1162,21 @@ class _CompanyBlock extends StatelessWidget {
                 ),
                 child: actionLoading
                     ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
-                    : const Text('Отозвать заявку',
-                        style: TextStyle(fontSize: 14, color: AppColors.brand)),
+                    : Text(l.btnRevokeApplication,
+                        style: const TextStyle(fontSize: 14, color: AppColors.brand)),
               ),
             ),
           ] else ...[
             // State 1: no company
-            const Text(
-              'Вы не привязаны к компании',
-              style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
+            Text(
+              l.noCompany,
+              style: const TextStyle(fontSize: 14, color: AppColors.textSecondary),
             ),
             if (!isVerified) ...[
               const SizedBox(height: 8),
-              const Text(
-                'Сначала пройдите верификацию',
-                style: TextStyle(fontSize: 12, color: Color(0xFFF59E0B)),
+              Text(
+                l.verifyFirst,
+                style: const TextStyle(fontSize: 12, color: Color(0xFFF59E0B)),
               ),
             ],
             const SizedBox(height: 12),
@@ -1166,7 +1194,7 @@ class _CompanyBlock extends StatelessWidget {
                 child: actionLoading
                     ? const SizedBox(width: 16, height: 16,
                         child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                    : const Text('Выбрать компанию', style: TextStyle(fontSize: 14)),
+                    : Text(l.btnSelectCompany, style: const TextStyle(fontSize: 14)),
               ),
             ),
           ],

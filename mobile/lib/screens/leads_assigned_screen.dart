@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../l10n/app_localizations.dart';
 import '../models/lead.dart';
 import '../services/leads_service.dart';
 import '../theme/app_colors.dart';
@@ -47,31 +48,32 @@ class _LeadsAssignedScreenState extends State<LeadsAssignedScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Padding(
-              padding: EdgeInsets.fromLTRB(24, 24, 24, 12),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 24, 24, 12),
               child: Text(
-                'Исполняю',
-                style: TextStyle(
+                l.navAssigned,
+                style: const TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
                   color: AppColors.textPrimary,
                 ),
               ),
             ),
-            Expanded(child: _buildBody()),
+            Expanded(child: _buildBody(l)),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildBody() {
+  Widget _buildBody(AppLocalizations l) {
     if (_loading) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -82,9 +84,9 @@ class _LeadsAssignedScreenState extends State<LeadsAssignedScreen> {
 
     final allLeads = _leads ?? [];
     final filtered = allLeads
-        .where((l) => _showDone
-            ? !_kActiveStatuses.contains(l.status)
-            : _kActiveStatuses.contains(l.status))
+        .where((lead) => _showDone
+            ? !_kActiveStatuses.contains(lead.status)
+            : _kActiveStatuses.contains(lead.status))
         .toList();
 
     return Column(
@@ -98,11 +100,11 @@ class _LeadsAssignedScreenState extends State<LeadsAssignedScreen> {
               ? _EmptyState(
                   icon: Icons.assignment_outlined,
                   title: _showDone
-                      ? 'Нет завершённых лидов'
-                      : 'Нет активных лидов в работе',
+                      ? l.createdEmptyDoneTitle
+                      : l.assignedEmptyActiveTitle,
                   hint: _showDone
-                      ? 'Завершённые лиды появятся здесь'
-                      : 'Здесь появятся лиды, назначенные вам',
+                      ? l.createdEmptyDoneHint
+                      : l.assignedEmptyActiveHint,
                 )
               : RefreshIndicator(
                   onRefresh: _load,
@@ -140,6 +142,7 @@ class _FilterToggle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
       child: Container(
@@ -151,12 +154,12 @@ class _FilterToggle extends StatelessWidget {
         child: Row(
           children: [
             _Tab(
-              label: 'Активные',
+              label: l.filterActive,
               selected: !showDone,
               onTap: () => onChanged(false),
             ),
             _Tab(
-              label: 'Завершённые',
+              label: l.filterDone,
               selected: showDone,
               onTap: () => onChanged(true),
             ),
@@ -255,6 +258,7 @@ class _ErrorState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(24),
@@ -271,7 +275,7 @@ class _ErrorState extends StatelessWidget {
             OutlinedButton.icon(
               onPressed: onRetry,
               icon: const Icon(Icons.refresh, size: 16),
-              label: const Text('Повторить'),
+              label: Text(l.btnRetry),
             ),
           ],
         ),

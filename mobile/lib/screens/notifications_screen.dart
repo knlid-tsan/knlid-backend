@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../l10n/app_localizations.dart';
 import '../models/app_notification.dart';
 import '../services/notifications_service.dart';
 import '../theme/app_colors.dart';
@@ -67,6 +68,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -74,20 +76,20 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         foregroundColor: AppColors.textPrimary,
         elevation: 0,
         surfaceTintColor: Colors.transparent,
-        title: const Text(
-          'Уведомления',
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+        title: Text(
+          l.notificationsTitle,
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
         ),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1),
           child: Container(height: 1, color: AppColors.divider),
         ),
       ),
-      body: _buildBody(),
+      body: _buildBody(l),
     );
   }
 
-  Widget _buildBody() {
+  Widget _buildBody(AppLocalizations l) {
     if (_loading) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -106,17 +108,17 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 16),
-              OutlinedButton(onPressed: _load, child: const Text('Повторить')),
+              OutlinedButton(onPressed: _load, child: Text(l.btnRetry)),
             ],
           ),
         ),
       );
     }
     if (_items.isEmpty) {
-      return const Center(
+      return Center(
         child: Text(
-          'Уведомлений пока нет',
-          style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
+          l.noNotifications,
+          style: const TextStyle(fontSize: 14, color: AppColors.textSecondary),
         ),
       );
     }
@@ -220,16 +222,18 @@ class _NotifTileState extends State<_NotifTile> {
   }
 
   String _relativeTime(DateTime dt) {
+    final l = AppLocalizations.of(context)!;
     final now = DateTime.now();
     final diff = now.difference(dt.toLocal());
-    if (diff.inMinutes < 1) return 'только что';
-    if (diff.inMinutes < 60) return '${diff.inMinutes} мин. назад';
-    if (diff.inHours < 24) return '${diff.inHours} ч. назад';
-    if (diff.inDays < 2) return 'вчера';
-    if (diff.inDays < 7) return '${diff.inDays} дн. назад';
-    const months = [
-      'янв', 'фев', 'мар', 'апр', 'май', 'июн',
-      'июл', 'авг', 'сен', 'окт', 'ноя', 'дек',
+    if (diff.inMinutes < 1) return l.relTimeJustNow;
+    if (diff.inMinutes < 60) return l.relTimeMinutes(diff.inMinutes);
+    if (diff.inHours < 24) return l.relTimeHours(diff.inHours);
+    if (diff.inDays < 2) return l.relTimeYesterday;
+    if (diff.inDays < 7) return l.relTimeDays(diff.inDays);
+    final months = [
+      l.monthJan, l.monthFeb, l.monthMar, l.monthApr,
+      l.monthMay, l.monthJun, l.monthJul, l.monthAug,
+      l.monthSep, l.monthOct, l.monthNov, l.monthDec,
     ];
     final local = dt.toLocal();
     return '${local.day} ${months[local.month - 1]}';

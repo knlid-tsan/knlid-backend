@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../l10n/app_localizations.dart';
 import '../models/city.dart';
 import '../services/api_client.dart';
 import '../services/auth_service.dart';
@@ -30,12 +31,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
   bool _termsAccepted = false;
   String _error = '';
 
-  static const _specializations = [
-    {'value': 'realtor', 'label': 'Риелтор'},
-    {'value': 'mortgage', 'label': 'Ипотечный брокер'},
-    {'value': 'lawyer', 'label': 'Юрист'},
-  ];
-
   @override
   void initState() {
     super.initState();
@@ -53,20 +48,21 @@ class _RegisterScreenState extends State<RegisterScreen> {
       final cities = await _authService.getCities();
       if (mounted) setState(() => _cities = cities);
     } catch (e) {
-      if (mounted) setState(() => _error = 'Не удалось загрузить города: $e');
+      if (mounted) setState(() => _error = e.toString());
     } finally {
       if (mounted) setState(() => _loadingCities = false);
     }
   }
 
   Future<void> _submit() async {
+    final l = AppLocalizations.of(context)!;
     if (!_formKey.currentState!.validate()) return;
     if (_specialization == null) {
-      setState(() => _error = 'Выберите специализацию');
+      setState(() => _error = l.specRequired);
       return;
     }
     if (_city == null) {
-      setState(() => _error = 'Выберите город');
+      setState(() => _error = l.cityRequired);
       return;
     }
 
@@ -95,15 +91,22 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
+    final specializations = [
+      {'value': 'realtor', 'label': l.specRealtor},
+      {'value': 'mortgage', 'label': l.specMortgage},
+      {'value': 'lawyer', 'label': l.specLawyer},
+    ];
+
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
         backgroundColor: AppColors.background,
         elevation: 0,
         leading: const BackButton(color: AppColors.textPrimary),
-        title: const Text(
-          'Регистрация',
-          style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w600),
+        title: Text(
+          l.registerAppBarTitle,
+          style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w600),
         ),
       ),
       body: SafeArea(
@@ -114,9 +117,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const Text(
-                  'Расскажите о себе',
-                  style: TextStyle(
+                Text(
+                  l.registerTitle,
+                  style: const TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
                     color: AppColors.textPrimary,
@@ -124,30 +127,30 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  'Номер ${widget.phone} не зарегистрирован. Заполните профиль.',
+                  l.registerSubtitle(widget.phone),
                   style: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
                 ),
                 const SizedBox(height: 28),
 
                 // Имя и фамилия
-                _Label('Имя и фамилия'),
+                _Label(l.labelFullName),
                 const SizedBox(height: 8),
                 TextFormField(
                   controller: _nameController,
                   textCapitalization: TextCapitalization.words,
                   decoration: _inputDecoration('Нурлан Серіков'),
                   validator: (v) {
-                    if (v == null || v.trim().isEmpty) return 'Введите имя и фамилию';
-                    if (v.trim().split(' ').length < 2) return 'Введите имя и фамилию';
+                    if (v == null || v.trim().isEmpty) return l.fullNameRequired;
+                    if (v.trim().split(' ').length < 2) return l.fullNameRequired;
                     return null;
                   },
                 ),
                 const SizedBox(height: 20),
 
                 // Специализация
-                _Label('Специализация'),
+                _Label(l.labelSpecialization),
                 const SizedBox(height: 8),
-                ...(_specializations.map((s) => _SpecOption(
+                ...(specializations.map((s) => _SpecOption(
                       label: s['label']!,
                       value: s['value']!,
                       selected: _specialization == s['value'],
@@ -156,7 +159,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 const SizedBox(height: 20),
 
                 // Город
-                _Label('Город'),
+                _Label(l.labelCity),
                 const SizedBox(height: 8),
                 if (_loadingCities)
                   const Center(
@@ -168,13 +171,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 else
                   DropdownButtonFormField<City>(
                     value: _city,
-                    hint: const Text('Выберите город'),
+                    hint: Text(l.cityPickerHint),
                     decoration: _inputDecoration(null),
                     items: _cities
                         .map((c) => DropdownMenuItem(value: c, child: Text(c.name)))
                         .toList(),
                     onChanged: (v) => setState(() => _city = v),
-                    validator: (v) => v == null ? 'Выберите город' : null,
+                    validator: (v) => v == null ? l.cityRequired : null,
                   ),
 
                 if (_error.isNotEmpty) ...[
@@ -216,9 +219,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             color: Colors.white,
                           ),
                         )
-                      : const Text(
-                          'Зарегистрироваться',
-                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                      : Text(
+                          l.btnRegister,
+                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                         ),
                 ),
                 const SizedBox(height: 24),
@@ -258,6 +261,7 @@ class _TermsConsentRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -283,15 +287,15 @@ class _TermsConsentRow extends StatelessWidget {
                   height: 1.45,
                 ),
                 children: [
-                  const TextSpan(text: 'Я принимаю '),
+                  TextSpan(text: '${l.consentIAccept} '),
                   WidgetSpan(
                     alignment: PlaceholderAlignment.baseline,
                     baseline: TextBaseline.alphabetic,
                     child: GestureDetector(
                       onTap: () => _open('https://lid.kn.kz/terms'),
-                      child: const Text(
-                        'Пользовательское соглашение',
-                        style: TextStyle(
+                      child: Text(
+                        l.consentTerms,
+                        style: const TextStyle(
                           fontSize: 13,
                           color: AppColors.primary,
                           decoration: TextDecoration.underline,
@@ -301,15 +305,15 @@ class _TermsConsentRow extends StatelessWidget {
                       ),
                     ),
                   ),
-                  const TextSpan(text: ' и '),
+                  TextSpan(text: ' ${l.consentAnd} '),
                   WidgetSpan(
                     alignment: PlaceholderAlignment.baseline,
                     baseline: TextBaseline.alphabetic,
                     child: GestureDetector(
                       onTap: () => _open('https://lid.kn.kz/privacy'),
-                      child: const Text(
-                        'Политику конфиденциальности',
-                        style: TextStyle(
+                      child: Text(
+                        l.consentPrivacy,
+                        style: const TextStyle(
                           fontSize: 13,
                           color: AppColors.primary,
                           decoration: TextDecoration.underline,

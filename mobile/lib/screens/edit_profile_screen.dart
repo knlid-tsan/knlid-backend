@@ -1,21 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
+import '../l10n/app_localizations.dart';
+import '../l10n/lead_labels.dart';
 import '../models/city.dart';
 import '../services/api_client.dart';
 import '../services/auth_service.dart';
 import '../theme/app_colors.dart';
-
-const _specializationLabels = {
-  'realtor': 'Риелтор',
-  'mortgage': 'Ипотечный брокер',
-  'lawyer': 'Юрист',
-};
-
-const _specializations = [
-  {'value': 'realtor', 'label': 'Риелтор'},
-  {'value': 'mortgage', 'label': 'Ипотечный брокер'},
-  {'value': 'lawyer', 'label': 'Юрист'},
-];
 
 class EditProfileScreen extends StatefulWidget {
   final Map<String, dynamic> user;
@@ -71,7 +61,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         });
       }
     } catch (_) {
-      if (mounted) setState(() => _error = 'Не удалось загрузить список городов');
+      if (mounted) {
+        setState(() => _error = AppLocalizations.of(context)!.citiesLoadError);
+      }
     } finally {
       if (mounted) setState(() => _loadingCities = false);
     }
@@ -101,9 +93,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     } on DioException catch (e) {
       final data = e.response?.data;
       final msg = data is Map ? data['message'] : null;
-      setState(() => _error = msg is String ? msg : 'Ошибка сохранения');
+      if (mounted) {
+        setState(() => _error = msg is String ? msg : AppLocalizations.of(context)!.saveError);
+      }
     } catch (_) {
-      setState(() => _error = 'Ошибка сохранения');
+      if (mounted) {
+        setState(() => _error = AppLocalizations.of(context)!.saveError);
+      }
     } finally {
       if (mounted) setState(() => _submitting = false);
     }
@@ -111,15 +107,22 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
+    final specializations = [
+      {'value': 'realtor', 'label': l.specRealtor},
+      {'value': 'mortgage', 'label': l.specMortgage},
+      {'value': 'lawyer', 'label': l.specLawyer},
+    ];
+
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
         backgroundColor: AppColors.background,
         elevation: 0,
         leading: const BackButton(color: AppColors.textPrimary),
-        title: const Text(
-          'Редактировать профиль',
-          style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w600),
+        title: Text(
+          l.editProfileTitle,
+          style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w600),
         ),
       ),
       body: SafeArea(
@@ -132,7 +135,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               children: [
                 const SizedBox(height: 12),
 
-                // ── Пояснение когда всё заблокировано ──
                 if (_isVerified && _hasActiveLead) ...[
                   Container(
                     padding: const EdgeInsets.all(14),
@@ -141,15 +143,15 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(color: const Color(0xFFFED7AA)),
                     ),
-                    child: const Row(
+                    child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Icon(Icons.info_outline, size: 18, color: Color(0xFFF97316)),
-                        SizedBox(width: 10),
+                        const Icon(Icons.info_outline, size: 18, color: Color(0xFFF97316)),
+                        const SizedBox(width: 10),
                         Expanded(
                           child: Text(
-                            'Сейчас профиль изменить нельзя. Имя и фамилия заморожены после верификации. Специализацию и город нельзя менять, пока у вас есть лиды в работе.',
-                            style: TextStyle(fontSize: 13, color: Color(0xFF9A3412), height: 1.4),
+                            l.editProfileLocked,
+                            style: const TextStyle(fontSize: 13, color: Color(0xFF9A3412), height: 1.4),
                           ),
                         ),
                       ],
@@ -158,8 +160,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   const SizedBox(height: 20),
                 ],
 
-                // ── Имя и фамилия ──
-                const _Label('Имя и фамилия'),
+                _Label(l.labelFullName),
                 const SizedBox(height: 8),
                 TextFormField(
                   controller: _nameController,
@@ -171,31 +172,30 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   ),
                   validator: (v) {
                     if (_isVerified) return null;
-                    if (v == null || v.trim().isEmpty) return 'Введите имя и фамилию';
-                    if (v.trim().split(' ').length < 2) return 'Введите имя и фамилию';
+                    if (v == null || v.trim().isEmpty) return l.fullNameRequired;
+                    if (v.trim().split(' ').length < 2) return l.fullNameRequired;
                     return null;
                   },
                 ),
                 if (_isVerified) ...[
                   const SizedBox(height: 6),
-                  const Text(
-                    'Имя и фамилию нельзя изменить после верификации',
-                    style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                  Text(
+                    l.nameLockedHint,
+                    style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
                   ),
                 ],
                 const SizedBox(height: 20),
 
-                // ── Специализация ──
-                const _Label('Специализация'),
+                _Label(l.labelSpecialization),
                 const SizedBox(height: 8),
                 if (_hasActiveLead) ...[
                   _LockedField(
-                    value: _specializationLabels[_specialization] ?? _specialization ?? '—',
+                    value: specializationLabel(l, _specialization ?? ''),
                   ),
                   const SizedBox(height: 6),
-                  const _LockedHint(),
+                  _LockedHint(text: l.lockedLeadsHint),
                 ] else
-                  ...(_specializations.map((s) => _SpecOption(
+                  ...(specializations.map((s) => _SpecOption(
                         label: s['label']!,
                         value: s['value']!,
                         selected: _specialization == s['value'],
@@ -203,13 +203,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       ))),
                 const SizedBox(height: 20),
 
-                // ── Город ──
-                const _Label('Город'),
+                _Label(l.labelCity),
                 const SizedBox(height: 8),
                 if (_hasActiveLead) ...[
                   _LockedField(value: widget.user['city'] as String? ?? '—'),
                   const SizedBox(height: 6),
-                  const _LockedHint(),
+                  _LockedHint(text: l.lockedLeadsHint),
                 ] else if (_loadingCities)
                   const Center(
                     child: Padding(
@@ -220,13 +219,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 else
                   DropdownButtonFormField<City>(
                     value: _city,
-                    hint: const Text('Выберите город'),
+                    hint: Text(l.cityPickerHint),
                     decoration: _inputDecoration(null),
                     items: _cities
                         .map((c) => DropdownMenuItem(value: c, child: Text(c.name)))
                         .toList(),
                     onChanged: (v) => setState(() => _city = v),
-                    validator: (v) => v == null ? 'Выберите город' : null,
+                    validator: (v) => v == null ? l.cityRequired : null,
                   ),
 
                 if (_error.isNotEmpty) ...[
@@ -265,9 +264,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                             color: Colors.white,
                           ),
                         )
-                      : const Text(
-                          'Сохранить',
-                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                      : Text(
+                          l.btnSave,
+                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                         ),
                 ),
                 const SizedBox(height: 24),
@@ -392,13 +391,14 @@ class _LockedField extends StatelessWidget {
 }
 
 class _LockedHint extends StatelessWidget {
-  const _LockedHint();
+  final String text;
+  const _LockedHint({required this.text});
 
   @override
   Widget build(BuildContext context) {
-    return const Text(
-      'Недоступно: у вас есть лиды в работе',
-      style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+    return Text(
+      text,
+      style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
     );
   }
 }

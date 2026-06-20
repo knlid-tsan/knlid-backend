@@ -1,14 +1,9 @@
 import 'package:flutter/material.dart';
+import '../l10n/app_localizations.dart';
+import '../l10n/lead_labels.dart';
 import '../models/tariff_entry.dart';
 import '../services/tariffs_service.dart';
 import '../theme/app_colors.dart';
-
-const _leadTypeLabels = {
-  'owner': 'Продажа',
-  'buyer': 'Покупка',
-  'mortgage': 'Ипотека',
-  'legal': 'Юр. услуга',
-};
 
 const _leadTypeOrder = ['owner', 'buyer', 'mortgage', 'legal'];
 
@@ -55,23 +50,23 @@ class _TariffsScreenState extends State<TariffsScreen> {
         });
       }
     } catch (e) {
-      if (mounted) setState(() {
-        _error = 'Не удалось загрузить тарифы';
-        _loading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _error = AppLocalizations.of(context)!.tariffsLoadError;
+          _loading = false;
+        });
+      }
     }
   }
 
   TariffEntry? _resolve() {
     if (_selectedType == null) return null;
-    // City-specific first
     if (_selectedCity != null) {
       final city = _tariffs.where(
         (t) => t.leadType == _selectedType && t.city == _selectedCity,
       );
       if (city.isNotEmpty) return city.first;
     }
-    // Base tariff (city == null)
     final base = _tariffs.where(
       (t) => t.leadType == _selectedType && t.city == null,
     );
@@ -97,6 +92,7 @@ class _TariffsScreenState extends State<TariffsScreen> {
   }
 
   Widget _buildError() {
+    final l = AppLocalizations.of(context)!;
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(24),
@@ -114,7 +110,7 @@ class _TariffsScreenState extends State<TariffsScreen> {
             OutlinedButton.icon(
               onPressed: _load,
               icon: const Icon(Icons.refresh, size: 16),
-              label: const Text('Повторить'),
+              label: Text(l.btnRetry),
             ),
           ],
         ),
@@ -123,15 +119,16 @@ class _TariffsScreenState extends State<TariffsScreen> {
   }
 
   Widget _buildContent() {
+    final l = AppLocalizations.of(context)!;
     final resolved = _resolve();
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
       children: [
         const SizedBox(height: 24),
-        const Text(
-          'Тарифы',
-          style: TextStyle(
+        Text(
+          l.tariffsTitle,
+          style: const TextStyle(
             fontSize: 22,
             fontWeight: FontWeight.bold,
             color: AppColors.textPrimary,
@@ -139,7 +136,6 @@ class _TariffsScreenState extends State<TariffsScreen> {
         ),
         const SizedBox(height: 16),
 
-        // ── Explanation ──────────────────────────────────────────────────────
         Container(
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
@@ -152,11 +148,10 @@ class _TariffsScreenState extends State<TariffsScreen> {
             children: [
               const Icon(Icons.info_outline, size: 18, color: AppColors.primary),
               const SizedBox(width: 10),
-              const Expanded(
+              Expanded(
                 child: Text(
-                  'Вознаграждение начисляется только за лид, по которому состоялась сделка. '
-                  'Если партнёр не закрыл договор — выплаты нет.',
-                  style: TextStyle(fontSize: 13, color: AppColors.textPrimary, height: 1.45),
+                  l.tariffsExplanation,
+                  style: const TextStyle(fontSize: 13, color: AppColors.textPrimary, height: 1.45),
                 ),
               ),
             ],
@@ -164,7 +159,6 @@ class _TariffsScreenState extends State<TariffsScreen> {
         ),
         const SizedBox(height: 20),
 
-        // ── Calculator ───────────────────────────────────────────────────────
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
@@ -181,9 +175,9 @@ class _TariffsScreenState extends State<TariffsScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'КАЛЬКУЛЯТОР',
-                style: TextStyle(
+              Text(
+                l.tariffsCalculatorTitle,
+                style: const TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w700,
                   color: AppColors.textSecondary,
@@ -192,10 +186,9 @@ class _TariffsScreenState extends State<TariffsScreen> {
               ),
               const SizedBox(height: 16),
 
-              // City dropdown
-              const Text(
-                'Город',
-                style: TextStyle(
+              Text(
+                l.labelCity,
+                style: const TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w500,
                   color: AppColors.textSecondary,
@@ -204,13 +197,13 @@ class _TariffsScreenState extends State<TariffsScreen> {
               const SizedBox(height: 6),
               DropdownButtonFormField<String?>(
                 value: _selectedCity,
-                decoration: _inputDec('Базовый тариф (любой город)'),
+                decoration: _inputDec(l.tariffBaseCityHint),
                 items: [
-                  const DropdownMenuItem<String?>(
+                  DropdownMenuItem<String?>(
                     value: null,
                     child: Text(
-                      'Базовый тариф',
-                      style: TextStyle(color: AppColors.textSecondary),
+                      l.tariffBaseCityLabel,
+                      style: const TextStyle(color: AppColors.textSecondary),
                     ),
                   ),
                   ..._cities.map(
@@ -221,10 +214,9 @@ class _TariffsScreenState extends State<TariffsScreen> {
               ),
               const SizedBox(height: 16),
 
-              // Lead type dropdown
-              const Text(
-                'Тип лида',
-                style: TextStyle(
+              Text(
+                l.labelLeadType,
+                style: const TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w500,
                   color: AppColors.textSecondary,
@@ -233,12 +225,12 @@ class _TariffsScreenState extends State<TariffsScreen> {
               const SizedBox(height: 6),
               DropdownButtonFormField<String>(
                 value: _selectedType,
-                decoration: _inputDec('Выберите тип'),
+                decoration: _inputDec(l.typePickerHint),
                 items: _leadTypeOrder
                     .map(
                       (k) => DropdownMenuItem(
                         value: k,
-                        child: Text(_leadTypeLabels[k]!),
+                        child: Text(leadTypeLabel(l, k)),
                       ),
                     )
                     .toList(),
@@ -249,7 +241,6 @@ class _TariffsScreenState extends State<TariffsScreen> {
         ),
         const SizedBox(height: 16),
 
-        // ── Result ───────────────────────────────────────────────────────────
         if (_selectedType != null)
           _ResultCard(
             tariff: resolved,
@@ -296,8 +287,9 @@ class _ResultCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final typeLabel = _leadTypeLabels[leadType] ?? leadType;
-    final cityLabel = city ?? 'базовый тариф';
+    final l = AppLocalizations.of(context)!;
+    final typeLabel = leadTypeLabel(l, leadType);
+    final cityLabel = city ?? l.tariffBaseCityLabel;
 
     if (tariff == null) {
       return _card(
@@ -306,18 +298,18 @@ class _ResultCard extends StatelessWidget {
           children: [
             _subtitle('$typeLabel · $cityLabel'),
             const SizedBox(height: 8),
-            const Text(
-              'Цена уточняется',
-              style: TextStyle(
+            Text(
+              l.priceOnRequest,
+              style: const TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
                 color: AppColors.textSecondary,
               ),
             ),
             const SizedBox(height: 4),
-            const Text(
-              'Обратитесь к администратору для уточнения условий.',
-              style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+            Text(
+              l.priceOnRequestHint,
+              style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
             ),
           ],
         ),
@@ -340,16 +332,15 @@ class _ResultCard extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 4),
-            const Text(
-              'фиксированное вознаграждение за лид',
-              style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+            Text(
+              l.fixedRewardLabel,
+              style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
             ),
           ],
         ),
       );
     }
 
-    // percent
     final pct = tariff!.value == tariff!.value.truncateToDouble()
         ? tariff!.value.toStringAsFixed(0)
         : tariff!.value.toStringAsFixed(1);
@@ -368,9 +359,9 @@ class _ResultCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 4),
-          const Text(
-            'от комиссии по сделке',
-            style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+          Text(
+            l.percentRewardLabel,
+            style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
           ),
         ],
       ),
@@ -409,7 +400,7 @@ String _fmtTenge(double v) {
   final buf = StringBuffer();
   final len = s.length;
   for (int i = 0; i < len; i++) {
-    if (i > 0 && (len - i) % 3 == 0) buf.write(' ');
+    if (i > 0 && (len - i) % 3 == 0) buf.write(' ');
     buf.write(s[i]);
   }
   return '${buf.toString()} ₸';

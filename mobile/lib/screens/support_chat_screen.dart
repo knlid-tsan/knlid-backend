@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import '../l10n/app_localizations.dart';
 import '../models/support_message.dart';
 import '../services/support_service.dart';
 import '../theme/app_colors.dart';
@@ -116,7 +117,7 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
       if (mounted) {
         setState(() => _sending = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Не удалось отправить сообщение')),
+          SnackBar(content: Text(AppLocalizations.of(context)!.messageSendFailed)),
         );
       }
     }
@@ -124,6 +125,7 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -131,9 +133,9 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
         foregroundColor: AppColors.textPrimary,
         elevation: 0,
         surfaceTintColor: Colors.transparent,
-        title: const Text(
-          'Поддержка',
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+        title: Text(
+          l.supportTitle,
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
         ),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1),
@@ -142,14 +144,14 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
       ),
       body: Column(
         children: [
-          Expanded(child: _buildBody()),
-          _buildInput(),
+          Expanded(child: _buildBody(l)),
+          _buildInput(l),
         ],
       ),
     );
   }
 
-  Widget _buildBody() {
+  Widget _buildBody(AppLocalizations l) {
     if (_loading) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -168,7 +170,7 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 16),
-              OutlinedButton(onPressed: _load, child: const Text('Повторить')),
+              OutlinedButton(onPressed: _load, child: Text(l.btnRetry)),
             ],
           ),
         ),
@@ -176,10 +178,10 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
     }
 
     if (_messages.isEmpty) {
-      return const Center(
+      return Center(
         child: Text(
-          'Напишите нам — мы поможем',
-          style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
+          l.supportEmpty,
+          style: const TextStyle(fontSize: 14, color: AppColors.textSecondary),
         ),
       );
     }
@@ -195,7 +197,7 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
     );
   }
 
-  Widget _buildInput() {
+  Widget _buildInput(AppLocalizations l) {
     return SafeArea(
       child: Container(
         color: AppColors.surface,
@@ -210,7 +212,7 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
                 maxLines: 4,
                 textCapitalization: TextCapitalization.sentences,
                 decoration: InputDecoration(
-                  hintText: 'Сообщение...',
+                  hintText: l.messageHint,
                   hintStyle: const TextStyle(color: AppColors.textSecondary),
                   filled: true,
                   fillColor: AppColors.background,

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import '../l10n/app_localizations.dart';
 import '../services/api_client.dart';
 import '../services/auth_service.dart';
 import '../theme/app_colors.dart';
@@ -69,7 +70,7 @@ class _OtpScreenState extends State<OtpScreen> {
     if (_loading) return;
     final code = _codeController.text.trim();
     if (code.length != 6) {
-      setState(() => _error = 'Введите 6-значный код');
+      setState(() => _error = AppLocalizations.of(context)!.otpCodeInvalid);
       return;
     }
 
@@ -134,8 +135,10 @@ class _OtpScreenState extends State<OtpScreen> {
     );
   }
 
-  String get _buttonLabel =>
-      widget.mode == AuthMode.login ? 'Войти' : 'Продолжить';
+  String get _buttonLabel {
+    final l = AppLocalizations.of(context)!;
+    return widget.mode == AuthMode.login ? l.btnLogin : l.btnContinue;
+  }
 
   String _formatPhone(String raw) {
     final digits = raw.replaceAll(RegExp(r'\D'), '');
@@ -148,6 +151,7 @@ class _OtpScreenState extends State<OtpScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -163,7 +167,7 @@ class _OtpScreenState extends State<OtpScreen> {
             children: [
               const SizedBox(height: 16),
               Text(
-                widget.mode == AuthMode.login ? 'Введите код' : 'Подтвердите номер',
+                widget.mode == AuthMode.login ? l.otpTitleLogin : l.otpTitleRegister,
                 style: const TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
@@ -172,7 +176,7 @@ class _OtpScreenState extends State<OtpScreen> {
               ),
               const SizedBox(height: 8),
               Text(
-                'Код отправлен в WhatsApp на номер ${_formatPhone(widget.phone)}',
+                l.otpHint(_formatPhone(widget.phone)),
                 style: const TextStyle(fontSize: 14, color: AppColors.textSecondary),
               ),
               const SizedBox(height: 20),
@@ -185,14 +189,14 @@ class _OtpScreenState extends State<OtpScreen> {
                   border: Border.all(color: const Color(0xFFFCD34D)),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Row(
+                child: Row(
                   children: [
-                    Icon(Icons.info_outline, size: 16, color: Color(0xFF92400E)),
-                    SizedBox(width: 8),
+                    const Icon(Icons.info_outline, size: 16, color: Color(0xFF92400E)),
+                    const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        'Режим разработки: код смотрите в логах бэкенда (npm run start)',
-                        style: TextStyle(fontSize: 12, color: Color(0xFF92400E)),
+                        l.otpDevHint,
+                        style: const TextStyle(fontSize: 12, color: Color(0xFF92400E)),
                       ),
                     ),
                   ],
@@ -249,9 +253,9 @@ class _OtpScreenState extends State<OtpScreen> {
                       final c = _codeController.text.trim();
                       if (c.length == 6) await _confirmAndRegister(c);
                     },
-                    child: const Text(
-                      'Зарегистрироваться с этим номером →',
-                      style: TextStyle(
+                    child: Text(
+                      l.otpRegisterHint,
+                      style: const TextStyle(
                         color: AppColors.primary,
                         fontWeight: FontWeight.w600,
                         fontSize: 14,
@@ -290,7 +294,7 @@ class _OtpScreenState extends State<OtpScreen> {
               Center(
                 child: _secondsLeft > 0
                     ? Text(
-                        'Отправить повторно через $_secondsLeft с',
+                        l.otpResendTimer(_secondsLeft),
                         style: const TextStyle(
                           fontSize: 13,
                           color: AppColors.textSecondary,
@@ -298,9 +302,9 @@ class _OtpScreenState extends State<OtpScreen> {
                       )
                     : TextButton(
                         onPressed: _resend,
-                        child: const Text(
-                          'Отправить повторно',
-                          style: TextStyle(color: AppColors.primary),
+                        child: Text(
+                          l.otpResend,
+                          style: const TextStyle(color: AppColors.primary),
                         ),
                       ),
               ),
