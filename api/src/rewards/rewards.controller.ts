@@ -26,6 +26,12 @@ interface AuthenticatedRequest extends Request {
 export class RewardsController {
   constructor(private readonly rewardsService: RewardsService) {}
 
+  @Get('tariffs')
+  async listTariffs() {
+    const { base, overrides } = await this.rewardsService.listTariffsGrouped();
+    return [...base, ...overrides];
+  }
+
   @Get('my')
   findMy(@Req() req: AuthenticatedRequest) {
     return this.rewardsService.findMy(req.user.sub);

@@ -4,6 +4,7 @@ import '../theme/app_colors.dart';
 import 'home_screen.dart';
 import 'leads_created_screen.dart';
 import 'leads_assigned_screen.dart';
+import 'tariffs_screen.dart';
 import 'profile_screen.dart';
 import 'create_lead_screen.dart';
 import 'verification_screen.dart';
@@ -76,7 +77,7 @@ class _MainScreenState extends State<MainScreen> {
   }
 
   bool get _showBanner =>
-      _role == 'user' && _userStatus.isNotEmpty && _userStatus != 'active' && _currentIndex < 3;
+      _role == 'user' && _userStatus.isNotEmpty && _userStatus != 'active' && _currentIndex < 4;
 
   @override
   Widget build(BuildContext context) {
@@ -99,6 +100,7 @@ class _MainScreenState extends State<MainScreen> {
                 ),
                 LeadsCreatedScreen(key: ValueKey(_createdRevision)),
                 const LeadsAssignedScreen(),
+                const TariffsScreen(),
                 ProfileScreen(key: ValueKey(_profileRevision)),
               ],
             ),
@@ -129,7 +131,7 @@ class _MainScreenState extends State<MainScreen> {
           setState(() {
             _currentIndex = i;
             if (i == 0) _homeRevision++;
-            if (i == 3) _profileRevision++;
+            if (i == 4) _profileRevision++;
           });
           if (i < 3) _refreshUserStatus();
         },
@@ -148,6 +150,11 @@ class _MainScreenState extends State<MainScreen> {
             icon: Icon(Icons.assignment_outlined),
             selectedIcon: Icon(Icons.assignment),
             label: 'Исполняю',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.percent_outlined),
+            selectedIcon: Icon(Icons.percent),
+            label: 'Тарифы',
           ),
           NavigationDestination(
             icon: Icon(Icons.person_outline),
