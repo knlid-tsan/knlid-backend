@@ -903,4 +903,26 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get statsCardTitle => 'Статистика';
+
+  @override
+  String get deleteAccountBtn => 'Удалить аккаунт';
+
+  @override
+  String get deleteAccountDialogTitle => 'Удалить аккаунт?';
+
+  @override
+  String get deleteAccountDialogBody =>
+      'Это действие необратимо. Будут удалены:\n• Профиль и фото\n• Платёжные реквизиты\n• Данные верификации\n\nЗаписи о сделках и вознаграждениях сохраняются в обезличенном виде.';
+
+  @override
+  String get deleteAccountConfirm => 'Удалить';
+
+  @override
+  String get deleteAccountCancel => 'Отмена';
+
+  @override
+  String get deleteAccountSuccess => 'Аккаунт удалён';
+
+  @override
+  String get deleteAccountLink => 'Подробнее об удалении аккаунта';
 }

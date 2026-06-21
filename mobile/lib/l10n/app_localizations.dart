@@ -1783,6 +1783,48 @@ abstract class AppLocalizations {
   /// In ru, this message translates to:
   /// **'Статистика'**
   String get statsCardTitle;
+
+  /// No description provided for @deleteAccountBtn.
+  ///
+  /// In ru, this message translates to:
+  /// **'Удалить аккаунт'**
+  String get deleteAccountBtn;
+
+  /// No description provided for @deleteAccountDialogTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Удалить аккаунт?'**
+  String get deleteAccountDialogTitle;
+
+  /// No description provided for @deleteAccountDialogBody.
+  ///
+  /// In ru, this message translates to:
+  /// **'Это действие необратимо. Будут удалены:\n• Профиль и фото\n• Платёжные реквизиты\n• Данные верификации\n\nЗаписи о сделках и вознаграждениях сохраняются в обезличенном виде.'**
+  String get deleteAccountDialogBody;
+
+  /// No description provided for @deleteAccountConfirm.
+  ///
+  /// In ru, this message translates to:
+  /// **'Удалить'**
+  String get deleteAccountConfirm;
+
+  /// No description provided for @deleteAccountCancel.
+  ///
+  /// In ru, this message translates to:
+  /// **'Отмена'**
+  String get deleteAccountCancel;
+
+  /// No description provided for @deleteAccountSuccess.
+  ///
+  /// In ru, this message translates to:
+  /// **'Аккаунт удалён'**
+  String get deleteAccountSuccess;
+
+  /// No description provided for @deleteAccountLink.
+  ///
+  /// In ru, this message translates to:
+  /// **'Подробнее об удалении аккаунта'**
+  String get deleteAccountLink;
 }
 
 class _AppLocalizationsDelegate

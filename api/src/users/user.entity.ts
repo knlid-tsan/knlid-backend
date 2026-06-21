@@ -105,4 +105,7 @@ export class User {
 
   @UpdateDateColumn() // дата обновления — обновляется сама
   updated_at: Date;
+
+  @Column({ type: 'timestamp', nullable: true })
+  deleted_at: Date | null;
 }

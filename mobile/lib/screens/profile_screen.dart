@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../l10n/app_localizations.dart';
 import '../l10n/lead_labels.dart';
 import '../main.dart';
@@ -287,6 +288,49 @@ class _ProfileScreenState extends State<ProfileScreen> {
     Navigator.pushNamedAndRemoveUntil(context, '/phone', (r) => false);
   }
 
+  Future<void> _deleteAccount() async {
+    final l = AppLocalizations.of(context)!;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(l.deleteAccountDialogTitle),
+        content: Text(l.deleteAccountDialogBody),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(l.deleteAccountCancel),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: Text(l.deleteAccountConfirm),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    try {
+      await _client.dio.delete('/users/me');
+      await _client.clearToken();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(AppLocalizations.of(context)!.deleteAccountSuccess)),
+      );
+      Navigator.pushNamedAndRemoveUntil(context, '/phone', (r) => false);
+    } on DioException catch (e) {
+      if (!mounted) return;
+      final data = e.response?.data;
+      final msg = data is Map ? data['message'] as String? : null;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(msg ?? 'Ошибка ${e.response?.statusCode ?? "сети"}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -503,6 +547,40 @@ class _ProfileScreenState extends State<ProfileScreen> {
               style: const TextStyle(color: AppColors.textSecondary, fontWeight: FontWeight.w500),
             ),
           ),
+
+          if (isSpecialist) ...[
+            const SizedBox(height: 8),
+            TextButton(
+              onPressed: () => launchUrl(Uri.parse('https://lid.kn.kz/delete-account')),
+              style: TextButton.styleFrom(
+                foregroundColor: AppColors.textSecondary,
+                padding: EdgeInsets.zero,
+                minimumSize: Size.zero,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+              child: Text(
+                l.deleteAccountLink,
+                style: const TextStyle(fontSize: 12, decoration: TextDecoration.underline),
+              ),
+            ),
+            const SizedBox(height: 4),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton(
+                onPressed: _deleteAccount,
+                style: OutlinedButton.styleFrom(
+                  side: const BorderSide(color: Color(0xFFFCA5A5), width: 1.5),
+                  foregroundColor: Colors.red,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                child: Text(
+                  l.deleteAccountBtn,
+                  style: const TextStyle(fontWeight: FontWeight.w500),
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );

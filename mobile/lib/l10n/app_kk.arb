@@ -372,5 +372,13 @@
       "date": { "type": "String" }
     }
   },
-  "statsCardTitle": "Статистика"
+  "statsCardTitle": "Статистика",
+
+  "deleteAccountBtn": "Аккаунтты жою",
+  "deleteAccountDialogTitle": "Аккаунтты жою керек пе?",
+  "deleteAccountDialogBody": "Бұл әрекетті қайтару мүмкін емес. Жойылады:\n• Профиль және фотолар\n• Төлем деректемелері\n• Верификация деректері\n\nМәмілелер мен сыйақылар туралы жазбалар жасырын түрде сақталады.",
+  "deleteAccountConfirm": "Жою",
+  "deleteAccountCancel": "Болдырмау",
+  "deleteAccountSuccess": "Аккаунт жойылды",
+  "deleteAccountLink": "Аккаунтты жою туралы толығырақ"
 }

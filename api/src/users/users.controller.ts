@@ -3,6 +3,7 @@ import {
   Get,
   Patch,
   Post,
+  Delete,
   Param,
   Body,
   Req,
@@ -10,6 +11,8 @@ import {
   UseInterceptors,
   UploadedFile,
   BadRequestException,
+  HttpCode,
+  HttpStatus,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
@@ -97,6 +100,21 @@ export class UsersController {
     if (!file) throw new BadRequestException('Файл не прикреплён');
     const key = await this.storageService.upload(file, 'avatars');
     return this.usersService.updateAvatar(req.user.sub, key);
+  }
+
+  // DELETE /users/me — удаление аккаунта специалиста (анонимизация)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.USER)
+  @Delete('me')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async deleteMe(@Req() req: AuthenticatedRequest) {
+    await this.usersService.deleteAccount(req.user.sub);
+    await this.auditService.log({
+      entityType: 'user',
+      entityId: req.user.sub,
+      action: AuditAction.ACCOUNT_DELETED,
+      actorId: req.user.sub,
+    });
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)

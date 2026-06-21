@@ -906,4 +906,26 @@ class AppLocalizationsKk extends AppLocalizations {
 
   @override
   String get statsCardTitle => 'Статистика';
+
+  @override
+  String get deleteAccountBtn => 'Аккаунтты жою';
+
+  @override
+  String get deleteAccountDialogTitle => 'Аккаунтты жою керек пе?';
+
+  @override
+  String get deleteAccountDialogBody =>
+      'Бұл әрекетті қайтару мүмкін емес. Жойылады:\n• Профиль және фотолар\n• Төлем деректемелері\n• Верификация деректері\n\nМәмілелер мен сыйақылар туралы жазбалар жасырын түрде сақталады.';
+
+  @override
+  String get deleteAccountConfirm => 'Жою';
+
+  @override
+  String get deleteAccountCancel => 'Болдырмау';
+
+  @override
+  String get deleteAccountSuccess => 'Аккаунт жойылды';
+
+  @override
+  String get deleteAccountLink => 'Аккаунтты жою туралы толығырақ';
 }

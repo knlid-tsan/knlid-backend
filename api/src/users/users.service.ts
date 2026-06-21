@@ -180,4 +180,58 @@ export class UsersService {
     await this.usersRepository.save(user);
     return { avatar_url: null };
   }
+
+  async deleteAccount(userId: string): Promise<void> {
+    const manager = this.usersRepository.manager;
+
+    const user = await this.usersRepository.findOneBy({ id: userId });
+    if (!user) throw new NotFoundException('Пользователь не найден');
+
+    // Block if user has active leads as executor (not archived/cancelled/closed)
+    const [{ cnt }] = await manager.query<[{ cnt: string }]>(
+      `SELECT COUNT(*)::int AS cnt FROM leads
+       WHERE executor_id = $1
+       AND status NOT IN ('archived', 'cancelled', 'closed_success')`,
+      [userId],
+    );
+    if (Number(cnt) > 0) {
+      throw new ConflictException(
+        'Сначала завершите активные лиды (переведите в Архив)',
+      );
+    }
+
+    // Anonymize clients in non-active leads created by this user
+    await manager.query(
+      `UPDATE clients SET
+         phone     = 'deleted_client_' || gen_random_uuid(),
+         full_name = 'Удалённый пользователь'
+       WHERE id IN (
+         SELECT client_id FROM leads
+         WHERE author_id = $1
+         AND status IN ('new', 'cancelled', 'archived')
+       )`,
+      [userId],
+    );
+
+    // Anonymize user and soft-delete
+    await manager.query(
+      `UPDATE users SET
+         phone                        = 'deleted_' || gen_random_uuid(),
+         full_name                    = 'Удалённый пользователь',
+         avatar_url                   = NULL,
+         identity_photo_url           = NULL,
+         payment_bank_id              = NULL,
+         payment_phone                = NULL,
+         city                         = NULL,
+         specialization               = NULL,
+         verification_rejection_reason = NULL,
+         status                       = 'archived',
+         deleted_at                   = NOW()
+       WHERE id = $1`,
+      [userId],
+    );
+
+    // Delete OTP codes so re-login is impossible
+    await manager.query(`DELETE FROM otp_codes WHERE phone = $1`, [user.phone]);
+  }
 }

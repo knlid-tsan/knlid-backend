@@ -372,5 +372,13 @@
       "date": { "type": "String" }
     }
   },
-  "statsCardTitle": "Статистика"
+  "statsCardTitle": "Статистика",
+
+  "deleteAccountBtn": "Удалить аккаунт",
+  "deleteAccountDialogTitle": "Удалить аккаунт?",
+  "deleteAccountDialogBody": "Это действие необратимо. Будут удалены:\n• Профиль и фото\n• Платёжные реквизиты\n• Данные верификации\n\nЗаписи о сделках и вознаграждениях сохраняются в обезличенном виде.",
+  "deleteAccountConfirm": "Удалить",
+  "deleteAccountCancel": "Отмена",
+  "deleteAccountSuccess": "Аккаунт удалён",
+  "deleteAccountLink": "Подробнее об удалении аккаунта"
 }
