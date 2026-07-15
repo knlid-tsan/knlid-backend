@@ -928,4 +928,13 @@ class AppLocalizationsKk extends AppLocalizations {
 
   @override
   String get deleteAccountLink => 'Аккаунтты жою туралы толығырақ';
+
+  @override
+  String get avatarCropTitle => 'Фотоны қию';
+
+  @override
+  String get avatarCropDone => 'Дайын';
+
+  @override
+  String get avatarCropCancel => 'Болдырмау';
 }

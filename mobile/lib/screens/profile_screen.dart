@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:image_cropper/image_cropper.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../l10n/app_localizations.dart';
 import '../l10n/lead_labels.dart';
@@ -241,15 +242,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     final XFile? file = await _picker.pickImage(
       source: choice,
-      imageQuality: 80,
-      maxWidth: 512,
+      imageQuality: 100,
+      maxWidth: 2048,
     );
     if (file == null) return;
+
+    // Обрезка/масштабирование: квадрат 1:1 с зумом и поворотом
+    final cropped = await _cropAvatar(file.path);
+    if (cropped == null) return;
 
     setState(() => _avatarUploading = true);
     try {
       final formData = FormData.fromMap({
-        'file': await MultipartFile.fromFile(file.path, filename: file.name),
+        'file': await MultipartFile.fromFile(
+          cropped.path,
+          filename: 'avatar.jpg',
+        ),
       });
       final response = await _client.dio.post<Map<String, dynamic>>(
         '/users/me/avatar',
@@ -280,6 +288,40 @@ class _ProfileScreenState extends State<ProfileScreen> {
     } finally {
       if (mounted) setState(() => _avatarUploading = false);
     }
+  }
+
+  /// Открывает нативный редактор обрезки: квадрат 1:1, зум щипком,
+  /// поворот. Возвращает обрезанный файл или null (если отменили).
+  Future<CroppedFile?> _cropAvatar(String sourcePath) async {
+    final l = AppLocalizations.of(context)!;
+    return ImageCropper().cropImage(
+      sourcePath: sourcePath,
+      aspectRatio: const CropAspectRatio(ratioX: 1, ratioY: 1),
+      maxWidth: 512,
+      maxHeight: 512,
+      compressFormat: ImageCompressFormat.jpg,
+      compressQuality: 85,
+      uiSettings: [
+        IOSUiSettings(
+          title: l.avatarCropTitle,
+          doneButtonTitle: l.avatarCropDone,
+          cancelButtonTitle: l.avatarCropCancel,
+          aspectRatioLockEnabled: true,
+          resetAspectRatioEnabled: false,
+          aspectRatioPickerButtonHidden: true,
+          rotateClockwiseButtonHidden: false,
+        ),
+        AndroidUiSettings(
+          toolbarTitle: l.avatarCropTitle,
+          toolbarColor: AppColors.brand,
+          toolbarWidgetColor: Colors.white,
+          activeControlsWidgetColor: AppColors.brand,
+          lockAspectRatio: true,
+          hideBottomControls: false,
+          initAspectRatio: CropAspectRatioPreset.square,
+        ),
+      ],
+    );
   }
 
   Future<void> _logout() async {

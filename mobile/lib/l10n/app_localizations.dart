@@ -1825,6 +1825,24 @@ abstract class AppLocalizations {
   /// In ru, this message translates to:
   /// **'Подробнее об удалении аккаунта'**
   String get deleteAccountLink;
+
+  /// No description provided for @avatarCropTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Обрезка фото'**
+  String get avatarCropTitle;
+
+  /// No description provided for @avatarCropDone.
+  ///
+  /// In ru, this message translates to:
+  /// **'Готово'**
+  String get avatarCropDone;
+
+  /// No description provided for @avatarCropCancel.
+  ///
+  /// In ru, this message translates to:
+  /// **'Отмена'**
+  String get avatarCropCancel;
 }
 
 class _AppLocalizationsDelegate

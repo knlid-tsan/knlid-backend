@@ -380,5 +380,8 @@
   "deleteAccountConfirm": "Удалить",
   "deleteAccountCancel": "Отмена",
   "deleteAccountSuccess": "Аккаунт удалён",
-  "deleteAccountLink": "Подробнее об удалении аккаунта"
+  "deleteAccountLink": "Подробнее об удалении аккаунта",
+  "avatarCropTitle": "Обрезка фото",
+  "avatarCropDone": "Готово",
+  "avatarCropCancel": "Отмена"
 }

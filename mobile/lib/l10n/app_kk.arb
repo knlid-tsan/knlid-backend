@@ -380,5 +380,8 @@
   "deleteAccountConfirm": "Жою",
   "deleteAccountCancel": "Болдырмау",
   "deleteAccountSuccess": "Аккаунт жойылды",
-  "deleteAccountLink": "Аккаунтты жою туралы толығырақ"
+  "deleteAccountLink": "Аккаунтты жою туралы толығырақ",
+  "avatarCropTitle": "Фотоны қию",
+  "avatarCropDone": "Дайын",
+  "avatarCropCancel": "Болдырмау"
 }
