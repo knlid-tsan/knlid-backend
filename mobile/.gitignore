@@ -10,6 +10,8 @@
 .history
 .svn/
 .swiftpm/
+# Xcode-generated SwiftPM checkout/resolution dirs
+**/xcshareddata/swiftpm/
 migrate_working_dir/
 
 # IntelliJ related
