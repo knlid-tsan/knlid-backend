@@ -4,3 +4,4 @@ dist/
 *.log
 api/uploads/
 .claude/worktrees/
+knlid_schema.sql
