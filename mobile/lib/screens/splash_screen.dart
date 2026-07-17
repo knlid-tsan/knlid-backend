@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../l10n/app_localizations.dart';
 import '../services/api_client.dart';
 import '../theme/app_colors.dart';
 
@@ -37,7 +38,8 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 }
 
-// Matches the native iOS launch screen: kn●lid in brand red, no subtitle
+// Same logo as the login screen (_KnLidLogo in phone_screen.dart):
+// kn●lid in brand red with the house-in-dot icon, subtitle in small gray caps.
 class _SplashLogo extends StatelessWidget {
   const _SplashLogo();
 
@@ -47,28 +49,44 @@ class _SplashLogo extends StatelessWidget {
     fontWeight: FontWeight.w700,
     color: _red,
     height: 1,
-    letterSpacing: -2,
+    letterSpacing: -1.5,
   );
 
   @override
   Widget build(BuildContext context) {
-    return Row(
+    final l = AppLocalizations.of(context)!;
+    return Column(
       mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        const Text('kn', style: _style),
-        const SizedBox(width: 4),
-        Container(
-          width: 18,
-          height: 18,
-          decoration: const BoxDecoration(
-            color: _red,
-            shape: BoxShape.circle,
-          ),
-          child: const Icon(Icons.home, size: 11, color: Colors.white),
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            const Text('kn', style: _style),
+            const SizedBox(width: 3),
+            Container(
+              width: 17,
+              height: 17,
+              decoration: const BoxDecoration(
+                color: _red,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.home, size: 11, color: Colors.white),
+            ),
+            const SizedBox(width: 3),
+            const Text('lid', style: _style),
+          ],
         ),
-        const SizedBox(width: 4),
-        const Text('lid', style: _style),
+        const SizedBox(height: 10),
+        Text(
+          l.appSubtitle,
+          style: const TextStyle(
+            fontSize: 9,
+            fontWeight: FontWeight.w400,
+            color: Color(0xFF6B7280),
+            letterSpacing: 2.5,
+          ),
+        ),
       ],
     );
   }
