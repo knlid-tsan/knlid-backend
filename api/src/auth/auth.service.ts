@@ -57,17 +57,44 @@ export class AuthService {
       );
     }
 
-    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    const testCode = this._testOtpCodeFor(phone);
+    const code =
+      testCode ?? Math.floor(100000 + Math.random() * 900000).toString();
     const expires_at = new Date(Date.now() + OTP_TTL_MINUTES * 60 * 1000);
 
     const otp = this.otpCodesRepository.create({ phone, code, expires_at });
     await this.otpCodesRepository.save(otp);
 
-    await this.otpSender.send(phone, code).catch((err: Error) =>
-      this.logger.error(`Ошибка отправки OTP для ${phone}: ${err?.message}`),
-    );
+    if (testCode) {
+      this.logger.warn(
+        `Тестовый номер ${phone}: выдан фиксированный OTP, SMS не отправлялась`,
+      );
+    } else {
+      await this.otpSender
+        .send(phone, code)
+        .catch((err: Error) =>
+          this.logger.error(
+            `Ошибка отправки OTP для ${phone}: ${err?.message}`,
+          ),
+        );
+    }
 
     return { message: 'Код отправлен' };
+  }
+
+  /**
+   * Фиксированный OTP для демо-номеров из TEST_PHONES (ревью App Store /
+   * Google Play). Возвращает код, только если номер явно перечислен в env
+   * И задан TEST_OTP_CODE; иначе null — обычный поток с отправкой SMS.
+   */
+  private _testOtpCodeFor(phone: string): string | null {
+    const code = process.env.TEST_OTP_CODE;
+    if (!code) return null;
+    const phones = (process.env.TEST_PHONES || '')
+      .split(',')
+      .map((p) => p.trim())
+      .filter(Boolean);
+    return phones.includes(phone) ? code : null;
   }
 
   async confirmPhone(dto: VerifyOtpDto): Promise<{ ok: true }> {
@@ -127,7 +154,9 @@ export class AuthService {
     const user = await this.usersService.findActiveByPhone(dto.phone);
 
     if (!user) {
-      throw new NotFoundException('Пользователь не найден. Пройдите регистрацию');
+      throw new NotFoundException(
+        'Пользователь не найден. Пройдите регистрацию',
+      );
     }
 
     await this.otpCodesRepository.delete({ phone: dto.phone });
