@@ -6,9 +6,10 @@ import '../theme/app_colors.dart';
 import 'lead_card.dart';
 import 'lead_detail_screen.dart';
 
+// closed_success здесь быть не должно: успешно закрытый лид — завершённый
 const _kActiveStatuses = {
   'new', 'pending_acceptance', 'in_progress',
-  'contract', 'deposit', 'closed_success', 'dispute',
+  'contract', 'deposit', 'dispute',
 };
 
 class LeadsAssignedScreen extends StatefulWidget {
