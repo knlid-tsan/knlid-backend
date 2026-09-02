@@ -419,13 +419,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
       child: ListView(
         padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
         children: [
-          Text(
-            l.navProfile,
-            style: const TextStyle(
-              fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.textPrimary,
-            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                l.navProfile,
+                style: const TextStyle(
+                  fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.textPrimary,
+                ),
+              ),
+              // Выход должен быть виден без прокрутки — кнопка внизу длинного
+              // списка терялась (общие устройства в офисах).
+              IconButton(
+                onPressed: _logout,
+                tooltip: l.btnLogout,
+                icon: const Icon(Icons.logout, color: AppColors.textSecondary),
+              ),
+            ],
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 12),
 
           // ── Визитка ──
           Center(
