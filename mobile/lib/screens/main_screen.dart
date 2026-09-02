@@ -47,10 +47,12 @@ class _MainScreenState extends State<MainScreen> {
         final data = res.data as Map<String, dynamic>;
         final status = data['status'] as String? ?? '';
         final reason = data['verification_rejection_reason'] as String?;
-        if (mounted) setState(() {
-          _userStatus = status;
-          _rejectionReason = reason;
-        });
+        if (mounted) {
+          setState(() {
+            _userStatus = status;
+            _rejectionReason = reason;
+          });
+        }
       }
     } catch (_) {}
   }
@@ -62,10 +64,12 @@ class _MainScreenState extends State<MainScreen> {
       final data = res.data as Map<String, dynamic>;
       final status = data['status'] as String? ?? '';
       final reason = data['verification_rejection_reason'] as String?;
-      if (mounted) setState(() {
-        _userStatus = status;
-        _rejectionReason = reason;
-      });
+      if (mounted) {
+        setState(() {
+          _userStatus = status;
+          _rejectionReason = reason;
+        });
+      }
     } catch (_) {}
   }
 
@@ -78,7 +82,10 @@ class _MainScreenState extends State<MainScreen> {
   }
 
   bool get _showBanner =>
-      _role == 'user' && _userStatus.isNotEmpty && _userStatus != 'active' && _currentIndex < 4;
+      _role == 'user' &&
+      _userStatus.isNotEmpty &&
+      _userStatus != 'active' &&
+      _currentIndex < 4;
 
   @override
   Widget build(BuildContext context) {
@@ -109,7 +116,8 @@ class _MainScreenState extends State<MainScreen> {
           ),
         ],
       ),
-      floatingActionButton: _role == 'user' && (_currentIndex == 1 || _currentIndex == 2)
+      floatingActionButton:
+          _role == 'user' && (_currentIndex == 1 || _currentIndex == 2)
           ? FloatingActionButton.extended(
               onPressed: () async {
                 await Navigator.push(
@@ -127,43 +135,49 @@ class _MainScreenState extends State<MainScreen> {
               ),
             )
           : null,
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _currentIndex,
-        onDestinationSelected: (i) {
-          setState(() {
-            _currentIndex = i;
-            if (i == 0) _homeRevision++;
-            if (i == 4) _profileRevision++;
-          });
-          if (i < 3) _refreshUserStatus();
-        },
-        destinations: [
-          NavigationDestination(
-            icon: const Icon(Icons.home_outlined),
-            selectedIcon: const Icon(Icons.home),
-            label: l.navHome,
-          ),
-          NavigationDestination(
-            icon: const Icon(Icons.send_outlined),
-            selectedIcon: const Icon(Icons.send),
-            label: l.navCreatedShort,
-          ),
-          NavigationDestination(
-            icon: const Icon(Icons.assignment_outlined),
-            selectedIcon: const Icon(Icons.assignment),
-            label: l.navAssignedShort,
-          ),
-          NavigationDestination(
-            icon: const Icon(Icons.percent_outlined),
-            selectedIcon: const Icon(Icons.percent),
-            label: l.navTariffs,
-          ),
-          NavigationDestination(
-            icon: const Icon(Icons.person_outline),
-            selectedIcon: const Icon(Icons.person),
-            label: l.navProfile,
-          ),
-        ],
+      // Тонкая граница сверху отделяет меню от контента и системной панели
+      bottomNavigationBar: Container(
+        decoration: const BoxDecoration(
+          border: Border(top: BorderSide(color: AppColors.divider)),
+        ),
+        child: NavigationBar(
+          selectedIndex: _currentIndex,
+          onDestinationSelected: (i) {
+            setState(() {
+              _currentIndex = i;
+              if (i == 0) _homeRevision++;
+              if (i == 4) _profileRevision++;
+            });
+            if (i < 3) _refreshUserStatus();
+          },
+          destinations: [
+            NavigationDestination(
+              icon: const Icon(Icons.home_outlined),
+              selectedIcon: const Icon(Icons.home),
+              label: l.navHome,
+            ),
+            NavigationDestination(
+              icon: const Icon(Icons.send_outlined),
+              selectedIcon: const Icon(Icons.send),
+              label: l.navCreatedShort,
+            ),
+            NavigationDestination(
+              icon: const Icon(Icons.assignment_outlined),
+              selectedIcon: const Icon(Icons.assignment),
+              label: l.navAssignedShort,
+            ),
+            NavigationDestination(
+              icon: const Icon(Icons.percent_outlined),
+              selectedIcon: const Icon(Icons.percent),
+              label: l.navTariffs,
+            ),
+            NavigationDestination(
+              icon: const Icon(Icons.person_outline),
+              selectedIcon: const Icon(Icons.person),
+              label: l.navProfile,
+            ),
+          ],
+        ),
       ),
     );
   }

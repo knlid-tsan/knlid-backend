@@ -149,7 +149,8 @@ class _LeadDetailScreenState extends State<LeadDetailScreen> {
     }
   }
 
-  Future<String?> _showReasonDialog(String title, String hint) {
+  Future<String?> _showReasonDialog(String title, String hint,
+      {String? confirmLabel}) {
     final l = AppLocalizations.of(context)!;
     final ctrl = TextEditingController();
     final formKey = GlobalKey<FormState>();
@@ -185,19 +186,27 @@ class _LeadDetailScreenState extends State<LeadDetailScreen> {
             ),
           ),
         ),
+        // Обе кнопки — текстовые, как принято в Material-диалогах:
+        // «Отмена» нейтральная, действие — акцентным цветом
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
+            style: TextButton.styleFrom(
+              foregroundColor: AppColors.textSecondary,
+            ),
             child: Text(l.btnCancel),
           ),
-          FilledButton(
+          TextButton(
             onPressed: () {
               // Пустое поле: подсветить ошибку, а не молча игнорировать тап
               if (!formKey.currentState!.validate()) return;
               Navigator.pop(ctx, ctrl.text.trim());
             },
-            style: FilledButton.styleFrom(backgroundColor: AppColors.primary),
-            child: Text(l.btnSend),
+            style: TextButton.styleFrom(foregroundColor: AppColors.primary),
+            child: Text(
+              confirmLabel ?? l.btnSend,
+              style: const TextStyle(fontWeight: FontWeight.w600),
+            ),
           ),
         ],
       ),
@@ -304,7 +313,8 @@ class _LeadDetailScreenState extends State<LeadDetailScreen> {
 
   Future<void> _onDecline() async {
     final l = AppLocalizations.of(context)!;
-    final reason = await _showReasonDialog(l.declineLeadTitle, l.declineLeadHint);
+    final reason = await _showReasonDialog(l.declineLeadTitle, l.declineLeadHint,
+        confirmLabel: l.declineLeadTitle);
     if (reason == null) return;
     await _runAction(() async {
       await _service.declineLead(widget.leadId, reason);
@@ -478,7 +488,8 @@ class _LeadDetailScreenState extends State<LeadDetailScreen> {
 
   Future<void> _onCancelByExecutor() async {
     final l = AppLocalizations.of(context)!;
-    final reason = await _showReasonDialog(l.cancelLeadTitle, l.cancelLeadHint);
+    final reason = await _showReasonDialog(l.cancelLeadTitle, l.cancelLeadHint,
+        confirmLabel: l.cancelLeadTitle);
     if (reason == null) return;
     await _runAction(() async {
       await _service.updateStatus(widget.leadId, 'cancelled', comment: reason);
@@ -489,7 +500,8 @@ class _LeadDetailScreenState extends State<LeadDetailScreen> {
 
   Future<void> _onDispute() async {
     final l = AppLocalizations.of(context)!;
-    final reason = await _showReasonDialog(l.openDisputeTitle, l.openDisputeHint);
+    final reason = await _showReasonDialog(l.openDisputeTitle, l.openDisputeHint,
+        confirmLabel: l.openDisputeTitle);
     if (reason == null) return;
     await _runAction(() async {
       await _service.openDispute(widget.leadId, reason);
