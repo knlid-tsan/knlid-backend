@@ -927,6 +927,9 @@ class AppLocalizationsRu extends AppLocalizations {
   String get deleteAccountLink => 'Подробнее об удалении аккаунта';
 
   @override
+  String get reasonRequired => 'Укажите причину';
+
+  @override
   String get avatarCropTitle => 'Обрезка фото';
 
   @override

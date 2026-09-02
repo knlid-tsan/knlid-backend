@@ -152,21 +152,36 @@ class _LeadDetailScreenState extends State<LeadDetailScreen> {
   Future<String?> _showReasonDialog(String title, String hint) {
     final l = AppLocalizations.of(context)!;
     final ctrl = TextEditingController();
+    final formKey = GlobalKey<FormState>();
     return showDialog<String>(
       context: context,
       builder: (ctx) => AlertDialog(
         title: Text(title),
-        content: TextField(
-          controller: ctrl,
-          maxLines: 3,
-          autofocus: true,
-          decoration: InputDecoration(
-            hintText: hint,
-            filled: true,
-            fillColor: AppColors.surface,
-            border: const OutlineInputBorder(
-              borderRadius: BorderRadius.all(Radius.circular(12)),
-              borderSide: BorderSide.none,
+        content: Form(
+          key: formKey,
+          child: TextFormField(
+            controller: ctrl,
+            maxLines: 3,
+            autofocus: true,
+            autovalidateMode: AutovalidateMode.onUserInteraction,
+            validator: (v) =>
+                (v == null || v.trim().isEmpty) ? l.reasonRequired : null,
+            decoration: InputDecoration(
+              hintText: hint,
+              filled: true,
+              fillColor: AppColors.surface,
+              border: const OutlineInputBorder(
+                borderRadius: BorderRadius.all(Radius.circular(12)),
+                borderSide: BorderSide.none,
+              ),
+              errorBorder: const OutlineInputBorder(
+                borderRadius: BorderRadius.all(Radius.circular(12)),
+                borderSide: BorderSide(color: Colors.red, width: 1.5),
+              ),
+              focusedErrorBorder: const OutlineInputBorder(
+                borderRadius: BorderRadius.all(Radius.circular(12)),
+                borderSide: BorderSide(color: Colors.red, width: 1.5),
+              ),
             ),
           ),
         ),
@@ -177,8 +192,9 @@ class _LeadDetailScreenState extends State<LeadDetailScreen> {
           ),
           FilledButton(
             onPressed: () {
-              final t = ctrl.text.trim();
-              if (t.isNotEmpty) Navigator.pop(ctx, t);
+              // Пустое поле: подсветить ошибку, а не молча игнорировать тап
+              if (!formKey.currentState!.validate()) return;
+              Navigator.pop(ctx, ctrl.text.trim());
             },
             style: FilledButton.styleFrom(backgroundColor: AppColors.primary),
             child: Text(l.btnSend),
@@ -321,7 +337,11 @@ class _LeadDetailScreenState extends State<LeadDetailScreen> {
           left: 24,
           right: 24,
           top: 24,
-          bottom: MediaQuery.of(ctx).viewInsets.bottom + 32,
+          // viewInsets — клавиатура, viewPadding — системная навигация
+          // (edge-to-edge Android): без второго низ листа обрезается панелью
+          bottom: MediaQuery.of(ctx).viewInsets.bottom +
+              MediaQuery.of(ctx).viewPadding.bottom +
+              32,
         ),
         child: Form(
           key: formKey,

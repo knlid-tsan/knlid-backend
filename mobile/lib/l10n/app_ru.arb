@@ -381,6 +381,7 @@
   "deleteAccountCancel": "Отмена",
   "deleteAccountSuccess": "Аккаунт удалён",
   "deleteAccountLink": "Подробнее об удалении аккаунта",
+  "reasonRequired": "Укажите причину",
   "avatarCropTitle": "Обрезка фото",
   "avatarCropDone": "Готово",
   "avatarCropCancel": "Отмена"

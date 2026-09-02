@@ -1826,6 +1826,12 @@ abstract class AppLocalizations {
   /// **'Подробнее об удалении аккаунта'**
   String get deleteAccountLink;
 
+  /// No description provided for @reasonRequired.
+  ///
+  /// In ru, this message translates to:
+  /// **'Укажите причину'**
+  String get reasonRequired;
+
   /// No description provided for @avatarCropTitle.
   ///
   /// In ru, this message translates to:
