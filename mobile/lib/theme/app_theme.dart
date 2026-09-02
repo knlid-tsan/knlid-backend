@@ -14,6 +14,16 @@ class AppTheme {
         ),
         scaffoldBackgroundColor: AppColors.background,
 
+        // Плавающие снекбары: фиксированные прилипали к нижнему краю и
+        // перекрывали кнопки действий над системной навигацией
+        snackBarTheme: SnackBarThemeData(
+          behavior: SnackBarBehavior.floating,
+          insetPadding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+        ),
+
         // Filled buttons — синяя заливка
         filledButtonTheme: FilledButtonThemeData(
           style: FilledButton.styleFrom(

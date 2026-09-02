@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'l10n/app_localizations.dart';
 import 'screens/splash_screen.dart';
 import 'screens/phone_screen.dart';
@@ -8,6 +9,19 @@ import 'services/navigator_key.dart';
 import 'services/locale_service.dart';
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+  // Светлая тема приложения → иконки статус-бара и системной навигации
+  // должны быть тёмными (на Android по умолчанию оставались белыми).
+  SystemChrome.setSystemUIOverlayStyle(
+    const SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      statusBarIconBrightness: Brightness.dark,
+      statusBarBrightness: Brightness.light, // iOS
+      systemNavigationBarColor: Colors.transparent,
+      systemNavigationBarIconBrightness: Brightness.dark,
+      systemNavigationBarContrastEnforced: false,
+    ),
+  );
   runApp(const KnlidApp());
 }
 
