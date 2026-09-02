@@ -91,7 +91,45 @@ class _PaymentFormScreenState extends State<PaymentFormScreen> {
       ),
       body: _loadingBanks
           ? const Center(child: CircularProgressIndicator())
-          : _buildForm(l),
+          : _banks.isEmpty
+              ? _buildBanksUnavailable(l)
+              : _buildForm(l),
+    );
+  }
+
+  // Пустой список банков (сбой сети или нет данных): без этого дропдаун
+  // выглядит «мёртвым» и реквизиты невозможно заполнить.
+  Widget _buildBanksUnavailable(AppLocalizations l) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.account_balance_outlined,
+                size: 48, color: AppColors.textSecondary),
+            const SizedBox(height: 16),
+            Text(
+              _error ?? l.banksLoadFailed,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                  fontSize: 15, color: AppColors.textSecondary),
+            ),
+            const SizedBox(height: 20),
+            OutlinedButton.icon(
+              onPressed: () {
+                setState(() {
+                  _loadingBanks = true;
+                  _error = null;
+                });
+                _loadBanks();
+              },
+              icon: const Icon(Icons.refresh),
+              label: Text(l.btnRetry),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
