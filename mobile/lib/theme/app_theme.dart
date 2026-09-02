@@ -1,8 +1,23 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'app_colors.dart';
 
 class AppTheme {
   AppTheme._();
+
+  /// Единый стиль системных панелей: светлая панель, ТЁМНЫЕ иконки.
+  /// Важно: AppBar перебивает SystemChrome-вызов из main() своим пресетом
+  /// (у которого нав-иконки светлые), поэтому стиль обязан быть задан и в
+  /// AppBarTheme.systemOverlayStyle, и глобально.
+  static const SystemUiOverlayStyle overlayStyle = SystemUiOverlayStyle(
+    statusBarColor: Colors.transparent,
+    statusBarIconBrightness: Brightness.dark,
+    statusBarBrightness: Brightness.light, // iOS
+    systemNavigationBarColor: AppColors.background,
+    systemNavigationBarDividerColor: AppColors.background,
+    systemNavigationBarIconBrightness: Brightness.dark,
+    systemNavigationBarContrastEnforced: false,
+  );
 
   static ThemeData get light => ThemeData(
         useMaterial3: true,
@@ -13,6 +28,10 @@ class AppTheme {
           onPrimary: Colors.white,
         ),
         scaffoldBackgroundColor: AppColors.background,
+
+        // Все AppBar применяют единый стиль системных панелей (иначе их
+        // дефолтный пресет возвращает светлые иконки нижней навигации)
+        appBarTheme: const AppBarTheme(systemOverlayStyle: overlayStyle),
 
         // Плавающие снекбары: фиксированные прилипали к нижнему краю и
         // перекрывали кнопки действий над системной навигацией

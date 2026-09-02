@@ -11,17 +11,9 @@ import 'services/locale_service.dart';
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
   // Светлая тема приложения → иконки статус-бара и системной навигации
-  // должны быть тёмными (на Android по умолчанию оставались белыми).
-  SystemChrome.setSystemUIOverlayStyle(
-    const SystemUiOverlayStyle(
-      statusBarColor: Colors.transparent,
-      statusBarIconBrightness: Brightness.dark,
-      statusBarBrightness: Brightness.light, // iOS
-      systemNavigationBarColor: Colors.transparent,
-      systemNavigationBarIconBrightness: Brightness.dark,
-      systemNavigationBarContrastEnforced: false,
-    ),
-  );
+  // должны быть тёмными. Единый стиль — AppTheme.overlayStyle (он же в
+  // AppBarTheme и в AnnotatedRegion ниже).
+  SystemChrome.setSystemUIOverlayStyle(AppTheme.overlayStyle);
   runApp(const KnlidApp());
 }
 
@@ -64,6 +56,12 @@ class _KnlidAppState extends State<KnlidApp> {
       locale: _locale,
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
+      // Глобальный стиль системных панелей для экранов без AppBar
+      // (главные вкладки): тёмные иконки нижней навигации на светлом фоне
+      builder: (context, child) => AnnotatedRegion<SystemUiOverlayStyle>(
+        value: AppTheme.overlayStyle,
+        child: child!,
+      ),
       initialRoute: '/',
       routes: {
         '/': (_) => const SplashScreen(),
