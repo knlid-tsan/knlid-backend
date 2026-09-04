@@ -930,6 +930,10 @@ class AppLocalizationsRu extends AppLocalizations {
   String get reasonRequired => 'Укажите причину';
 
   @override
+  String get initLoadFailed =>
+      'Не удалось загрузить данные. Проверьте интернет и попробуйте снова';
+
+  @override
   String get avatarCropTitle => 'Обрезка фото';
 
   @override

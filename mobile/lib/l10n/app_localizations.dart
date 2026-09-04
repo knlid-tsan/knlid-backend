@@ -1832,6 +1832,12 @@ abstract class AppLocalizations {
   /// **'Укажите причину'**
   String get reasonRequired;
 
+  /// No description provided for @initLoadFailed.
+  ///
+  /// In ru, this message translates to:
+  /// **'Не удалось загрузить данные. Проверьте интернет и попробуйте снова'**
+  String get initLoadFailed;
+
   /// No description provided for @avatarCropTitle.
   ///
   /// In ru, this message translates to:

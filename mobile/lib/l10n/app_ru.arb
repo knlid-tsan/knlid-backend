@@ -382,6 +382,7 @@
   "deleteAccountSuccess": "Аккаунт удалён",
   "deleteAccountLink": "Подробнее об удалении аккаунта",
   "reasonRequired": "Укажите причину",
+  "initLoadFailed": "Не удалось загрузить данные. Проверьте интернет и попробуйте снова",
   "avatarCropTitle": "Обрезка фото",
   "avatarCropDone": "Готово",
   "avatarCropCancel": "Отмена"

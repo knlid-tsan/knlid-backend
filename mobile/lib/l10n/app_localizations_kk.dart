@@ -933,6 +933,10 @@ class AppLocalizationsKk extends AppLocalizations {
   String get reasonRequired => 'Себебін көрсетіңіз';
 
   @override
+  String get initLoadFailed =>
+      'Деректерді жүктеу мүмкін болмады. Интернетті тексеріп, қайталап көріңіз';
+
+  @override
   String get avatarCropTitle => 'Фотоны қию';
 
   @override

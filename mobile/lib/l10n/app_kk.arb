@@ -382,6 +382,7 @@
   "deleteAccountSuccess": "Аккаунт жойылды",
   "deleteAccountLink": "Аккаунтты жою туралы толығырақ",
   "reasonRequired": "Себебін көрсетіңіз",
+  "initLoadFailed": "Деректерді жүктеу мүмкін болмады. Интернетті тексеріп, қайталап көріңіз",
   "avatarCropTitle": "Фотоны қию",
   "avatarCropDone": "Дайын",
   "avatarCropCancel": "Болдырмау"

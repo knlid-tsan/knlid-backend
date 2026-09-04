@@ -43,6 +43,7 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
   bool _hasPayment = false;
   List<String> _cities = [];
   bool _initLoading = true;
+  bool _initFailed = false;
 
   // Error messages
   String? _checkError;
@@ -87,12 +88,30 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
               (user['payment_phone'] as String?)?.isNotEmpty == true;
           _cities = cities;
           _selectedCity = null;
+          // Пустой список городов = форма неработоспособна (город обязателен):
+          // показываем состояние ошибки с «Повторить», а не мёртвый дропдаун
+          _initFailed = cities.isEmpty;
           _initLoading = false;
         });
       }
     } catch (_) {
-      if (mounted) setState(() => _initLoading = false);
+      // Молча глотать нельзя: без городов дропдаун «не открывается»
+      // и создать лид невозможно
+      if (mounted) {
+        setState(() {
+          _initFailed = true;
+          _initLoading = false;
+        });
+      }
     }
+  }
+
+  void _retryInit() {
+    setState(() {
+      _initLoading = true;
+      _initFailed = false;
+    });
+    _loadInit();
   }
 
   // ─── Dup check logic ────────────────────────────────────────────────────────
@@ -261,9 +280,42 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
       ),
       body: _initLoading
           ? const Center(child: CircularProgressIndicator())
-          : _phase == _Phase.success
-              ? _buildSuccess()
-              : _buildForm(),
+          : _initFailed
+              ? _buildInitFailed()
+              : _phase == _Phase.success
+                  ? _buildSuccess()
+                  : _buildForm(),
+    );
+  }
+
+  // Сбой загрузки справочников (города/профиль): без них форма
+  // неработоспособна, поэтому — сообщение и «Повторить»
+  Widget _buildInitFailed() {
+    final l = AppLocalizations.of(context)!;
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.wifi_off_outlined,
+                size: 48, color: AppColors.textSecondary),
+            const SizedBox(height: 16),
+            Text(
+              l.initLoadFailed,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                  fontSize: 15, color: AppColors.textSecondary),
+            ),
+            const SizedBox(height: 20),
+            OutlinedButton.icon(
+              onPressed: _retryInit,
+              icon: const Icon(Icons.refresh),
+              label: Text(l.btnRetry),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
