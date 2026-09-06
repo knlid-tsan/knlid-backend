@@ -44,16 +44,15 @@ import { UserConsent } from './consents/user-consent.entity';
 @Module({
   imports: [
     ScheduleModule.forRoot(),
+    // Именованные лимитеры из forRoot применяются КО ВСЕМ маршрутам, а не
+    // только к «своим»: второй лимитер (auth, 10/мин) душил весь API —
+    // профиль с пикером компаний ловил 429 за минуту работы. Жёсткий лимит
+    // для /auth/* задаётся декоратором @Throttle на AuthController.
     ThrottlerModule.forRoot([
       {
         name: 'default',
         ttl: 60_000,   // 1 minute window
         limit: 120,    // 120 req / min per IP — global flood protection
-      },
-      {
-        name: 'auth',
-        ttl: 60_000,
-        limit: 10,     // 10 req / min per IP on /auth/* routes
       },
     ]),
     TypeOrmModule.forRoot({
