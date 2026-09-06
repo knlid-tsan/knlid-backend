@@ -16,6 +16,14 @@ export class AuthController {
     return this.authService.requestOtp(dto.phone);
   }
 
+  // POST /auth/check-phone — есть ли активный пользователь с этим номером.
+  // Нужен экрану ввода номера: при регистрации занятый номер отклоняется
+  // сразу, до отправки платной SMS и заполнения формы
+  @Post('check-phone')
+  checkPhone(@Body() dto: RequestOtpDto): Promise<{ exists: boolean }> {
+    return this.authService.checkPhone(dto.phone);
+  }
+
   // POST /auth/confirm-phone — проверить OTP и продлить TTL (шаг перед формой регистрации)
   @Post('confirm-phone')
   confirmPhone(@Body() dto: VerifyOtpDto): Promise<{ ok: true }> {

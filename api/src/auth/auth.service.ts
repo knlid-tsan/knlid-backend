@@ -97,6 +97,11 @@ export class AuthService {
     return phones.includes(phone) ? code : null;
   }
 
+  async checkPhone(phone: string): Promise<{ exists: boolean }> {
+    const user = await this.usersService.findActiveByPhone(phone);
+    return { exists: !!user };
+  }
+
   async confirmPhone(dto: VerifyOtpDto): Promise<{ ok: true }> {
     const latestOtp = await this.otpCodesRepository.findOne({
       where: { phone: dto.phone },

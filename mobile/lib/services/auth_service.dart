@@ -14,6 +14,18 @@ class AuthService {
     }
   }
 
+  /// Есть ли активный пользователь с этим номером (для экрана ввода номера:
+  /// при регистрации занятый номер отклоняется до отправки SMS).
+  Future<bool> phoneExists(String phone) async {
+    try {
+      final response =
+          await _client.dio.post('/auth/check-phone', data: {'phone': phone});
+      return (response.data as Map<String, dynamic>)['exists'] == true;
+    } on DioException catch (e) {
+      throw _message(e);
+    }
+  }
+
   /// Login — verify OTP for an EXISTING user. Throws [String] on error.
   /// Returns JWT access token.
   Future<String> verifyOtp({

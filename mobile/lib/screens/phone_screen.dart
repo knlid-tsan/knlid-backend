@@ -92,6 +92,16 @@ class _PhoneScreenState extends State<PhoneScreen> {
 
     try {
       final phone = stripPhone(_phoneController.text);
+      // Регистрация занятого номера отклоняется сразу, на этом экране —
+      // до отправки платной SMS и заполнения формы (раньше конфликт
+      // всплывал только на финальном POST /auth/register)
+      if (mode == AuthMode.register && await _authService.phoneExists(phone)) {
+        if (!mounted) return;
+        setState(
+          () => _error = AppLocalizations.of(context)!.phoneAlreadyRegistered,
+        );
+        return;
+      }
       await _authService.requestOtp(phone);
       if (!mounted) return;
       Navigator.push(

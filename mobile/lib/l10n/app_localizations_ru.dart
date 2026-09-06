@@ -934,6 +934,10 @@ class AppLocalizationsRu extends AppLocalizations {
       'Не удалось загрузить данные. Проверьте интернет и попробуйте снова';
 
   @override
+  String get phoneAlreadyRegistered =>
+      'Пользователь с этим номером уже зарегистрирован. Войдите';
+
+  @override
   String get avatarCropTitle => 'Обрезка фото';
 
   @override

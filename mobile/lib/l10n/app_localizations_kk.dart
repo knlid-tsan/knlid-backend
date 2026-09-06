@@ -937,6 +937,10 @@ class AppLocalizationsKk extends AppLocalizations {
       'Деректерді жүктеу мүмкін болмады. Интернетті тексеріп, қайталап көріңіз';
 
   @override
+  String get phoneAlreadyRegistered =>
+      'Бұл нөмірмен пайдаланушы тіркелген. Кіріңіз';
+
+  @override
   String get avatarCropTitle => 'Фотоны қию';
 
   @override

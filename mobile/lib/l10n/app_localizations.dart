@@ -1838,6 +1838,12 @@ abstract class AppLocalizations {
   /// **'Не удалось загрузить данные. Проверьте интернет и попробуйте снова'**
   String get initLoadFailed;
 
+  /// No description provided for @phoneAlreadyRegistered.
+  ///
+  /// In ru, this message translates to:
+  /// **'Пользователь с этим номером уже зарегистрирован. Войдите'**
+  String get phoneAlreadyRegistered;
+
   /// No description provided for @avatarCropTitle.
   ///
   /// In ru, this message translates to:

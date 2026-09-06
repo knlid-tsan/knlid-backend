@@ -383,6 +383,7 @@
   "deleteAccountLink": "Аккаунтты жою туралы толығырақ",
   "reasonRequired": "Себебін көрсетіңіз",
   "initLoadFailed": "Деректерді жүктеу мүмкін болмады. Интернетті тексеріп, қайталап көріңіз",
+  "phoneAlreadyRegistered": "Бұл нөмірмен пайдаланушы тіркелген. Кіріңіз",
   "avatarCropTitle": "Фотоны қию",
   "avatarCropDone": "Дайын",
   "avatarCropCancel": "Болдырмау"

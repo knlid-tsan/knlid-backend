@@ -383,6 +383,7 @@
   "deleteAccountLink": "Подробнее об удалении аккаунта",
   "reasonRequired": "Укажите причину",
   "initLoadFailed": "Не удалось загрузить данные. Проверьте интернет и попробуйте снова",
+  "phoneAlreadyRegistered": "Пользователь с этим номером уже зарегистрирован. Войдите",
   "avatarCropTitle": "Обрезка фото",
   "avatarCropDone": "Готово",
   "avatarCropCancel": "Отмена"
