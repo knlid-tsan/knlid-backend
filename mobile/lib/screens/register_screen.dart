@@ -18,6 +18,7 @@ class RegisterScreen extends StatefulWidget {
 
 class _RegisterScreenState extends State<RegisterScreen> {
   final _nameController = TextEditingController();
+  final _specOtherController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
   final _authService = AuthService();
   final _client = ApiClient();
@@ -40,6 +41,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   @override
   void dispose() {
     _nameController.dispose();
+    _specOtherController.dispose();
     super.dispose();
   }
 
@@ -77,6 +79,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
         code: widget.code,
         fullName: _nameController.text.trim(),
         specialization: _specialization!,
+        specializationOther: _specialization == 'other'
+            ? _specOtherController.text.trim()
+            : null,
         city: _city!.name,
       );
       await _client.saveToken(token);
@@ -96,6 +101,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       {'value': 'realtor', 'label': l.specRealtor},
       {'value': 'mortgage', 'label': l.specMortgage},
       {'value': 'lawyer', 'label': l.specLawyer},
+      {'value': 'other', 'label': l.specOther},
     ];
 
     return Scaffold(
@@ -156,6 +162,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       selected: _specialization == s['value'],
                       onTap: () => setState(() => _specialization = s['value']),
                     ))),
+                // Уточнение для «Другое»
+                if (_specialization == 'other') ...[
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: _specOtherController,
+                    textCapitalization: TextCapitalization.sentences,
+                    decoration: _inputDecoration(l.specOtherHint),
+                    validator: (v) => _specialization == 'other' &&
+                            (v == null || v.trim().length < 2)
+                        ? l.specOtherRequired
+                        : null,
+                  ),
+                ],
                 const SizedBox(height: 20),
 
                 // Город

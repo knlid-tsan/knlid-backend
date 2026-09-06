@@ -1,4 +1,11 @@
-import { IsOptional, IsString, Length, IsEnum } from 'class-validator';
+import {
+  IsOptional,
+  IsString,
+  Length,
+  IsEnum,
+  IsNotEmpty,
+  ValidateIf,
+} from 'class-validator';
 import { Specialization } from '../user.entity';
 
 export class UpdateProfileDto {
@@ -10,6 +17,13 @@ export class UpdateProfileDto {
   @IsOptional()
   @IsEnum(Specialization)
   specialization?: Specialization;
+
+  // Обязательно, если специализация меняется на «Другое»
+  @ValidateIf((o: UpdateProfileDto) => o.specialization === Specialization.OTHER)
+  @IsString()
+  @IsNotEmpty({ message: 'Укажите вашу специализацию' })
+  @Length(2, 100)
+  specialization_other?: string;
 
   @IsOptional()
   @IsString()

@@ -29,6 +29,7 @@ const REJECT_REASONS = [
 
 const SPEC_LABELS: Record<string, string> = {
   realtor: 'Риелтор',
+  other: 'Другое',
   mortgage: 'Ипотечный брокер',
   lawyer: 'Юрист',
 };

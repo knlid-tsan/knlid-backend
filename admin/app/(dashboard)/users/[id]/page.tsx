@@ -61,7 +61,7 @@ const ROLE_CLASS: Record<string, string> = {
   admin: 'bg-violet-100 text-violet-700',
 };
 const SPEC_LABEL: Record<string, string> = {
-  realtor: 'Риелтор', mortgage: 'Ипотечный брокер', lawyer: 'Юрист',
+  realtor: 'Риелтор', mortgage: 'Ипотечный брокер', lawyer: 'Юрист', other: 'Другое',
 };
 const ACTION_LABEL: Record<string, string> = {
   user_registered: 'Регистрация',

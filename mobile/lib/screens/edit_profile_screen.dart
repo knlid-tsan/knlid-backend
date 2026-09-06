@@ -18,6 +18,7 @@ class EditProfileScreen extends StatefulWidget {
 
 class _EditProfileScreenState extends State<EditProfileScreen> {
   final _nameController = TextEditingController();
+  final _specOtherController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
   final _client = ApiClient();
   final _authService = AuthService();
@@ -38,12 +39,15 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     super.initState();
     _nameController.text = widget.user['full_name'] as String? ?? '';
     _specialization = widget.user['specialization'] as String?;
+    _specOtherController.text =
+        widget.user['specialization_other'] as String? ?? '';
     _loadCities();
   }
 
   @override
   void dispose() {
     _nameController.dispose();
+    _specOtherController.dispose();
     super.dispose();
   }
 
@@ -77,7 +81,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       body['full_name'] = _nameController.text.trim();
     }
     if (!_hasActiveLead) {
-      if (_specialization != null) body['specialization'] = _specialization;
+      if (_specialization != null) {
+        body['specialization'] = _specialization;
+        if (_specialization == 'other') {
+          body['specialization_other'] = _specOtherController.text.trim();
+        }
+      }
       if (_city != null) body['city'] = _city!.name;
     }
 
@@ -112,6 +121,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       {'value': 'realtor', 'label': l.specRealtor},
       {'value': 'mortgage', 'label': l.specMortgage},
       {'value': 'lawyer', 'label': l.specLawyer},
+      {'value': 'other', 'label': l.specOther},
     ];
 
     return Scaffold(
@@ -190,17 +200,31 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 const SizedBox(height: 8),
                 if (_hasActiveLead) ...[
                   _LockedField(
-                    value: specializationLabel(l, _specialization ?? ''),
+                    value: userSpecializationLabel(l, widget.user),
                   ),
                   const SizedBox(height: 6),
                   _LockedHint(text: l.lockedLeadsHint),
-                ] else
+                ] else ...[
                   ...(specializations.map((s) => _SpecOption(
                         label: s['label']!,
                         value: s['value']!,
                         selected: _specialization == s['value'],
                         onTap: () => setState(() => _specialization = s['value']),
                       ))),
+                  // Уточнение для «Другое»
+                  if (_specialization == 'other') ...[
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: _specOtherController,
+                      textCapitalization: TextCapitalization.sentences,
+                      decoration: _inputDecoration(l.specOtherHint),
+                      validator: (v) => _specialization == 'other' &&
+                              (v == null || v.trim().length < 2)
+                          ? l.specOtherRequired
+                          : null,
+                    ),
+                  ],
+                ],
                 const SizedBox(height: 20),
 
                 _Label(l.labelCity),

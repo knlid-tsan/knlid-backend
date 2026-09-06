@@ -78,7 +78,7 @@ const ACTION_LABEL: Record<string, string> = {
 };
 
 const SPEC_LABEL: Record<string, string> = {
-  realtor: 'Риелтор', mortgage: 'Ипотечный брокер', lawyer: 'Юрист',
+  realtor: 'Риелтор', mortgage: 'Ипотечный брокер', lawyer: 'Юрист', other: 'Другое',
 };
 const ROLE_LABEL: Record<string, string> = {
   user: 'Специалист', moderator: 'Модератор', admin: 'Администратор', company: 'Компания',

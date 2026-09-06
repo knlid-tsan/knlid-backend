@@ -1,7 +1,7 @@
 import { Injectable, BadRequestException, ConflictException, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Not, Repository } from 'typeorm';
-import { User, UserRole, UserStatus } from './user.entity';
+import { Specialization, User, UserRole, UserStatus } from './user.entity';
 import { BanksService } from '../banks/banks.service';
 import { UpdatePaymentDto } from './dto/update-payment.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
@@ -134,7 +134,15 @@ export class UsersService {
     }
 
     if (dto.full_name !== undefined) user.full_name = dto.full_name;
-    if (dto.specialization !== undefined) user.specialization = dto.specialization;
+    if (dto.specialization !== undefined) {
+      user.specialization = dto.specialization;
+      // Уточнение хранится только для «Другое»; при смене на конкретную
+      // специализацию — очищается
+      user.specialization_other =
+        dto.specialization === Specialization.OTHER
+          ? (dto.specialization_other?.trim() ?? user.specialization_other)
+          : null;
+    }
     if (dto.city !== undefined) user.city = dto.city;
 
     return this.usersRepository.save(user);

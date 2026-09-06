@@ -205,6 +205,18 @@ class AppLocalizationsKk extends AppLocalizations {
   String get specLawyer => 'Заңгер';
 
   @override
+  String get specOther => 'Басқа';
+
+  @override
+  String get specOtherLabel => 'Сіздің мамандығыңыз';
+
+  @override
+  String get specOtherHint => 'Мысалы: жылжымайтын мүлік бағалаушысы';
+
+  @override
+  String get specOtherRequired => 'Мамандығыңызды көрсетіңіз';
+
+  @override
   String get labelCity => 'Қала';
 
   @override

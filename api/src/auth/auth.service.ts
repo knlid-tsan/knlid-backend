@@ -20,6 +20,7 @@ import { AuditAction } from '../audit/audit-action.enum';
 import { UserConsent } from '../consents/user-consent.entity';
 import { ConsentType } from '../consents/consent-type.enum';
 import { OtpSenderService } from '../otp-sender/otp-sender.service';
+import { Specialization } from '../users/user.entity';
 
 const OTP_TTL_MINUTES = 5;
 const OTP_REQUEST_LIMIT = 3;
@@ -211,6 +212,10 @@ export class AuthService {
       phone: dto.phone,
       full_name: dto.full_name,
       specialization: dto.specialization,
+      specialization_other:
+        dto.specialization === Specialization.OTHER
+          ? dto.specialization_other?.trim()
+          : null,
       city: dto.city,
     });
 

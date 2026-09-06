@@ -462,7 +462,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     (user['specialization'] as String?)?.isNotEmpty == true) ...[
                   const SizedBox(height: 4),
                   Text(
-                    specializationLabel(l, user['specialization'] as String),
+                    userSpecializationLabel(l, user),
                     style: const TextStyle(
                       fontSize: 14, fontWeight: FontWeight.w500, color: AppColors.primary,
                     ),
@@ -552,7 +552,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 (user['specialization'] as String).isNotEmpty)
               _InfoRow(
                 l.labelSpecialization,
-                specializationLabel(l, user['specialization'] as String),
+                userSpecializationLabel(l, user),
               ),
             if (!isSpecialist)
               _InfoRow(l.labelRole, roleLabel(l, role)),

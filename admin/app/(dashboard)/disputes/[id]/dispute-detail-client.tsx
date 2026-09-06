@@ -75,7 +75,7 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 const SPEC_LABELS: Record<string, string> = {
-  realtor: 'Риелтор', mortgage: 'Ипотечный брокер', lawyer: 'Юрист',
+  realtor: 'Риелтор', mortgage: 'Ипотечный брокер', lawyer: 'Юрист', other: 'Другое',
 };
 
 const REWARD_STATUS_LABELS: Record<string, string> = {

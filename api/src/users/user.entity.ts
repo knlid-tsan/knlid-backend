@@ -12,6 +12,7 @@ export enum Specialization {
   REALTOR = 'realtor',           // Риелтор
   MORTGAGE_BROKER = 'mortgage',  // Ипотечный брокер
   LAWYER = 'lawyer',             // Юрист
+  OTHER = 'other',               // Другое (уточняется в specialization_other)
 }
 
 // Статусы пользователя из BRD раздел 4.1
@@ -45,6 +46,10 @@ export class User {
 
   @Column({ type: 'enum', enum: Specialization, nullable: true })
   specialization: Specialization | null;
+
+  // Уточнение специализации при specialization = 'other'
+  @Column({ type: 'varchar', nullable: true })
+  specialization_other: string | null;
 
   @Column({ type: 'varchar', nullable: true })
   city: string | null;

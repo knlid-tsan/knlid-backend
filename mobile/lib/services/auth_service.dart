@@ -65,6 +65,7 @@ class AuthService {
     required String code,
     required String fullName,
     required String specialization,
+    String? specializationOther,
     required String city,
   }) async {
     try {
@@ -73,6 +74,8 @@ class AuthService {
         'code': code,
         'full_name': fullName,
         'specialization': specialization,
+        if (specializationOther != null && specializationOther.isNotEmpty)
+          'specialization_other': specializationOther,
         'city': city,
       });
       return response.data['access_token'] as String;

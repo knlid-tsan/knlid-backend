@@ -81,6 +81,9 @@ const SPECIALIZATION_LABEL: Record<Specialization, string> = {
   [Specialization.REALTOR]: 'Риелтор',
   [Specialization.MORTGAGE_BROKER]: 'Ипотечный брокер',
   [Specialization.LAWYER]: 'Юрист',
+  // «Другое» не входит в REQUIRED_SPECIALIZATION — такие специалисты
+  // не принимают лиды, лейбл нужен только для полноты Record
+  [Specialization.OTHER]: 'Другое',
 };
 
 @Injectable()

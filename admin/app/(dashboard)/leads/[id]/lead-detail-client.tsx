@@ -103,6 +103,7 @@ const TYPE_LABELS = LEAD_TYPE_LABELS;
 
 const SPEC_LABELS: Record<string, string> = {
   realtor: 'Риелтор',
+  other: 'Другое',
   mortgage: 'Ипотечный брокер',
   lawyer: 'Юрист',
 };

@@ -205,6 +205,18 @@ class AppLocalizationsRu extends AppLocalizations {
   String get specLawyer => 'Юрист';
 
   @override
+  String get specOther => 'Другое';
+
+  @override
+  String get specOtherLabel => 'Ваша специализация';
+
+  @override
+  String get specOtherHint => 'Например: оценщик недвижимости';
+
+  @override
+  String get specOtherRequired => 'Укажите вашу специализацию';
+
+  @override
   String get labelCity => 'Город';
 
   @override

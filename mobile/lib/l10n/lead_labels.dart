@@ -8,9 +8,22 @@ String specializationLabel(AppLocalizations l, String spec) {
       return l.specMortgage;
     case 'lawyer':
       return l.specLawyer;
+    case 'other':
+      return l.specOther;
     default:
       return spec;
   }
+}
+
+/// Лейбл специализации из объекта пользователя: для «Другое» показывает
+/// уточнение из specialization_other, если оно заполнено.
+String userSpecializationLabel(AppLocalizations l, Map<String, dynamic> user) {
+  final spec = user['specialization'] as String? ?? '';
+  if (spec == 'other') {
+    final other = (user['specialization_other'] as String?)?.trim();
+    if (other != null && other.isNotEmpty) return other;
+  }
+  return specializationLabel(l, spec);
 }
 
 String roleLabel(AppLocalizations l, String role) {

@@ -476,6 +476,30 @@ abstract class AppLocalizations {
   /// **'Юрист'**
   String get specLawyer;
 
+  /// No description provided for @specOther.
+  ///
+  /// In ru, this message translates to:
+  /// **'Другое'**
+  String get specOther;
+
+  /// No description provided for @specOtherLabel.
+  ///
+  /// In ru, this message translates to:
+  /// **'Ваша специализация'**
+  String get specOtherLabel;
+
+  /// No description provided for @specOtherHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'Например: оценщик недвижимости'**
+  String get specOtherHint;
+
+  /// No description provided for @specOtherRequired.
+  ///
+  /// In ru, this message translates to:
+  /// **'Укажите вашу специализацию'**
+  String get specOtherRequired;
+
   /// No description provided for @labelCity.
   ///
   /// In ru, this message translates to:
