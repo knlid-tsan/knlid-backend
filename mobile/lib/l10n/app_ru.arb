@@ -124,8 +124,8 @@
   "assignedEmptyActiveHint": "Здесь появятся лиды, назначенные вам",
   "noExecutor": "Исполнитель не назначен",
 
-  "leadTypeOwner": "Продажа",
-  "leadTypeBuyer": "Покупка",
+  "leadTypeOwner": "Продавец",
+  "leadTypeBuyer": "Покупатель",
   "leadTypeMortgage": "Ипотека",
   "leadTypeLegal": "Юр. услуга",
 

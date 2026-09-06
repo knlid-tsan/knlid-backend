@@ -315,10 +315,10 @@ class AppLocalizationsKk extends AppLocalizations {
   String get noExecutor => 'Орындаушы тағайындалмаған';
 
   @override
-  String get leadTypeOwner => 'Сату';
+  String get leadTypeOwner => 'Сатушы';
 
   @override
-  String get leadTypeBuyer => 'Сатып алу';
+  String get leadTypeBuyer => 'Сатып алушы';
 
   @override
   String get leadTypeMortgage => 'Ипотека';

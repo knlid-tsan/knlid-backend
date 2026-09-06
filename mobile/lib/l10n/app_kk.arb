@@ -124,8 +124,8 @@
   "assignedEmptyActiveHint": "Сізге тағайындалған лидтер осында пайда болады",
   "noExecutor": "Орындаушы тағайындалмаған",
 
-  "leadTypeOwner": "Сату",
-  "leadTypeBuyer": "Сатып алу",
+  "leadTypeOwner": "Сатушы",
+  "leadTypeBuyer": "Сатып алушы",
   "leadTypeMortgage": "Ипотека",
   "leadTypeLegal": "Заң қызметі",
 

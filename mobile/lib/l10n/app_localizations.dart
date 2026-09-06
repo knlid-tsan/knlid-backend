@@ -689,13 +689,13 @@ abstract class AppLocalizations {
   /// No description provided for @leadTypeOwner.
   ///
   /// In ru, this message translates to:
-  /// **'Продажа'**
+  /// **'Продавец'**
   String get leadTypeOwner;
 
   /// No description provided for @leadTypeBuyer.
   ///
   /// In ru, this message translates to:
-  /// **'Покупка'**
+  /// **'Покупатель'**
   String get leadTypeBuyer;
 
   /// No description provided for @leadTypeMortgage.

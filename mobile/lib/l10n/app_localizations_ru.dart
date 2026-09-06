@@ -313,10 +313,10 @@ class AppLocalizationsRu extends AppLocalizations {
   String get noExecutor => 'Исполнитель не назначен';
 
   @override
-  String get leadTypeOwner => 'Продажа';
+  String get leadTypeOwner => 'Продавец';
 
   @override
-  String get leadTypeBuyer => 'Покупка';
+  String get leadTypeBuyer => 'Покупатель';
 
   @override
   String get leadTypeMortgage => 'Ипотека';

@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 // ─── Labels & colours ────────────────────────────────────────────────────────
 
 const leadTypeLabels = {
-  'owner': 'Продажа',
-  'buyer': 'Покупка',
+  'owner': 'Продавец',
+  'buyer': 'Покупатель',
   'mortgage': 'Ипотека',
   'legal': 'Юр. услуга',
 };

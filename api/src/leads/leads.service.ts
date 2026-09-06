@@ -22,7 +22,7 @@ import {
   ACTIVE_STATUSES,
   TERMINAL_STATUSES,
 } from './enums/lead-status.enum';
-import { LeadType } from './enums/lead-type.enum';
+import { LeadType, leadTypeLabel } from './enums/lead-type.enum';
 import { UsersService } from '../users/users.service';
 import { Specialization, UserRole, UserStatus } from '../users/user.entity';
 import { RewardsService } from '../rewards/rewards.service';
@@ -283,7 +283,7 @@ export class LeadsService {
     await this.notificationsService.send(
       dto.executor_id,
       'Вам назначен лид',
-      `Лид типа "${lead.type}" ожидает вашего подтверждения.`,
+      `Лид типа "${leadTypeLabel(lead.type)}" ожидает вашего подтверждения.`,
       { lead_id: lead.id, action: 'lead_assigned' },
     );
 
@@ -321,7 +321,7 @@ export class LeadsService {
     await this.notificationsService.send(
       lead.author_id,
       'Лид принят',
-      `Исполнитель принял ваш лид типа "${lead.type}".`,
+      `Исполнитель принял ваш лид типа "${leadTypeLabel(lead.type)}".`,
       { lead_id: lead.id, action: 'lead_accepted' },
     );
 
