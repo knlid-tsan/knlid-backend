@@ -46,13 +46,14 @@
   "sourceGallery": "Галерея",
 
   "phoneTitle": "Телефон нөмірін енгізіңіз",
-  "phoneHint": "Сізге WhatsApp арқылы растау коды жіберіледі",
+  "phoneHint": "Сізге SMS растау коды жіберіледі",
   "phoneLabel": "Телефон нөмірі",
   "phoneInvalid": "Дұрыс нөмір енгізіңіз",
+  "phoneKzOnly": "Тек Қазақстан нөмірлері қолжетімді",
 
   "otpTitleLogin": "Кодты енгізіңіз",
   "otpTitleRegister": "Нөмірді растаңыз",
-  "otpHint": "WhatsApp арқылы {phone} нөміріне код жіберілді",
+  "otpHint": "SMS арқылы {phone} нөміріне код жіберілді",
   "@otpHint": {
     "placeholders": {
       "phone": { "type": "String" }

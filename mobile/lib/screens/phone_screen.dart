@@ -157,8 +157,13 @@ class _PhoneScreenState extends State<PhoneScreen> {
                     hintText: '+7 705 000 00 00',
                   ),
                   validator: (v) {
-                    final phone = v?.trim() ?? '';
-                    if (phone.length < 10) return l.phoneInvalid;
+                    final phone = stripPhone(v ?? '');
+                    // Казахстанские мобильные: +7 7XX XXX XX XX → +77XXXXXXXXX
+                    if (!RegExp(r'^\+77\d{9}$').hasMatch(phone)) {
+                      // Полностью введённый, но не-KZ номер — точная подсказка;
+                      // недобранный — общая ошибка формата
+                      return phone.length >= 12 ? l.phoneKzOnly : l.phoneInvalid;
+                    }
                     return null;
                   },
                 ),

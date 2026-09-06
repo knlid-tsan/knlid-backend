@@ -46,13 +46,14 @@
   "sourceGallery": "Галерея",
 
   "phoneTitle": "Введите номер телефона",
-  "phoneHint": "Вам будет отправлен код подтверждения в WhatsApp",
+  "phoneHint": "Вам будет отправлен SMS-код подтверждения",
   "phoneLabel": "Номер телефона",
   "phoneInvalid": "Введите корректный номер",
+  "phoneKzOnly": "Доступны только номера Казахстана",
 
   "otpTitleLogin": "Введите код",
   "otpTitleRegister": "Подтвердите номер",
-  "otpHint": "Код отправлен в WhatsApp на номер {phone}",
+  "otpHint": "Код отправлен по SMS на номер {phone}",
   "@otpHint": {
     "placeholders": {
       "phone": { "type": "String" }

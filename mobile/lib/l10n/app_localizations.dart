@@ -353,7 +353,7 @@ abstract class AppLocalizations {
   /// No description provided for @phoneHint.
   ///
   /// In ru, this message translates to:
-  /// **'Вам будет отправлен код подтверждения в WhatsApp'**
+  /// **'Вам будет отправлен SMS-код подтверждения'**
   String get phoneHint;
 
   /// No description provided for @phoneLabel.
@@ -367,6 +367,12 @@ abstract class AppLocalizations {
   /// In ru, this message translates to:
   /// **'Введите корректный номер'**
   String get phoneInvalid;
+
+  /// No description provided for @phoneKzOnly.
+  ///
+  /// In ru, this message translates to:
+  /// **'Доступны только номера Казахстана'**
+  String get phoneKzOnly;
 
   /// No description provided for @otpTitleLogin.
   ///
@@ -383,7 +389,7 @@ abstract class AppLocalizations {
   /// No description provided for @otpHint.
   ///
   /// In ru, this message translates to:
-  /// **'Код отправлен в WhatsApp на номер {phone}'**
+  /// **'Код отправлен по SMS на номер {phone}'**
   String otpHint(String phone);
 
   /// No description provided for @otpDevHint.

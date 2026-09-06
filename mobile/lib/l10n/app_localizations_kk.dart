@@ -135,13 +135,16 @@ class AppLocalizationsKk extends AppLocalizations {
   String get phoneTitle => 'Телефон нөмірін енгізіңіз';
 
   @override
-  String get phoneHint => 'Сізге WhatsApp арқылы растау коды жіберіледі';
+  String get phoneHint => 'Сізге SMS растау коды жіберіледі';
 
   @override
   String get phoneLabel => 'Телефон нөмірі';
 
   @override
   String get phoneInvalid => 'Дұрыс нөмір енгізіңіз';
+
+  @override
+  String get phoneKzOnly => 'Тек Қазақстан нөмірлері қолжетімді';
 
   @override
   String get otpTitleLogin => 'Кодты енгізіңіз';
@@ -151,7 +154,7 @@ class AppLocalizationsKk extends AppLocalizations {
 
   @override
   String otpHint(String phone) {
-    return 'WhatsApp арқылы $phone нөміріне код жіберілді';
+    return 'SMS арқылы $phone нөміріне код жіберілді';
   }
 
   @override
