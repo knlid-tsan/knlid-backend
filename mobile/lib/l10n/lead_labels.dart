@@ -58,6 +58,8 @@ String leadTypeLabel(AppLocalizations l, String type) {
 
 String leadStatusLabel(AppLocalizations l, String status) {
   switch (status) {
+    case 'pending_verification':
+      return l.leadStatusPendingVerification;
     case 'new':
       return l.leadStatusNew;
     case 'pending_acceptance':

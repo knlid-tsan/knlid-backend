@@ -105,9 +105,9 @@
   "navTariffs": "Тарифы",
   "navProfile": "Профиль",
 
-  "bannerPending": "Верификация на проверке. Пока вы не можете принимать лиды",
+  "bannerPending": "Профиль на проверке, обычно до 1 рабочего дня",
   "bannerRejected": "Верификация отклонена. Загрузите фото заново",
-  "bannerNotVerified": "Вы не верифицированы — не можете принимать лиды",
+  "bannerNotVerified": "Профиль на проверке, обычно до 1 рабочего дня",
   "bannerCta": "Пройти →",
 
   "statsTitle": "СТАТИСТИКА",
@@ -133,6 +133,7 @@
   "leadTypeMortgage": "Ипотека",
   "leadTypeLegal": "Юр. услуга",
 
+  "leadStatusPendingVerification": "Опубликуем после проверки профиля",
   "leadStatusNew": "Ожидает подбора",
   "leadStatusPendingAcceptance": "Ожидает принятия",
   "leadStatusInProgress": "В работе",
@@ -187,6 +188,7 @@
   "openDisputeHint": "Опишите причину спора подробно",
   "verificationRequired": "Требуется верификация",
   "verificationRequiredBody": "Для принятия лидов необходимо пройти верификацию личности.",
+  "acceptAfterVerification": "Доступно после проверки профиля",
 
   "proofAttachedSnack": "Чек прикреплён — ожидаем подтверждения автора",
   "paymentConfirmedSnack": "Получение подтверждено — лид переведён в архив",

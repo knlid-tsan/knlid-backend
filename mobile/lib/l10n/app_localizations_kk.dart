@@ -263,7 +263,7 @@ class AppLocalizationsKk extends AppLocalizations {
 
   @override
   String get bannerPending =>
-      'Верификация тексерілуде. Әзірге лидтерді қабылдай алмайсыз';
+      'Профиль тексерілуде, әдетте 1 жұмыс күніне дейін';
 
   @override
   String get bannerRejected =>
@@ -271,7 +271,7 @@ class AppLocalizationsKk extends AppLocalizations {
 
   @override
   String get bannerNotVerified =>
-      'Сіз верификациядан өтпегенсіз — лидтерді қабылдай алмайсыз';
+      'Профиль тексерілуде, әдетте 1 жұмыс күніне дейін';
 
   @override
   String get bannerCta => 'Өту →';
@@ -337,6 +337,10 @@ class AppLocalizationsKk extends AppLocalizations {
 
   @override
   String get leadTypeLegal => 'Заң қызметі';
+
+  @override
+  String get leadStatusPendingVerification =>
+      'Профиль тексерілген соң жарияланады';
 
   @override
   String get leadStatusNew => 'Таңдауды күтуде';
@@ -477,6 +481,10 @@ class AppLocalizationsKk extends AppLocalizations {
   @override
   String get verificationRequiredBody =>
       'Лидтерді қабылдау үшін жеке басты верификациядан өткізу қажет.';
+
+  @override
+  String get acceptAfterVerification =>
+      'Профиль тексерілгеннен кейін қолжетімді';
 
   @override
   String get proofAttachedSnack =>

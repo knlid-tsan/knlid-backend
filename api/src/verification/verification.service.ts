@@ -121,10 +121,32 @@ export class VerificationService {
       actorId: moderatorId,
     });
 
+    // Публикуем лиды, созданные до верификации: pending_verification → new
+    // (+ строка истории на каждый), уведомление автору — только push
+    const manager = this.usersRepository.manager;
+    const pending: { id: string }[] = await manager.query(
+      `SELECT id FROM leads WHERE author_id = $1 AND status = 'pending_verification'`,
+      [userId],
+    );
+    if (pending.length > 0) {
+      const ids = pending.map((r) => r.id);
+      await manager.query(
+        `UPDATE leads SET status = 'new' WHERE id = ANY($1::uuid[])`,
+        [ids],
+      );
+      await manager.query(
+        `INSERT INTO lead_status_history (lead_id, from_status, to_status, changed_by)
+         SELECT unnest($1::uuid[]), 'pending_verification', 'new', $2`,
+        [ids, moderatorId],
+      );
+    }
+
     await this.notificationsService.send(
       userId,
-      'Верификация пройдена',
-      'Ваш документ подтверждён — вы можете создавать лиды и принимать заявки.',
+      'Профиль подтверждён',
+      pending.length > 0
+        ? 'Профиль подтверждён, ваши лиды опубликованы.'
+        : 'Вы можете создавать лиды и принимать заявки.',
       { action: 'verification_approved' },
     );
 

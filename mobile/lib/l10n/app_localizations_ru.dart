@@ -262,15 +262,14 @@ class AppLocalizationsRu extends AppLocalizations {
   String get navProfile => 'Профиль';
 
   @override
-  String get bannerPending =>
-      'Верификация на проверке. Пока вы не можете принимать лиды';
+  String get bannerPending => 'Профиль на проверке, обычно до 1 рабочего дня';
 
   @override
   String get bannerRejected => 'Верификация отклонена. Загрузите фото заново';
 
   @override
   String get bannerNotVerified =>
-      'Вы не верифицированы — не можете принимать лиды';
+      'Профиль на проверке, обычно до 1 рабочего дня';
 
   @override
   String get bannerCta => 'Пройти →';
@@ -335,6 +334,10 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get leadTypeLegal => 'Юр. услуга';
+
+  @override
+  String get leadStatusPendingVerification =>
+      'Опубликуем после проверки профиля';
 
   @override
   String get leadStatusNew => 'Ожидает подбора';
@@ -474,6 +477,9 @@ class AppLocalizationsRu extends AppLocalizations {
   @override
   String get verificationRequiredBody =>
       'Для принятия лидов необходимо пройти верификацию личности.';
+
+  @override
+  String get acceptAfterVerification => 'Доступно после проверки профиля';
 
   @override
   String get proofAttachedSnack =>

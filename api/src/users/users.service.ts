@@ -27,6 +27,13 @@ export class UsersService {
     return this.usersRepository.find();
   }
 
+  // Активные администраторы (для служебных уведомлений)
+  findAdmins(): Promise<User[]> {
+    return this.usersRepository.find({
+      where: { role: UserRole.ADMIN },
+    });
+  }
+
   // Найти одного по ID
   findOne(id: string): Promise<User | null> {
     return this.usersRepository.findOneBy({ id });

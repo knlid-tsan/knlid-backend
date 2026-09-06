@@ -1,4 +1,7 @@
 export enum LeadStatus {
+  // Лид неверифицированного автора: скрыт от подбора (assign требует NEW),
+  // публикуется автоматически при подтверждении профиля
+  PENDING_VERIFICATION = 'pending_verification',
   NEW = 'new',
   PENDING_ACCEPTANCE = 'pending_acceptance',
   IN_PROGRESS = 'in_progress',
@@ -19,6 +22,8 @@ export const TERMINAL_STATUSES = [
 
 // Статусы, в которых лид считается "активным" — допускают cancel/dispute
 export const ACTIVE_STATUSES = [
+  // учитывается в проверке дублей и допускает отмену автором
+  LeadStatus.PENDING_VERIFICATION,
   LeadStatus.NEW,
   LeadStatus.PENDING_ACCEPTANCE,
   LeadStatus.IN_PROGRESS,

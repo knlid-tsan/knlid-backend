@@ -105,9 +105,9 @@
   "navTariffs": "Тарифтер",
   "navProfile": "Профиль",
 
-  "bannerPending": "Верификация тексерілуде. Әзірге лидтерді қабылдай алмайсыз",
+  "bannerPending": "Профиль тексерілуде, әдетте 1 жұмыс күніне дейін",
   "bannerRejected": "Верификация қабылданбады. Фотоны қайта жүктеңіз",
-  "bannerNotVerified": "Сіз верификациядан өтпегенсіз — лидтерді қабылдай алмайсыз",
+  "bannerNotVerified": "Профиль тексерілуде, әдетте 1 жұмыс күніне дейін",
   "bannerCta": "Өту →",
 
   "statsTitle": "СТАТИСТИКА",
@@ -133,6 +133,7 @@
   "leadTypeMortgage": "Ипотека",
   "leadTypeLegal": "Заң қызметі",
 
+  "leadStatusPendingVerification": "Профиль тексерілген соң жарияланады",
   "leadStatusNew": "Таңдауды күтуде",
   "leadStatusPendingAcceptance": "Қабылдауды күтуде",
   "leadStatusInProgress": "Жұмыста",
@@ -187,6 +188,7 @@
   "openDisputeHint": "Дау себебін толық сипаттаңыз",
   "verificationRequired": "Верификация қажет",
   "verificationRequiredBody": "Лидтерді қабылдау үшін жеке басты верификациядан өткізу қажет.",
+  "acceptAfterVerification": "Профиль тексерілгеннен кейін қолжетімді",
 
   "proofAttachedSnack": "Түбіртек тіркелді — автордың растауын күтудеміз",
   "paymentConfirmedSnack": "Алынғаны расталды — лид мұрағатқа жіберілді",

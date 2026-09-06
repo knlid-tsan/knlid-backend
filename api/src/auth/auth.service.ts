@@ -21,6 +21,7 @@ import { UserConsent } from '../consents/user-consent.entity';
 import { ConsentType } from '../consents/consent-type.enum';
 import { OtpSenderService } from '../otp-sender/otp-sender.service';
 import { Specialization } from '../users/user.entity';
+import { NotificationsService } from '../notifications/notifications.service';
 
 const OTP_TTL_MINUTES = 5;
 const OTP_REQUEST_LIMIT = 3;
@@ -41,6 +42,7 @@ export class AuthService {
     private jwtService: JwtService,
     private auditService: AuditService,
     private otpSender: OtpSenderService,
+    private notificationsService: NotificationsService,
   ) {}
 
   async requestOtp(phone: string): Promise<{ message: string }> {
@@ -236,6 +238,26 @@ export class AuthService {
       actorId: user.id,
       metadata: { phone: user.phone, specialization: user.specialization },
     });
+
+    // Онбординг: администраторы узнают о новой регистрации, чтобы
+    // проверить профиль (обещание в приложении — до 1 рабочего дня)
+    const admins = await this.usersService.findAdmins();
+    await Promise.all(
+      admins.map((admin) =>
+        this.notificationsService
+          .send(
+            admin.id,
+            'Новая регистрация',
+            `${user.full_name} — ${
+              user.specialization === Specialization.OTHER
+                ? (user.specialization_other ?? 'другое')
+                : (user.specialization ?? '—')
+            }, ${user.city ?? '—'}. Требуется проверка профиля.`,
+            { action: 'user_registered', user_id: user.id },
+          )
+          .catch(() => undefined),
+      ),
+    );
 
     const access_token = await this.jwtService.signAsync({
       sub: user.id,

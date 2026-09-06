@@ -74,6 +74,7 @@ class _LeadDetailScreenState extends State<LeadDetailScreen> {
   Lead? _lead;
   LeadTariff? _tariff;
   String _userId = '';
+  String _myStatus = 'active'; // статус текущего юзера (для гейта «Принять»)
   bool _loading = true;
   String? _error;
   bool _actionLoading = false;
@@ -114,6 +115,14 @@ class _LeadDetailScreenState extends State<LeadDetailScreen> {
       if (_userId == lead.executorId) {
         try {
           tariff = await _service.getTariff(widget.leadId);
+        } catch (_) {}
+        // Статус юзера гейтит кнопку «Принять» (неверифицированным —
+        // неактивна с подписью, а не ошибка после нажатия)
+        try {
+          final me = await ApiClient().dio.get('/users/me');
+          _myStatus =
+              (me.data as Map<String, dynamic>)['status'] as String? ??
+                  'active';
         } catch (_) {}
       }
       if (mounted) {
@@ -695,6 +704,41 @@ class _LeadDetailScreenState extends State<LeadDetailScreen> {
 
     if (_isExecutor) {
       if (status == 'pending_acceptance') {
+        // Неверифицированный исполнитель: «Принять» неактивна с подписью
+        if (_myStatus != 'active') {
+          return _ActionBar(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(children: [
+                  Expanded(
+                    child: FilledButton(
+                      onPressed: null,
+                      style: FilledButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: Text(l.btnAccept),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  _ActionBtn(
+                      label: l.btnDecline, onTap: _onDecline, danger: true),
+                ]),
+                const SizedBox(height: 8),
+                Text(
+                  l.acceptAfterVerification,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                      fontSize: 12, color: AppColors.textSecondary),
+                ),
+              ],
+            ),
+          );
+        }
         return _ActionBar(
           child: Row(children: [
             _ActionBtn(label: l.btnAccept, onTap: _onAccept, filled: true),

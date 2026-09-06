@@ -109,13 +109,21 @@ export class LeadsService {
   ) {}
 
   async create(dto: CreateLeadDto, authorId: string, authorRole: UserRole, ip?: string) {
-    // Блок 1: только верифицированные пользователи могут создавать лиды
+    // Онбординг: неверифицированный (new/pending) создаёт лид со статусом
+    // pending_verification — он скрыт от подбора и публикуется автоматически
+    // после подтверждения профиля. Заблокированные/архивные — нельзя.
+    let initialStatus = LeadStatus.NEW;
     if (!PRIVILEGED_ROLES.includes(authorRole)) {
       const author = await this.usersService.findOne(authorId);
-      if (!author || author.status !== UserStatus.ACTIVE) {
-        throw new ForbiddenException(
-          'Только верифицированные пользователи могут создавать лиды',
-        );
+      if (!author) throw new ForbiddenException('Пользователь не найден');
+      if (
+        author.status === UserStatus.BLOCKED ||
+        author.status === UserStatus.ARCHIVED
+      ) {
+        throw new ForbiddenException('Аккаунт не может создавать лиды');
+      }
+      if (author.status !== UserStatus.ACTIVE) {
+        initialStatus = LeadStatus.PENDING_VERIFICATION;
       }
     }
 
@@ -152,7 +160,7 @@ export class LeadsService {
         client_id: client.id,
         client,
         author_id: authorId,
-        status: LeadStatus.NEW,
+        status: initialStatus,
         is_duplicate: isDuplicate,
         duplicate_of_id: isDuplicate ? duplicate!.id : null,
         client_consent_confirmed: dto.client_consent_confirmed,
@@ -163,7 +171,7 @@ export class LeadsService {
         manager.create(LeadStatusHistory, {
           lead_id: lead.id,
           from_status: null,
-          to_status: LeadStatus.NEW,
+          to_status: initialStatus,
           changed_by: authorId,
           comment: null,
         }),

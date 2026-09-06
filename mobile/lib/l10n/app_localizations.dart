@@ -593,7 +593,7 @@ abstract class AppLocalizations {
   /// No description provided for @bannerPending.
   ///
   /// In ru, this message translates to:
-  /// **'Верификация на проверке. Пока вы не можете принимать лиды'**
+  /// **'Профиль на проверке, обычно до 1 рабочего дня'**
   String get bannerPending;
 
   /// No description provided for @bannerRejected.
@@ -605,7 +605,7 @@ abstract class AppLocalizations {
   /// No description provided for @bannerNotVerified.
   ///
   /// In ru, this message translates to:
-  /// **'Вы не верифицированы — не можете принимать лиды'**
+  /// **'Профиль на проверке, обычно до 1 рабочего дня'**
   String get bannerNotVerified;
 
   /// No description provided for @bannerCta.
@@ -733,6 +733,12 @@ abstract class AppLocalizations {
   /// In ru, this message translates to:
   /// **'Юр. услуга'**
   String get leadTypeLegal;
+
+  /// No description provided for @leadStatusPendingVerification.
+  ///
+  /// In ru, this message translates to:
+  /// **'Опубликуем после проверки профиля'**
+  String get leadStatusPendingVerification;
 
   /// No description provided for @leadStatusNew.
   ///
@@ -1003,6 +1009,12 @@ abstract class AppLocalizations {
   /// In ru, this message translates to:
   /// **'Для принятия лидов необходимо пройти верификацию личности.'**
   String get verificationRequiredBody;
+
+  /// No description provided for @acceptAfterVerification.
+  ///
+  /// In ru, this message translates to:
+  /// **'Доступно после проверки профиля'**
+  String get acceptAfterVerification;
 
   /// No description provided for @proofAttachedSnack.
   ///

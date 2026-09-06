@@ -8,7 +8,7 @@ import 'lead_detail_screen.dart';
 
 // closed_success здесь быть не должно: успешно закрытый лид — завершённый
 const _kActiveStatuses = {
-  'new', 'pending_acceptance', 'in_progress',
+  'pending_verification', 'new', 'pending_acceptance', 'in_progress',
   'contract', 'deposit', 'dispute',
 };
 
