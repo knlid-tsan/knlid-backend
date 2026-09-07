@@ -3,16 +3,8 @@ import java.io.FileInputStream
 
 plugins {
     id("com.android.application")
-    // Firebase (FCM): применяется ниже только при наличии google-services.json
-    id("com.google.gms.google-services") version "4.4.2" apply false
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
-}
-
-// google-services.json кладётся в android/app/; без него плагин не применяем,
-// чтобы сборка не падала до подключения Firebase
-if (file("google-services.json").exists()) {
-    apply(plugin = "com.google.gms.google-services")
 }
 
 val keystorePropertiesFile = rootProject.file("key.properties")

@@ -491,7 +491,6 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				CODE_SIGN_ENTITLEMENTS = Runner/Runner.entitlements;
 				DEVELOPMENT_TEAM = UNRWMRBQXW;
 				PRODUCT_BUNDLE_IDENTIFIER = kz.knlid.mobile;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -675,7 +674,6 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				CODE_SIGN_ENTITLEMENTS = Runner/Runner.entitlements;
 				DEVELOPMENT_TEAM = UNRWMRBQXW;
 				PRODUCT_BUNDLE_IDENTIFIER = kz.knlid.mobile;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -699,7 +697,6 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				CODE_SIGN_ENTITLEMENTS = Runner/Runner.entitlements;
 				DEVELOPMENT_TEAM = UNRWMRBQXW;
 				PRODUCT_BUNDLE_IDENTIFIER = kz.knlid.mobile;
 				PRODUCT_NAME = "$(TARGET_NAME)";

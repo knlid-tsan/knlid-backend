@@ -7,7 +7,6 @@ import '../l10n/app_localizations.dart';
 import '../l10n/lead_labels.dart';
 import '../main.dart';
 import '../services/api_client.dart';
-import '../services/push_service.dart';
 import '../services/phone_formatter.dart';
 import '../config.dart';
 import '../theme/app_colors.dart';
@@ -327,7 +326,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _logout() async {
-    await PushService.instance.unregister();
     await _client.clearToken();
     if (!mounted) return;
     Navigator.pushNamedAndRemoveUntil(context, '/phone', (r) => false);
