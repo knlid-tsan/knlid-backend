@@ -202,6 +202,13 @@ export class UsersService {
     const user = await this.usersRepository.findOneBy({ id: userId });
     if (!user) throw new NotFoundException('Пользователь не найден');
 
+    // Демо-аккаунты для ревью App Store / Google Play удалять нельзя:
+    // ревьюеры входят под ними по фиксированному коду
+    const DEMO_PHONES = ['+77010000000', '+77010000001'];
+    if (DEMO_PHONES.includes(user.phone)) {
+      throw new ConflictException('Демо-аккаунт нельзя удалить');
+    }
+
     // Block if user has active leads as executor (not archived/cancelled/closed)
     const [{ cnt }] = await manager.query<[{ cnt: string }]>(
       `SELECT COUNT(*)::int AS cnt FROM leads

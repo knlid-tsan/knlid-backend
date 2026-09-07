@@ -7,12 +7,14 @@ import '../l10n/app_localizations.dart';
 import '../l10n/lead_labels.dart';
 import '../main.dart';
 import '../services/api_client.dart';
+import '../services/push_service.dart';
 import '../services/phone_formatter.dart';
 import '../config.dart';
 import '../theme/app_colors.dart';
 import 'verification_screen.dart';
 import 'payment_form_screen.dart';
 import 'edit_profile_screen.dart';
+import '../services/error_text.dart';
 
 // ─── Screen ──────────────────────────────────────────────────────────────────
 
@@ -83,7 +85,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       final msg = data is Map ? data['message'] : null;
       setState(() => _error = msg is String ? msg : 'Ошибка ${e.response?.statusCode ?? "сети"}');
     } catch (e) {
-      setState(() => _error = e.toString());
+      setState(() => _error = humanError(e));
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -325,6 +327,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _logout() async {
+    await PushService.instance.unregister();
     await _client.clearToken();
     if (!mounted) return;
     Navigator.pushNamedAndRemoveUntil(context, '/phone', (r) => false);
@@ -477,19 +480,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     textAlign: TextAlign.center,
                   ),
                 ],
-                if (user['avatar_url'] == null) ...[
-                  const SizedBox(height: 6),
-                  TextButton(
-                    onPressed: _avatarUploading ? null : _pickAvatar,
-                    style: TextButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                    ),
-                    child: Text(
-                      l.btnAddPhoto,
-                      style: const TextStyle(fontSize: 13, color: AppColors.primary),
-                    ),
+                const SizedBox(height: 6),
+                TextButton(
+                  onPressed: _avatarUploading ? null : _pickAvatar,
+                  style: TextButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                   ),
-                ],
+                  child: Text(
+                    // Явное действие и при уже загруженном фото
+                    user['avatar_url'] == null ? l.btnAddPhoto : l.btnChangePhoto,
+                    style: const TextStyle(fontSize: 13, color: AppColors.primary),
+                  ),
+                ),
               ],
             ),
           ),

@@ -27,6 +27,7 @@
   "btnConfirmPayment": "Алынғанын растау",
   "btnAttachProof": "Түбіртек тіркеу",
   "btnAddPhoto": "Фото қосу",
+  "btnChangePhoto": "Фотоны өзгерту",
   "btnEditProfile": "Профильді өңдеу",
   "btnSelectCompany": "Компанияны таңдау",
   "btnChangeCompany": "Компанияны ауыстыру",
@@ -104,6 +105,9 @@
   "navAssignedShort": "Жұмыста",
   "navTariffs": "Тарифтер",
   "navProfile": "Профиль",
+  "adminUseWebTitle": "Әкімші панелі — вебте",
+  "adminUseWebBody": "Сіз әкімші ретінде кірдіңіз. Платформаны басқару admin.lid.kn.kz веб-кабинетінде қолжетімді",
+  "adminOpenWeb": "admin.lid.kn.kz ашу",
 
   "bannerPending": "Профиль тексерілуде, әдетте 1 жұмыс күніне дейін",
   "bannerRejected": "Верификация қабылданбады. Фотоны қайта жүктеңіз",

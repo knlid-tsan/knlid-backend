@@ -11,6 +11,7 @@ import 'lead_detail_screen.dart';
 import 'create_lead_screen.dart';
 import 'support_chat_screen.dart';
 import 'notifications_screen.dart';
+import '../services/error_text.dart';
 
 class HomeScreen extends StatefulWidget {
   final VoidCallback? onLeadCreated;
@@ -78,7 +79,7 @@ class _HomeScreenState extends State<HomeScreen> {
       }
     } catch (e) {
       if (mounted) setState(() {
-        _error = e.toString();
+        _error = humanError(e);
         _loading = false;
       });
     }

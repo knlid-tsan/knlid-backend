@@ -248,6 +248,12 @@ abstract class AppLocalizations {
   /// **'Добавить фото'**
   String get btnAddPhoto;
 
+  /// No description provided for @btnChangePhoto.
+  ///
+  /// In ru, this message translates to:
+  /// **'Изменить фото'**
+  String get btnChangePhoto;
+
   /// No description provided for @btnEditProfile.
   ///
   /// In ru, this message translates to:
@@ -563,7 +569,7 @@ abstract class AppLocalizations {
   /// No description provided for @navCreatedShort.
   ///
   /// In ru, this message translates to:
-  /// **'Переданные'**
+  /// **'Передано'**
   String get navCreatedShort;
 
   /// No description provided for @navAssigned.
@@ -589,6 +595,24 @@ abstract class AppLocalizations {
   /// In ru, this message translates to:
   /// **'Профиль'**
   String get navProfile;
+
+  /// No description provided for @adminUseWebTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Админ-панель — в вебе'**
+  String get adminUseWebTitle;
+
+  /// No description provided for @adminUseWebBody.
+  ///
+  /// In ru, this message translates to:
+  /// **'Вы вошли как администратор. Управление платформой доступно в веб-кабинете admin.lid.kn.kz'**
+  String get adminUseWebBody;
+
+  /// No description provided for @adminOpenWeb.
+  ///
+  /// In ru, this message translates to:
+  /// **'Открыть admin.lid.kn.kz'**
+  String get adminOpenWeb;
 
   /// No description provided for @bannerPending.
   ///

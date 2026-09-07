@@ -27,6 +27,7 @@
   "btnConfirmPayment": "Подтвердить получение",
   "btnAttachProof": "Прикрепить чек",
   "btnAddPhoto": "Добавить фото",
+  "btnChangePhoto": "Изменить фото",
   "btnEditProfile": "Редактировать профиль",
   "btnSelectCompany": "Выбрать компанию",
   "btnChangeCompany": "Сменить компанию",
@@ -99,11 +100,14 @@
 
   "navHome": "Главная",
   "navCreated": "Переданные",
-  "navCreatedShort": "Переданные",
+  "navCreatedShort": "Передано",
   "navAssigned": "Исполняю",
   "navAssignedShort": "Исполняю",
   "navTariffs": "Тарифы",
   "navProfile": "Профиль",
+  "adminUseWebTitle": "Админ-панель — в вебе",
+  "adminUseWebBody": "Вы вошли как администратор. Управление платформой доступно в веб-кабинете admin.lid.kn.kz",
+  "adminOpenWeb": "Открыть admin.lid.kn.kz",
 
   "bannerPending": "Профиль на проверке, обычно до 1 рабочего дня",
   "bannerRejected": "Верификация отклонена. Загрузите фото заново",

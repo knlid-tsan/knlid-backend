@@ -39,6 +39,8 @@ dependencies:
   url_launcher: ^6.3.1
   intl: any
   image_cropper: ^12.2.1
+  firebase_core: ^4.14.0
+  firebase_messaging: ^16.6.0
 
 dev_dependencies:
   flutter_test:

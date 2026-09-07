@@ -5,6 +5,7 @@ import '../services/leads_service.dart';
 import '../theme/app_colors.dart';
 import 'lead_card.dart';
 import 'lead_detail_screen.dart';
+import '../services/error_text.dart';
 
 // closed_success здесь быть не должно: успешно закрытый лид — завершённый
 const _kActiveStatuses = {
@@ -41,7 +42,7 @@ class _LeadsCreatedScreenState extends State<LeadsCreatedScreen> {
       final leads = await _service.getMyCreated();
       setState(() => _leads = leads);
     } catch (e) {
-      setState(() => _error = e.toString());
+      setState(() => _error = humanError(e));
     } finally {
       if (mounted) setState(() => _loading = false);
     }

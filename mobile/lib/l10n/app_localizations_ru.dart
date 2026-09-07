@@ -84,6 +84,9 @@ class AppLocalizationsRu extends AppLocalizations {
   String get btnAddPhoto => 'Добавить фото';
 
   @override
+  String get btnChangePhoto => 'Изменить фото';
+
+  @override
   String get btnEditProfile => 'Редактировать профиль';
 
   @override
@@ -247,7 +250,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get navCreated => 'Переданные';
 
   @override
-  String get navCreatedShort => 'Переданные';
+  String get navCreatedShort => 'Передано';
 
   @override
   String get navAssigned => 'Исполняю';
@@ -260,6 +263,16 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get navProfile => 'Профиль';
+
+  @override
+  String get adminUseWebTitle => 'Админ-панель — в вебе';
+
+  @override
+  String get adminUseWebBody =>
+      'Вы вошли как администратор. Управление платформой доступно в веб-кабинете admin.lid.kn.kz';
+
+  @override
+  String get adminOpenWeb => 'Открыть admin.lid.kn.kz';
 
   @override
   String get bannerPending => 'Профиль на проверке, обычно до 1 рабочего дня';

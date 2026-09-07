@@ -1,5 +1,7 @@
 import {
+  Body,
   Controller,
+  Delete,
   Get,
   Post,
   Param,
@@ -10,6 +12,7 @@ import {
 import { Request } from 'express';
 import { JwtAuthGuard, AuthenticatedUser } from '../auth/jwt-auth.guard';
 import { NotificationsService } from './notifications.service';
+import { RegisterDeviceDto } from './dto/register-device.dto';
 
 interface AuthenticatedRequest extends Request {
   user: AuthenticatedUser;
@@ -19,6 +22,28 @@ interface AuthenticatedRequest extends Request {
 @Controller('notifications')
 export class NotificationsController {
   constructor(private notificationsService: NotificationsService) {}
+
+  // POST /notifications/device — регистрация FCM-токена устройства
+  @Post('device')
+  registerDevice(
+    @Body() dto: RegisterDeviceDto,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.notificationsService.registerDevice(
+      req.user.sub,
+      dto.token,
+      dto.platform,
+    );
+  }
+
+  // DELETE /notifications/device — отвязать токен (logout)
+  @Delete('device')
+  removeDevice(
+    @Body() dto: RegisterDeviceDto,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.notificationsService.removeDevice(req.user.sub, dto.token);
+  }
 
   @Get('my')
   findMy(

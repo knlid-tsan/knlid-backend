@@ -6,7 +6,9 @@
 		<string>Камера нужна для фотографирования себя с удостоверением личности при верификации, а также для обновления фото профиля.</string>
 		<key>NSPhotoLibraryUsageDescription</key>
 		<string>Доступ к фотографиям нужен для выбора фото профиля и загрузки фото для верификации.</string>
-		<key>CADisableMinimumFrameDurationOnPhone</key>
+		<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
+	<key>CADisableMinimumFrameDurationOnPhone</key>
 		<true/>
 		<key>CFBundleDevelopmentRegion</key>
 		<string>$(DEVELOPMENT_LANGUAGE)</string>

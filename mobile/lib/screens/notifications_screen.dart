@@ -4,6 +4,7 @@ import '../models/app_notification.dart';
 import '../services/notifications_service.dart';
 import '../theme/app_colors.dart';
 import 'lead_detail_screen.dart';
+import '../services/error_text.dart';
 
 class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({super.key});
@@ -43,7 +44,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       });
     } catch (e) {
       if (mounted) setState(() {
-        _error = e.toString();
+        _error = humanError(e);
         _loading = false;
       });
     }

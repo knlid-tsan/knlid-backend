@@ -124,16 +124,17 @@ class AppTheme {
             }
             return const IconThemeData(color: AppColors.textSecondary);
           }),
+          // 11px: пять вкладок на узких экранах — 12px переносил «Переданные»
           labelTextStyle: WidgetStateProperty.resolveWith((states) {
             if (states.contains(WidgetState.selected)) {
               return const TextStyle(
-                fontSize: 12,
+                fontSize: 11,
                 fontWeight: FontWeight.w600,
                 color: AppColors.primary,
               );
             }
             return const TextStyle(
-              fontSize: 12,
+              fontSize: 11,
               color: AppColors.textSecondary,
             );
           }),

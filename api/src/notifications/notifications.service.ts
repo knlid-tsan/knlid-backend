@@ -2,6 +2,7 @@ import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Notification } from './notification.entity';
+import { DeviceToken } from './device-token.entity';
 import { NOTIFICATION_PROVIDER } from './notification-provider.interface';
 import type { NotificationProvider } from './notification-provider.interface';
 
@@ -10,9 +11,30 @@ export class NotificationsService {
   constructor(
     @InjectRepository(Notification)
     private notificationsRepository: Repository<Notification>,
+    @InjectRepository(DeviceToken)
+    private deviceTokensRepository: Repository<DeviceToken>,
     @Inject(NOTIFICATION_PROVIDER)
     private provider: NotificationProvider,
   ) {}
+
+  /** Регистрация/обновление FCM-токена устройства (upsert по токену). */
+  async registerDevice(
+    userId: string,
+    token: string,
+    platform: string,
+  ): Promise<{ ok: true }> {
+    await this.deviceTokensRepository.upsert(
+      { user_id: userId, token, platform },
+      ['token'],
+    );
+    return { ok: true };
+  }
+
+  /** Удаление токена устройства (logout). */
+  async removeDevice(userId: string, token: string): Promise<{ ok: true }> {
+    await this.deviceTokensRepository.delete({ user_id: userId, token });
+    return { ok: true };
+  }
 
   async send(
     userId: string,

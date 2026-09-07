@@ -11,6 +11,7 @@ import '../services/phone_formatter.dart';
 import '../config.dart';
 import '../theme/app_colors.dart';
 import 'verification_screen.dart';
+import '../services/error_text.dart';
 
 String _resolveFileUrl(String base, String key) {
   if (key.startsWith('http://') || key.startsWith('https://')) return key;
@@ -45,17 +46,7 @@ class _ThousandsFormatter extends TextInputFormatter {
   }
 }
 
-String _extractError(Object e) {
-  if (e is DioException) {
-    final data = e.response?.data;
-    if (data is Map) {
-      final msg = data['message'];
-      if (msg is String) return msg;
-    }
-    return 'Ошибка ${e.response?.statusCode ?? "сети"}';
-  }
-  return e.toString();
-}
+String _extractError(Object e) => humanError(e);
 
 // ─── Screen ──────────────────────────────────────────────────────────────────
 

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../l10n/app_localizations.dart';
 import '../services/api_client.dart';
+import '../services/push_service.dart';
 import '../theme/app_colors.dart';
 import 'home_screen.dart';
 import 'leads_created_screen.dart';
@@ -30,6 +32,8 @@ class _MainScreenState extends State<MainScreen> {
   void initState() {
     super.initState();
     _loadUserInfo();
+    // Пуши: разрешение + регистрация FCM-токена (безопасно без Firebase-конфигов)
+    PushService.instance.init();
   }
 
   Future<void> _loadUserInfo() async {
@@ -90,6 +94,64 @@ class _MainScreenState extends State<MainScreen> {
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context)!;
+
+    // Администратор: мобильное приложение — для специалистов и компаний,
+    // вместо каскада 403 показываем понятную заглушку с ссылкой на веб
+    if (_role == 'admin') {
+      return Scaffold(
+        backgroundColor: AppColors.background,
+        body: SafeArea(
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 32),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const Icon(Icons.admin_panel_settings_outlined,
+                      size: 64, color: AppColors.textSecondary),
+                  const SizedBox(height: 20),
+                  Text(
+                    l.adminUseWebTitle,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textPrimary),
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    l.adminUseWebBody,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                        fontSize: 14, color: AppColors.textSecondary),
+                  ),
+                  const SizedBox(height: 28),
+                  FilledButton(
+                    onPressed: () =>
+                        launchUrl(Uri.parse('https://admin.lid.kn.kz')),
+                    child: Text(l.adminOpenWeb),
+                  ),
+                  const SizedBox(height: 12),
+                  OutlinedButton(
+                    onPressed: () async {
+                      await PushService.instance.unregister();
+                      await ApiClient().clearToken();
+                      if (context.mounted) {
+                        Navigator.pushNamedAndRemoveUntil(
+                            context, '/phone', (r) => false);
+                      }
+                    },
+                    child: Text(l.btnLogout),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       body: Column(
         children: [

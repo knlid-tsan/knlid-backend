@@ -5,6 +5,7 @@ import '../models/city.dart';
 import '../services/api_client.dart';
 import '../services/auth_service.dart';
 import '../theme/app_colors.dart';
+import '../services/error_text.dart';
 
 class RegisterScreen extends StatefulWidget {
   final String phone;
@@ -50,7 +51,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       final cities = await _authService.getCities();
       if (mounted) setState(() => _cities = cities);
     } catch (e) {
-      if (mounted) setState(() => _error = e.toString());
+      if (mounted) setState(() => _error = humanError(e));
     } finally {
       if (mounted) setState(() => _loadingCities = false);
     }
@@ -88,7 +89,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       if (!mounted) return;
       Navigator.pushNamedAndRemoveUntil(context, '/home', (r) => false);
     } catch (e) {
-      setState(() => _error = e.toString());
+      setState(() => _error = humanError(e));
     } finally {
       if (mounted) setState(() => _submitting = false);
     }

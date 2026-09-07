@@ -84,6 +84,9 @@ class AppLocalizationsKk extends AppLocalizations {
   String get btnAddPhoto => 'Фото қосу';
 
   @override
+  String get btnChangePhoto => 'Фотоны өзгерту';
+
+  @override
   String get btnEditProfile => 'Профильді өңдеу';
 
   @override
@@ -260,6 +263,16 @@ class AppLocalizationsKk extends AppLocalizations {
 
   @override
   String get navProfile => 'Профиль';
+
+  @override
+  String get adminUseWebTitle => 'Әкімші панелі — вебте';
+
+  @override
+  String get adminUseWebBody =>
+      'Сіз әкімші ретінде кірдіңіз. Платформаны басқару admin.lid.kn.kz веб-кабинетінде қолжетімді';
+
+  @override
+  String get adminOpenWeb => 'admin.lid.kn.kz ашу';
 
   @override
   String get bannerPending =>

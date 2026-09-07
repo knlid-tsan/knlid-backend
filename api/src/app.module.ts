@@ -25,6 +25,7 @@ import { AuditModule } from './audit/audit.module';
 import { AuditLog } from './audit/audit-log.entity';
 import { NotificationsModule } from './notifications/notifications.module';
 import { Notification } from './notifications/notification.entity';
+import { DeviceToken } from './notifications/device-token.entity';
 import { VerificationModule } from './verification/verification.module';
 import { CitiesModule } from './cities/cities.module';
 import { City } from './cities/city.entity';
@@ -73,6 +74,7 @@ import { UserConsent } from './consents/user-consent.entity';
         Dispute,
         AuditLog,
         Notification,
+    DeviceToken,
         City,
         Company,
         CompanyMembership,
