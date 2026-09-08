@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../l10n/app_localizations.dart';
 import '../services/api_client.dart';
@@ -181,27 +182,31 @@ class _OtpScreenState extends State<OtpScreen> {
               ),
               const SizedBox(height: 20),
 
-              // Dev hint
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFFFBEB),
-                  border: Border.all(color: const Color(0xFFFCD34D)),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.info_outline, size: 16, color: Color(0xFF92400E)),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        l.otpDevHint,
-                        style: const TextStyle(fontSize: 12, color: Color(0xFF92400E)),
+              // Подсказка про код в логах — только для debug-сборок,
+              // в release пользователи получают SMS
+              if (kDebugMode) ...[
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFFBEB),
+                    border: Border.all(color: const Color(0xFFFCD34D)),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.info_outline, size: 16, color: Color(0xFF92400E)),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          l.otpDevHint,
+                          style: const TextStyle(fontSize: 12, color: Color(0xFF92400E)),
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
+                const SizedBox(height: 4),
+              ],
 
               const SizedBox(height: 24),
               TextFormField(
