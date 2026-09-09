@@ -26,6 +26,7 @@ interface LeadsResponse {
 }
 
 const STATUS_LABELS: Record<string, string> = {
+  pending_verification: 'Ждёт проверки профиля',
   new: 'Новый',
   pending_acceptance: 'Ожидает принятия',
   in_progress: 'В работе',
@@ -38,6 +39,7 @@ const STATUS_LABELS: Record<string, string> = {
 };
 
 const STATUS_COLORS: Record<string, string> = {
+  pending_verification: 'bg-orange-100 text-orange-800',
   new: 'bg-yellow-100 text-yellow-800',
   pending_acceptance: 'bg-yellow-100 text-yellow-800',
   in_progress: 'bg-blue-100 text-blue-800',
@@ -76,6 +78,28 @@ export default function LeadsPage() {
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  // Отметка прошлого визита в раздел: лиды новее неё показываем как «непрочитанные»
+  const [lastSeenAt, setLastSeenAt] = useState<string | null>(null);
+  const [seenLoaded, setSeenLoaded] = useState(false);
+
+  useEffect(() => {
+    api.post<{ previous_viewed_at: string | null }>('/admin/sections/leads/seen')
+      .then((d) => {
+        setLastSeenAt(d.previous_viewed_at);
+        // бейдж в меню обнуляется сразу, не дожидаясь минутного поллинга
+        window.dispatchEvent(new Event('moderation-counts-changed'));
+      })
+      .catch(() => {})
+      .finally(() => setSeenLoaded(true));
+  }, []);
+
+  const isUnseen = useCallback(
+    (lead: AdminLeadRow) =>
+      seenLoaded &&
+      (lead.status === 'new' || lead.status === 'pending_verification') &&
+      (lastSeenAt === null || new Date(lead.created_at) > new Date(lastSeenAt)),
+    [seenLoaded, lastSeenAt],
+  );
 
   const fetchLeads = useCallback(async () => {
     setLoading(true);
@@ -211,14 +235,26 @@ export default function LeadsPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
-              {leads.map((lead) => (
+              {leads.map((lead) => {
+                const unseen = isUnseen(lead);
+                return (
                 <tr
                   key={lead.id}
                   onClick={() => router.push(`/leads/${lead.id}`)}
-                  className="hover:bg-gray-50/50 transition-colors cursor-pointer"
+                  className={`hover:bg-gray-50/50 transition-colors cursor-pointer ${
+                    unseen ? 'font-semibold bg-blue-50/40' : ''
+                  }`}
                 >
                   <td className="px-4 py-3 text-gray-900 whitespace-nowrap font-medium">
-                    {TYPE_LABELS[lead.type] ?? lead.type}
+                    <span className="inline-flex items-center gap-2">
+                      {unseen && (
+                        <span
+                          className="w-2 h-2 rounded-full bg-blue-600 flex-shrink-0"
+                          title="Новый с последнего просмотра"
+                        />
+                      )}
+                      {TYPE_LABELS[lead.type] ?? lead.type}
+                    </span>
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap">
                     <span
@@ -245,7 +281,8 @@ export default function LeadsPage() {
                     {formatDate(lead.created_at)}
                   </td>
                 </tr>
-              ))}
+                );
+              })}
             </tbody>
           </table>
         </div>

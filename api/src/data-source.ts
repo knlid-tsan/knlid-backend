@@ -11,6 +11,7 @@ import { Dispute } from './disputes/entities/dispute.entity';
 import { AuditLog } from './audit/audit-log.entity';
 import { Notification } from './notifications/notification.entity';
 import { DeviceToken } from './notifications/device-token.entity';
+import { AdminSectionView } from './admin/admin-section-view.entity';
 import { City } from './cities/city.entity';
 import { Company } from './companies/entities/company.entity';
 import { CompanyMembership } from './companies/entities/company-membership.entity';
@@ -38,6 +39,7 @@ export const AppDataSource = new DataSource({
     AuditLog,
     Notification,
     DeviceToken,
+    AdminSectionView,
     City,
     Company,
     CompanyMembership,

@@ -3,6 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { AdminController } from './admin.controller';
 import { AdminSeedService } from './admin-seed.service';
 import { User } from '../users/user.entity';
+import { AdminSectionView } from './admin-section-view.entity';
 import { AuthModule } from '../auth/auth.module';
 import { RewardsModule } from '../rewards/rewards.module';
 import { LeadsModule } from '../leads/leads.module';
@@ -13,7 +14,7 @@ import { UsersModule } from '../users/users.module';
 import { CompaniesModule } from '../companies/companies.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([User]), AuthModule, RewardsModule, LeadsModule, CitiesModule, SettingsModule, BanksModule, UsersModule, CompaniesModule],
+  imports: [TypeOrmModule.forFeature([User, AdminSectionView]), AuthModule, RewardsModule, LeadsModule, CitiesModule, SettingsModule, BanksModule, UsersModule, CompaniesModule],
   controllers: [AdminController],
   providers: [AdminSeedService],
 })

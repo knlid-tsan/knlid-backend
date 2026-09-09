@@ -30,6 +30,7 @@ import { JwtAuthGuard, AuthenticatedUser } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
 import { User, UserRole, UserStatus } from '../users/user.entity';
+import { AdminSectionView } from './admin-section-view.entity';
 import { BootstrapAdminDto } from './dto/bootstrap-admin.dto';
 import { UpsertTariffV2Dto } from './dto/upsert-tariff-v2.dto';
 import { UsersService } from '../users/users.service';
@@ -60,6 +61,8 @@ export class AdminController {
   constructor(
     @InjectRepository(User)
     private usersRepository: Repository<User>,
+    @InjectRepository(AdminSectionView)
+    private sectionViewsRepository: Repository<AdminSectionView>,
     private usersService: UsersService,
     private rewardsService: RewardsService,
     private leadsService: LeadsService,
@@ -339,6 +342,54 @@ export class AdminController {
   @Put('settings/payment-deadline')
   async setPaymentDeadline(@Body() dto: UpdatePaymentDeadlineDto, @Req() req: AuthenticatedRequest) {
     return this.settingsService.setPaymentDeadlineDays(dto.days, req.user.sub);
+  }
+
+  // ─── Бейджи «требует внимания» ────────────────────────────────────────────
+
+  // Счётчики для левого меню админки. Лиды считаются от последнего
+  // просмотра раздела этим админом (admin_section_views), споры — все открытые.
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.MODERATOR, UserRole.ADMIN)
+  @Get('attention-counts')
+  async attentionCounts(@Req() req: AuthenticatedRequest) {
+    const view = await this.sectionViewsRepository.findOneBy({
+      admin_id: req.user.sub,
+      section: 'leads',
+    });
+    const [leadsRow] = await this.dataSource.query<[{ cnt: number }]>(
+      `SELECT COUNT(*)::int AS cnt FROM leads
+       WHERE status IN ('new', 'pending_verification')
+         AND ($1::timestamp IS NULL OR created_at > $1::timestamp)`,
+      [view?.viewed_at ?? null],
+    );
+    const [disputesRow] = await this.dataSource.query<[{ cnt: number }]>(
+      `SELECT COUNT(*)::int AS cnt FROM disputes WHERE status = 'open'`,
+    );
+    return { leads: leadsRow.cnt, disputes: disputesRow.cnt };
+  }
+
+  // Отметить раздел просмотренным; возвращает прошлую отметку,
+  // чтобы фронт мог подсветить строки, появившиеся после неё
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.MODERATOR, UserRole.ADMIN)
+  @Post('sections/:section/seen')
+  async markSectionSeen(
+    @Param('section') section: string,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    if (!['leads'].includes(section)) {
+      throw new BadRequestException('Неизвестный раздел');
+    }
+    const prev = await this.sectionViewsRepository.findOneBy({
+      admin_id: req.user.sub,
+      section,
+    });
+    await this.sectionViewsRepository.save({
+      admin_id: req.user.sub,
+      section,
+      viewed_at: new Date(),
+    });
+    return { previous_viewed_at: prev?.viewed_at ?? null };
   }
 
   // ─── Лиды ─────────────────────────────────────────────────────────────────

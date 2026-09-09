@@ -45,6 +45,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [companySupportUnread, setCompanySupportUnread] = useState(0);
   const [verificationsCount, setVerificationsCount] = useState(0);
   const [newCompaniesCount, setNewCompaniesCount] = useState(0);
+  const [newLeadsCount, setNewLeadsCount] = useState(0);
+  const [openDisputesCount, setOpenDisputesCount] = useState(0);
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
@@ -111,6 +113,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         .catch(() => {});
       api.get<{ count: number }>('/moderation/companies/count?status=new')
         .then((d) => setNewCompaniesCount(d.count))
+        .catch(() => {});
+      api.get<{ leads: number; disputes: number }>('/admin/attention-counts')
+        .then((d) => {
+          setNewLeadsCount(d.leads);
+          setOpenDisputesCount(d.disputes);
+        })
         .catch(() => {});
     };
 
@@ -208,6 +216,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               if (item.href === '/support' && supportUnread > 0) badge = supportUnread;
               else if (item.href === '/verifications' && verificationsCount > 0) badge = verificationsCount;
               else if (item.href === '/companies' && newCompaniesCount > 0) badge = newCompaniesCount;
+              else if (item.href === '/leads' && newLeadsCount > 0) badge = newLeadsCount;
+              else if (item.href === '/disputes' && openDisputesCount > 0) badge = openDisputesCount;
               return (
                 <Link
                   key={item.href}

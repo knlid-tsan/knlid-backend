@@ -26,6 +26,7 @@ import { AuditLog } from './audit/audit-log.entity';
 import { NotificationsModule } from './notifications/notifications.module';
 import { Notification } from './notifications/notification.entity';
 import { DeviceToken } from './notifications/device-token.entity';
+import { AdminSectionView } from './admin/admin-section-view.entity';
 import { VerificationModule } from './verification/verification.module';
 import { CitiesModule } from './cities/cities.module';
 import { City } from './cities/city.entity';
@@ -75,6 +76,7 @@ import { UserConsent } from './consents/user-consent.entity';
         AuditLog,
         Notification,
     DeviceToken,
+    AdminSectionView,
         City,
         Company,
         CompanyMembership,
