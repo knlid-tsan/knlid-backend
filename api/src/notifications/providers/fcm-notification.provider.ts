@@ -2,7 +2,7 @@ import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
 import { readFileSync } from 'fs';
-import { App, cert, initializeApp } from 'firebase-admin/app';
+import { App, cert, getApps, initializeApp } from 'firebase-admin/app';
 import { getMessaging, Messaging } from 'firebase-admin/messaging';
 import { NotificationProvider } from '../notification-provider.interface';
 import { DeviceToken } from '../device-token.entity';
@@ -36,9 +36,13 @@ export class FcmNotificationProvider
       const serviceAccount = JSON.parse(readFileSync(keyPath, 'utf8')) as {
         project_id: string;
       };
-      const app: App = initializeApp({
-        credential: cert(keyPath),
-      });
+      // Провайдер может инстанцироваться несколько раз — firebase-admin
+      // допускает лишь один app [DEFAULT], переиспользуем существующий
+      const existing = getApps();
+      const app: App =
+        existing.length > 0
+          ? existing[0]
+          : initializeApp({ credential: cert(keyPath) });
       this.messaging = getMessaging(app);
       this.logger.log(
         `FCM инициализирован (project: ${serviceAccount.project_id})`,
