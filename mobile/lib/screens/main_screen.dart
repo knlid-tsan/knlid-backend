@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../l10n/app_localizations.dart';
 import '../services/api_client.dart';
+import '../services/push_service.dart';
 import '../theme/app_colors.dart';
 import 'home_screen.dart';
 import 'leads_created_screen.dart';
@@ -31,6 +32,8 @@ class _MainScreenState extends State<MainScreen> {
   void initState() {
     super.initState();
     _loadUserInfo();
+    // Пуши: разрешение + регистрация FCM-токена (безопасно без Firebase-конфигов)
+    PushService.instance.init();
   }
 
   Future<void> _loadUserInfo() async {
@@ -132,6 +135,7 @@ class _MainScreenState extends State<MainScreen> {
                   const SizedBox(height: 12),
                   OutlinedButton(
                     onPressed: () async {
+                      await PushService.instance.unregister();
                       await ApiClient().clearToken();
                       if (context.mounted) {
                         Navigator.pushNamedAndRemoveUntil(

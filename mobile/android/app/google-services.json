@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "869774020008",
+    "project_id": "knlid-c5cde",
+    "storage_bucket": "knlid-c5cde.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:869774020008:android:c2778b268e42606a9a219d",
+        "android_client_info": {
+          "package_name": "kz.knlid.mobile"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCa0K2tUzQ3KIUnhvZuiCVzl5sMAHsfWuw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
