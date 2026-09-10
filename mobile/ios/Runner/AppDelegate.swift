@@ -1,5 +1,7 @@
 import Flutter
 import UIKit
+import FirebaseCore
+import FirebaseMessaging
 
 @main
 @objc class AppDelegate: FlutterAppDelegate, FlutterImplicitEngineDelegate {
@@ -7,7 +9,24 @@ import UIKit
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
+    // Firebase конфигурируем нативно до старта Dart-слоя; FlutterFire
+    // переиспользует уже созданный [DEFAULT]-app
+    if FirebaseApp.app() == nil {
+      FirebaseApp.configure()
+    }
+    // Новый UIScene-шаблон Flutter (FlutterImplicitEngineDelegate) не доводит
+    // APNs-регистрацию до firebase_messaging — регистрируемся явно,
+    // токен передаём вручную в didRegisterForRemoteNotificationsWithDeviceToken
+    application.registerForRemoteNotifications()
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
+  }
+
+  override func application(
+    _ application: UIApplication,
+    didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data
+  ) {
+    Messaging.messaging().apnsToken = deviceToken
+    super.application(application, didRegisterForRemoteNotificationsWithDeviceToken: deviceToken)
   }
 
   func didInitializeImplicitFlutterEngine(_ engineBridge: FlutterImplicitEngineBridge) {
