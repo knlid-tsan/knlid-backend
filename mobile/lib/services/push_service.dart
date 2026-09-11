@@ -3,6 +3,7 @@ import 'dart:io' show Platform;
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 import '../screens/lead_detail_screen.dart';
 import 'api_client.dart';
@@ -20,6 +21,16 @@ class PushService {
 
   bool _initialized = false;
   String? _currentToken;
+
+  // Показ уведомлений при открытом приложении (Android): FCM в foreground
+  // не рисует системное уведомление сам — показываем через локальные
+  final _localNotifications = FlutterLocalNotificationsPlugin();
+  static const _androidChannel = AndroidNotificationChannel(
+    'knlid_default',
+    'Уведомления KN.LID',
+    description: 'Лиды, статусы и события платформы',
+    importance: Importance.high,
+  );
 
   /// Вызывать после успешного входа (главный экран).
   Future<void> init() async {
@@ -50,6 +61,29 @@ class PushService {
 
     await _registerToken();
     messaging.onTokenRefresh.listen((_) => _registerToken());
+
+    // Уведомления при открытом приложении:
+    // iOS умеет показывать их системно, Android — только через локальные
+    if (Platform.isIOS) {
+      await messaging.setForegroundNotificationPresentationOptions(
+        alert: true,
+        badge: true,
+        sound: true,
+      );
+    } else {
+      await _localNotifications
+          .resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin>()
+          ?.createNotificationChannel(_androidChannel);
+      await _localNotifications.initialize(
+        settings: const InitializationSettings(
+          android: AndroidInitializationSettings('@mipmap/ic_launcher'),
+        ),
+        onDidReceiveNotificationResponse: (response) =>
+            _openLead(response.payload),
+      );
+      FirebaseMessaging.onMessage.listen(_showForegroundNotification);
+    }
 
     // Тап по пушу, когда приложение было в фоне
     FirebaseMessaging.onMessageOpenedApp.listen(_handleTap);
@@ -86,8 +120,31 @@ class PushService {
     _currentToken = null;
   }
 
+  void _showForegroundNotification(RemoteMessage message) {
+    final notification = message.notification;
+    if (notification == null) return;
+    _localNotifications.show(
+      id: notification.hashCode,
+      title: notification.title,
+      body: notification.body,
+      notificationDetails: NotificationDetails(
+        android: AndroidNotificationDetails(
+          _androidChannel.id,
+          _androidChannel.name,
+          channelDescription: _androidChannel.description,
+          importance: Importance.high,
+          priority: Priority.high,
+        ),
+      ),
+      payload: message.data['lead_id'] as String?,
+    );
+  }
+
   void _handleTap(RemoteMessage message) {
-    final leadId = message.data['lead_id'] as String?;
+    _openLead(message.data['lead_id'] as String?);
+  }
+
+  void _openLead(String? leadId) {
     if (leadId == null || leadId.isEmpty) return;
     navigatorKey.currentState?.push(
       MaterialPageRoute(builder: (_) => LeadDetailScreen(leadId: leadId)),
