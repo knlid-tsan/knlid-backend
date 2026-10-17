@@ -37,6 +37,7 @@ const ACTION_LABEL: Record<string, string> = {
   user_unblocked: 'Пользователь разблокирован',
   user_role_changed: 'Изменена роль',
   user_reverification_requested: 'Сброс верификации',
+  user_verified_manually: 'Верифицирован админом вручную',
   document_uploaded: 'Загружен документ',
   verification_approved: 'Верификация одобрена',
   verification_rejected: 'Верификация отклонена',
@@ -187,6 +188,7 @@ const FILTER_OPTIONS = [
   { value: 'verification_approved', label: 'Верификация: одобрено', group: 'Верификация' },
   { value: 'verification_rejected', label: 'Верификация: отклонено', group: 'Верификация' },
   { value: 'user_reverification_requested', label: 'Сброс верификации', group: 'Верификация' },
+  { value: 'user_verified_manually', label: 'Верификация вручную', group: 'Верификация' },
   // --- Группа: специалисты и компании ---
   { value: 'specialist_created_by_moderator', label: 'Создание специалиста', group: 'Мод. действия' },
   { value: 'company_created_by_moderator', label: 'Создание компании', group: 'Мод. действия' },

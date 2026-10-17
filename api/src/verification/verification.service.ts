@@ -121,8 +121,54 @@ export class VerificationService {
       actorId: moderatorId,
     });
 
-    // Публикуем лиды, созданные до верификации: pending_verification → new
-    // (+ строка истории на каждый), уведомление автору — только push
+    await this.publishPendingLeadsAndNotify(userId, moderatorId);
+
+    return user;
+  }
+
+  // Прямая верификация админом/модератором — без заявки пользователя.
+  // Эффекты те же, что при одобрении из очереди: active, публикация
+  // pending_verification-лидов, push «Профиль подтверждён»
+  async approveManual(userId: string, moderatorId: string): Promise<User> {
+    const user = await this.getUserOrFail(userId);
+
+    if (user.status === UserStatus.ACTIVE) {
+      throw new BadRequestException('Пользователь уже верифицирован');
+    }
+    if (
+      user.status === UserStatus.BLOCKED ||
+      user.status === UserStatus.ARCHIVED
+    ) {
+      throw new BadRequestException(
+        `Нельзя верифицировать пользователя в статусе "${user.status}"`,
+      );
+    }
+
+    user.status = UserStatus.ACTIVE;
+    user.verified_manually = true;
+    user.verification_rejection_reason = null;
+    user.verification_attempts = 0;
+    user.verification_blocked_until = null;
+    await this.usersRepository.save(user);
+
+    await this.auditService.log({
+      entityType: 'user',
+      entityId: userId,
+      action: AuditAction.USER_VERIFIED_MANUALLY,
+      actorId: moderatorId,
+    });
+
+    await this.publishPendingLeadsAndNotify(userId, moderatorId);
+
+    return user;
+  }
+
+  // Публикация лидов, созданных до верификации: pending_verification → new
+  // (+ строка истории на каждый), уведомление автору — только push
+  private async publishPendingLeadsAndNotify(
+    userId: string,
+    moderatorId: string,
+  ): Promise<void> {
     const manager = this.usersRepository.manager;
     const pending: { id: string }[] = await manager.query(
       `SELECT id FROM leads WHERE author_id = $1 AND status = 'pending_verification'`,
@@ -149,8 +195,6 @@ export class VerificationService {
         : 'Вы можете создавать лиды и принимать заявки.',
       { action: 'verification_approved' },
     );
-
-    return user;
   }
 
   async reject(

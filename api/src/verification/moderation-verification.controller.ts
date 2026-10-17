@@ -75,6 +75,15 @@ export class ModerationVerificationController {
     return this.verificationService.approve(userId, req.user.sub);
   }
 
+  // Прямая верификация без заявки (кнопка в карточке пользователя)
+  @Post(':userId/verify-manual')
+  verifyManual(
+    @Param('userId') userId: string,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.verificationService.approveManual(userId, req.user.sub);
+  }
+
   @Post(':userId/reject')
   reject(
     @Param('userId') userId: string,
