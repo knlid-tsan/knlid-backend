@@ -51,6 +51,7 @@ const ACTION_LABEL: Record<string, string> = {
   lead_accepted: 'Лид принят',
   lead_declined: 'Лид отклонён',
   lead_status_changed: 'Смена статуса лида',
+  lead_edited: 'Лид изменён админом',
   view_client_phone: 'Просмотр телефона',
   reward_created: 'Создано вознаграждение',
   reward_paid: 'Вознаграждение выплачено',
@@ -149,6 +150,10 @@ function renderMeta(action: string, meta: Record<string, unknown> | null): strin
     return `${from} → ${to}`;
   }
 
+  if (action === 'lead_edited' && Array.isArray(meta.changes)) {
+    return (meta.changes as string[]).join('; ');
+  }
+
   if (action === 'verification_rejected' && meta.reason) {
     return `Причина: ${meta.reason}`;
   }
@@ -189,6 +194,7 @@ const FILTER_OPTIONS = [
   // --- Группа: лиды ---
   { value: 'lead_created', label: 'Создание лида', group: 'Лиды' },
   { value: 'lead_status_changed', label: 'Смена статуса лида', group: 'Лиды' },
+  { value: 'lead_edited', label: 'Изменение лида админом', group: 'Лиды' },
   { value: 'dispute_opened', label: 'Открыт спор', group: 'Лиды' },
   { value: 'dispute_resolved', label: 'Спор разрешён', group: 'Лиды' },
   // --- Группа: вознаграждения ---

@@ -7,6 +7,7 @@ export enum AuditAction {
   LEAD_ACCEPTED = 'lead_accepted',
   LEAD_DECLINED = 'lead_declined',
   LEAD_STATUS_CHANGED = 'lead_status_changed',
+  LEAD_EDITED = 'lead_edited',
   VIEW_CLIENT_PHONE = 'view_client_phone',
 
   REWARD_CREATED = 'reward_created',

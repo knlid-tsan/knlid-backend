@@ -23,6 +23,7 @@ import {
   TERMINAL_STATUSES,
 } from './enums/lead-status.enum';
 import { LeadType, leadTypeLabel } from './enums/lead-type.enum';
+import { AdminUpdateLeadDto } from '../admin/dto/admin-update-lead.dto';
 import { UsersService } from '../users/users.service';
 import { Specialization, UserRole, UserStatus } from '../users/user.entity';
 import { RewardsService } from '../rewards/rewards.service';
@@ -886,6 +887,83 @@ export class LeadsService {
       reward: reward ?? null,
       dispute: dispute ?? null,
     };
+  }
+
+  // Редактирование лида админом/модератором. Каждое изменение пишется
+  // в историю статусов (from=to=текущий статус, человекочитаемый comment)
+  // и в журнал аудита (lead_edited)
+  async adminUpdateLead(
+    leadId: string,
+    dto: AdminUpdateLeadDto,
+    adminId: string,
+    ip?: string,
+  ) {
+    const lead = await this.leadsRepository.findOne({
+      where: { id: leadId },
+      relations: { client: true },
+    });
+    if (!lead) throw new NotFoundException('Лид не найден');
+
+    const changes: string[] = [];
+
+    if (dto.type !== undefined && dto.type !== lead.type) {
+      changes.push(`тип ${leadTypeLabel(lead.type)} → ${leadTypeLabel(dto.type)}`);
+      lead.type = dto.type;
+    }
+    const newCity = dto.city?.trim();
+    if (newCity !== undefined && newCity !== lead.city) {
+      changes.push(`город ${lead.city} → ${newCity}`);
+      lead.city = newCity;
+    }
+    const newDescription = dto.description?.trim();
+    if (newDescription !== undefined && newDescription !== (lead.description ?? '')) {
+      changes.push('описание обновлено');
+      lead.description = newDescription;
+    }
+
+    let clientChanged = false;
+    const newClientName = dto.client_full_name?.trim();
+    if (newClientName !== undefined && newClientName !== lead.client.full_name) {
+      changes.push(`имя клиента ${lead.client.full_name} → ${newClientName}`);
+      lead.client.full_name = newClientName;
+      clientChanged = true;
+    }
+    const newClientPhone = dto.client_phone?.trim();
+    if (newClientPhone !== undefined && newClientPhone !== lead.client.phone) {
+      changes.push(`телефон клиента ${lead.client.phone} → ${newClientPhone}`);
+      lead.client.phone = newClientPhone;
+      clientChanged = true;
+    }
+
+    if (changes.length === 0) {
+      return this.adminFindOne(leadId);
+    }
+
+    if (clientChanged) {
+      await this.leadsRepository.manager.save(lead.client);
+    }
+    await this.leadsRepository.save(lead);
+
+    await this.historyRepository.save(
+      this.historyRepository.create({
+        lead_id: leadId,
+        from_status: lead.status,
+        to_status: lead.status,
+        changed_by: adminId,
+        comment: `Изменено админом: ${changes.join('; ')}`,
+      }),
+    );
+
+    await this.auditService.log({
+      entityType: 'lead',
+      entityId: leadId,
+      action: AuditAction.LEAD_EDITED,
+      actorId: adminId,
+      ip: ip ?? null,
+      metadata: { changes },
+    });
+
+    return this.adminFindOne(leadId);
   }
 
   async adminFindClients(

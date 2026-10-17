@@ -46,6 +46,7 @@ import { AuditAction } from '../audit/audit-action.enum';
 import { CreateCityDto } from '../cities/dto/create-city.dto';
 import { ToggleCityDto } from '../cities/dto/toggle-city.dto';
 import { AdminLeadsQueryDto } from './dto/admin-leads-query.dto';
+import { AdminUpdateLeadDto } from './dto/admin-update-lead.dto';
 import { AdminClientsQueryDto } from './dto/admin-clients-query.dto';
 import { AdminUsersQueryDto } from './dto/admin-users-query.dto';
 import { SetRoleDto } from './dto/set-role.dto';
@@ -410,6 +411,17 @@ export class AdminController {
   @Get('leads/:id')
   adminLead(@Param('id') id: string) {
     return this.leadsService.adminFindOne(id);
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.MODERATOR, UserRole.ADMIN)
+  @Patch('leads/:id')
+  adminUpdateLead(
+    @Param('id') id: string,
+    @Body() dto: AdminUpdateLeadDto,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.leadsService.adminUpdateLead(id, dto, req.user.sub, req.ip);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)

@@ -154,6 +154,18 @@ export default function LeadDetailClient({ id }: { id: string }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
+  // Редактирование полей лида админом/модератором
+  const [editing, setEditing] = useState(false);
+  const [editForm, setEditForm] = useState({
+    type: '',
+    city: '',
+    description: '',
+    client_full_name: '',
+    client_phone: '',
+  });
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState('');
+
   const [showCandidates, setShowCandidates] = useState(false);
   const [candidatesData, setCandidatesData] = useState<CandidatesResponse | null>(null);
   const [candidatesLoading, setCandidatesLoading] = useState(false);
@@ -174,6 +186,39 @@ export default function LeadDetailClient({ id }: { id: string }) {
   useEffect(() => {
     fetchLead();
   }, [fetchLead]);
+
+  function startEdit() {
+    if (!lead) return;
+    setEditForm({
+      type: lead.type,
+      city: lead.city,
+      description: lead.description ?? '',
+      client_full_name: lead.client.full_name,
+      client_phone: lead.client.phone,
+    });
+    setSaveError('');
+    setEditing(true);
+  }
+
+  async function saveEdit() {
+    setSaving(true);
+    setSaveError('');
+    try {
+      const updated = await api.patch<LeadDetail>(`/admin/leads/${id}`, {
+        type: editForm.type,
+        city: editForm.city.trim(),
+        description: editForm.description.trim(),
+        client_full_name: editForm.client_full_name.trim(),
+        client_phone: editForm.client_phone.trim(),
+      });
+      setLead(updated);
+      setEditing(false);
+    } catch (err) {
+      setSaveError(err instanceof ApiError ? err.message : 'Не удалось сохранить изменения');
+    } finally {
+      setSaving(false);
+    }
+  }
 
   async function loadCandidates() {
     setShowCandidates(true);
@@ -250,7 +295,93 @@ export default function LeadDetailClient({ id }: { id: string }) {
             Дубликат
           </span>
         )}
+        {!editing && (
+          <button
+            onClick={startEdit}
+            className="ml-auto text-sm text-blue-600 hover:text-blue-800 border border-blue-200 rounded-lg px-3 py-1.5 hover:border-blue-400 transition-colors"
+          >
+            Редактировать
+          </button>
+        )}
       </div>
+
+      {/* Edit form */}
+      {editing && (
+        <Section title="Редактирование лида">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-1">Тип лида</label>
+              <select
+                value={editForm.type}
+                onChange={(e) => setEditForm((f) => ({ ...f, type: e.target.value }))}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+              >
+                {Object.entries(TYPE_LABELS).map(([value, label]) => (
+                  <option key={value} value={value}>{label}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-1">Город</label>
+              <input
+                type="text"
+                value={editForm.city}
+                onChange={(e) => setEditForm((f) => ({ ...f, city: e.target.value }))}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <div className="sm:col-span-2">
+              <label className="block text-xs font-medium text-gray-500 mb-1">Описание / суть запроса</label>
+              <textarea
+                value={editForm.description}
+                onChange={(e) => setEditForm((f) => ({ ...f, description: e.target.value }))}
+                rows={4}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-1">Имя клиента</label>
+              <input
+                type="text"
+                value={editForm.client_full_name}
+                onChange={(e) => setEditForm((f) => ({ ...f, client_full_name: e.target.value }))}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-1">Телефон клиента</label>
+              <input
+                type="text"
+                value={editForm.client_phone}
+                onChange={(e) => setEditForm((f) => ({ ...f, client_phone: e.target.value }))}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+          </div>
+          {saveError && (
+            <p className="text-sm text-red-600 mt-3">{saveError}</p>
+          )}
+          <div className="flex gap-2 mt-4">
+            <button
+              onClick={saveEdit}
+              disabled={saving}
+              className="bg-blue-600 text-white rounded-lg px-4 py-2 text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors"
+            >
+              {saving ? 'Сохранение…' : 'Сохранить'}
+            </button>
+            <button
+              onClick={() => setEditing(false)}
+              disabled={saving}
+              className="border border-gray-200 rounded-lg px-4 py-2 text-sm text-gray-600 hover:border-gray-300 transition-colors"
+            >
+              Отмена
+            </button>
+          </div>
+          <p className="text-xs text-gray-400 mt-3">
+            Изменения будут записаны в историю лида и журнал с пометкой «изменено админом».
+          </p>
+        </Section>
+      )}
 
       {/* Dispute banner */}
       {lead.dispute && lead.dispute.status === 'open' && (
@@ -468,7 +599,9 @@ export default function LeadDetailClient({ id }: { id: string }) {
               <li key={entry.id} className="ml-4">
                 <div className="absolute -left-1.5 mt-1 h-3 w-3 rounded-full border-2 border-white bg-gray-300" />
                 <div className="flex items-center gap-2 flex-wrap">
-                  {entry.from_status ? (
+                  {entry.from_status === entry.to_status ? (
+                    <span className="text-xs text-gray-400">Данные изменены, статус</span>
+                  ) : entry.from_status ? (
                     <>
                       <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_COLORS[entry.from_status] ?? 'bg-gray-100 text-gray-600'}`}>
                         {STATUS_LABELS[entry.from_status] ?? entry.from_status}
