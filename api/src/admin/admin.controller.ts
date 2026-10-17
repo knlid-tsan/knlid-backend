@@ -348,18 +348,23 @@ export class AdminController {
     const newCity = dto.city?.trim();
     const cityChanged = newCity !== undefined && newCity !== user.city;
 
-    // Как и в самостоятельном редактировании: при активных лидах в работе
-    // специализацию/город менять нельзя — сломается подбор и текущие сделки
-    if (specChanged || cityChanged) {
+    // Смена специализации/города при активных лидах в работе — с явным
+    // подтверждением (force). Уже назначенные лиды остаются за исполнителем:
+    // соответствие специализации проверяется только на этапе подбора/назначения
+    if ((specChanged || cityChanged) && !dto.force) {
       const [{ cnt }] = await this.dataSource.query<[{ cnt: number }]>(
         `SELECT COUNT(*)::int AS cnt FROM leads
          WHERE executor_id = $1
          AND status IN ('in_progress', 'contract', 'deposit', 'dispute')`,
         [id],
       );
-      if (Number(cnt) > 0) {
-        throw new BadRequestException(
-          'Нельзя сменить специализацию/город: у пользователя есть активные лиды в работе',
+      const n = Number(cnt);
+      if (n > 0) {
+        const word = n % 10 === 1 && n % 100 !== 11 ? 'лид'
+          : [2, 3, 4].includes(n % 10) && ![12, 13, 14].includes(n % 100) ? 'лида'
+          : 'лидов';
+        throw new ConflictException(
+          `У пользователя ${n} ${word} в работе, они останутся за ним.`,
         );
       }
     }

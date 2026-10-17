@@ -150,6 +150,8 @@ export default function UserDetailPage() {
   });
   const [profileError, setProfileError] = useState('');
   const [profileSaving, setProfileSaving] = useState(false);
+  // 409 от сервера: смена спец./города при активных лидах — нужно подтверждение
+  const [profileConfirm, setProfileConfirm] = useState('');
   const [roleSelectOpen, setRoleSelectOpen] = useState(false);
   const [selectedRole, setSelectedRole] = useState('');
   const [confirmSelfRole, setConfirmSelfRole] = useState(false);
@@ -295,23 +297,31 @@ export default function UserDetailPage() {
       city: user.city ?? '',
     });
     setProfileError('');
+    setProfileConfirm('');
     setEditingProfile(true);
   }
 
-  async function saveProfileEdit() {
+  async function saveProfileEdit(force = false) {
     setProfileSaving(true);
     setProfileError('');
+    setProfileConfirm('');
     try {
       await api.patch(`/admin/users/${id}/profile`, {
         full_name: profileForm.full_name.trim(),
         specialization: profileForm.specialization,
         specialization_other: profileForm.specialization_other.trim(),
         city: profileForm.city.trim(),
+        ...(force ? { force: true } : {}),
       });
       setEditingProfile(false);
       await load();
     } catch (err) {
-      setProfileError(err instanceof ApiError ? err.message : 'Не удалось сохранить профиль');
+      if (err instanceof ApiError && err.status === 409) {
+        // Активные лиды в работе — показываем подтверждение
+        setProfileConfirm(err.message);
+      } else {
+        setProfileError(err instanceof ApiError ? err.message : 'Не удалось сохранить профиль');
+      }
     } finally {
       setProfileSaving(false);
     }
@@ -514,9 +524,26 @@ export default function UserDetailPage() {
                   )}
                 </div>
                 {profileError && <p className="text-sm text-red-600 mt-3">{profileError}</p>}
+                {profileConfirm && (
+                  <div className="rounded-lg bg-amber-50 border border-amber-300 p-3 mt-3 space-y-2">
+                    <p className="text-sm text-amber-800">{profileConfirm} Продолжить?</p>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => saveProfileEdit(true)}
+                        disabled={profileSaving}
+                        className="text-xs font-medium text-white bg-amber-600 hover:bg-amber-700 rounded-lg px-3 py-1.5 disabled:opacity-50 transition-colors"
+                      >
+                        {profileSaving ? '...' : 'Продолжить'}
+                      </button>
+                      <button onClick={() => setProfileConfirm('')} className="text-xs text-gray-500 hover:text-gray-700">
+                        Отмена
+                      </button>
+                    </div>
+                  </div>
+                )}
                 <div className="flex gap-2 mt-4">
                   <button
-                    onClick={saveProfileEdit}
+                    onClick={() => saveProfileEdit()}
                     disabled={profileSaving}
                     className="bg-blue-600 text-white rounded-lg px-4 py-1.5 text-xs font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors"
                   >

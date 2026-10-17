@@ -1,4 +1,4 @@
-import { IsEnum, IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator';
+import { IsBoolean, IsEnum, IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator';
 import { Specialization } from '../../users/user.entity';
 
 // Редактирование профиля пользователя админом/модератором
@@ -24,4 +24,9 @@ export class AdminUpdateUserProfileDto {
   @IsNotEmpty()
   @MaxLength(120)
   city?: string;
+
+  // Подтверждение смены специализации/города при активных лидах в работе
+  @IsOptional()
+  @IsBoolean()
+  force?: boolean;
 }
