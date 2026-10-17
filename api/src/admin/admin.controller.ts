@@ -29,7 +29,7 @@ import { DataSource, Repository, Not, In } from 'typeorm';
 import { JwtAuthGuard, AuthenticatedUser } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
-import { User, UserRole, UserStatus } from '../users/user.entity';
+import { Specialization, User, UserRole, UserStatus } from '../users/user.entity';
 import { AdminSectionView } from './admin-section-view.entity';
 import { BootstrapAdminDto } from './dto/bootstrap-admin.dto';
 import { UpsertTariffV2Dto } from './dto/upsert-tariff-v2.dto';
@@ -47,6 +47,7 @@ import { CreateCityDto } from '../cities/dto/create-city.dto';
 import { ToggleCityDto } from '../cities/dto/toggle-city.dto';
 import { AdminLeadsQueryDto } from './dto/admin-leads-query.dto';
 import { AdminUpdateLeadDto } from './dto/admin-update-lead.dto';
+import { AdminUpdateUserProfileDto } from './dto/admin-update-user-profile.dto';
 import { AdminClientsQueryDto } from './dto/admin-clients-query.dto';
 import { AdminUsersQueryDto } from './dto/admin-users-query.dto';
 import { SetRoleDto } from './dto/set-role.dto';
@@ -326,6 +327,86 @@ export class AdminController {
     });
 
     return { id, status: user.status };
+  }
+
+  // Редактирование профиля пользователя админом/модератором:
+  // имя, специализация (с очисткой уточнения при уходе с «Другое»), город.
+  // Запись в журнал profile_updated с пометкой by_admin
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.MODERATOR, UserRole.ADMIN)
+  @Patch('users/:id/profile')
+  async adminUpdateUserProfile(
+    @Param('id') id: string,
+    @Body() dto: AdminUpdateUserProfileDto,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    const user = await this.usersRepository.findOneBy({ id });
+    if (!user) throw new NotFoundException('Пользователь не найден');
+
+    const specChanged =
+      dto.specialization !== undefined && dto.specialization !== user.specialization;
+    const newCity = dto.city?.trim();
+    const cityChanged = newCity !== undefined && newCity !== user.city;
+
+    // Как и в самостоятельном редактировании: при активных лидах в работе
+    // специализацию/город менять нельзя — сломается подбор и текущие сделки
+    if (specChanged || cityChanged) {
+      const [{ cnt }] = await this.dataSource.query<[{ cnt: number }]>(
+        `SELECT COUNT(*)::int AS cnt FROM leads
+         WHERE executor_id = $1
+         AND status IN ('in_progress', 'contract', 'deposit', 'dispute')`,
+        [id],
+      );
+      if (Number(cnt) > 0) {
+        throw new BadRequestException(
+          'Нельзя сменить специализацию/город: у пользователя есть активные лиды в работе',
+        );
+      }
+    }
+
+    const meta: Record<string, unknown> = { by_admin: true };
+
+    const newName = dto.full_name?.trim();
+    if (newName !== undefined && newName !== user.full_name) {
+      user.full_name = newName;
+      meta.full_name = newName;
+    }
+    if (specChanged) {
+      user.specialization = dto.specialization!;
+      // Уточнение хранится только для «Другое»
+      user.specialization_other =
+        dto.specialization === Specialization.OTHER
+          ? (dto.specialization_other?.trim() || user.specialization_other)
+          : null;
+      meta.specialization = user.specialization;
+    } else if (
+      dto.specialization_other !== undefined &&
+      user.specialization === Specialization.OTHER
+    ) {
+      user.specialization_other = dto.specialization_other.trim() || null;
+    }
+    if (cityChanged) {
+      user.city = newCity!;
+      meta.city = newCity;
+    }
+
+    if (Object.keys(meta).length === 1) {
+      // Ничего не изменилось
+      return user;
+    }
+
+    await this.usersRepository.save(user);
+
+    await this.auditService.log({
+      entityType: 'user',
+      entityId: id,
+      action: AuditAction.PROFILE_UPDATED,
+      actorId: req.user.sub,
+      ip: req.ip ?? null,
+      metadata: meta,
+    });
+
+    return user;
   }
 
   // ─── Настройки ────────────────────────────────────────────────────────────

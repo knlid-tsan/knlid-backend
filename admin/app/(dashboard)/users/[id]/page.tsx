@@ -25,6 +25,7 @@ interface UserDetail {
   full_name: string;
   phone: string;
   specialization: string;
+  specialization_other: string | null;
   city: string;
   status: string;
   role: string;
@@ -86,6 +87,7 @@ const ACTION_LABEL: Record<string, string> = {
   user_role_changed: 'Роль изменена',
   user_reverification_requested: 'Запрошена повторная верификация',
   user_verified_manually: 'Верифицирован админом вручную',
+  profile_updated: 'Изменён профиль',
   specialist_created_by_moderator: 'Специалист создан модератором',
   company_created_by_moderator: 'Компания создана модератором',
 };
@@ -138,6 +140,16 @@ export default function UserDetailPage() {
   const [confirmBlock, setConfirmBlock] = useState(false);
   const [confirmReverif, setConfirmReverif] = useState(false);
   const [confirmVerify, setConfirmVerify] = useState(false);
+  // Редактирование профиля (имя, специализация, город)
+  const [editingProfile, setEditingProfile] = useState(false);
+  const [profileForm, setProfileForm] = useState({
+    full_name: '',
+    specialization: '',
+    specialization_other: '',
+    city: '',
+  });
+  const [profileError, setProfileError] = useState('');
+  const [profileSaving, setProfileSaving] = useState(false);
   const [roleSelectOpen, setRoleSelectOpen] = useState(false);
   const [selectedRole, setSelectedRole] = useState('');
   const [confirmSelfRole, setConfirmSelfRole] = useState(false);
@@ -272,6 +284,37 @@ export default function UserDetailPage() {
 
   function handleUnblock() {
     doAction(() => api.post(`/admin/users/${id}/unblock`));
+  }
+
+  function startProfileEdit() {
+    if (!user) return;
+    setProfileForm({
+      full_name: user.full_name,
+      specialization: user.specialization ?? '',
+      specialization_other: user.specialization_other ?? '',
+      city: user.city ?? '',
+    });
+    setProfileError('');
+    setEditingProfile(true);
+  }
+
+  async function saveProfileEdit() {
+    setProfileSaving(true);
+    setProfileError('');
+    try {
+      await api.patch(`/admin/users/${id}/profile`, {
+        full_name: profileForm.full_name.trim(),
+        specialization: profileForm.specialization,
+        specialization_other: profileForm.specialization_other.trim(),
+        city: profileForm.city.trim(),
+      });
+      setEditingProfile(false);
+      await load();
+    } catch (err) {
+      setProfileError(err instanceof ApiError ? err.message : 'Не удалось сохранить профиль');
+    } finally {
+      setProfileSaving(false);
+    }
   }
 
   function handleVerifyManual() {
@@ -411,9 +454,84 @@ export default function UserDetailPage() {
 
           {/* Details card */}
           <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
-            <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">
-              Данные
-            </h2>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide">
+                Данные
+              </h2>
+              {!editingProfile && (
+                <button
+                  onClick={startProfileEdit}
+                  className="text-xs font-medium text-blue-600 hover:text-blue-800 border border-blue-200 hover:border-blue-400 rounded-lg px-3 py-1 transition-colors"
+                >
+                  Редактировать
+                </button>
+              )}
+            </div>
+            {editingProfile && (
+              <div className="rounded-lg bg-blue-50/50 border border-blue-100 p-4 mb-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-medium text-gray-500 mb-1">Имя</label>
+                    <input
+                      type="text"
+                      value={profileForm.full_name}
+                      onChange={(e) => setProfileForm((f) => ({ ...f, full_name: e.target.value }))}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-500 mb-1">Город</label>
+                    <input
+                      type="text"
+                      value={profileForm.city}
+                      onChange={(e) => setProfileForm((f) => ({ ...f, city: e.target.value }))}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-500 mb-1">Специализация</label>
+                    <select
+                      value={profileForm.specialization}
+                      onChange={(e) => setProfileForm((f) => ({ ...f, specialization: e.target.value }))}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                    >
+                      <option value="realtor">Риелтор</option>
+                      <option value="mortgage">Ипотечный брокер</option>
+                      <option value="lawyer">Юрист</option>
+                      <option value="other">Другое</option>
+                    </select>
+                  </div>
+                  {profileForm.specialization === 'other' && (
+                    <div>
+                      <label className="block text-xs font-medium text-gray-500 mb-1">Уточнение специализации</label>
+                      <input
+                        type="text"
+                        value={profileForm.specialization_other}
+                        onChange={(e) => setProfileForm((f) => ({ ...f, specialization_other: e.target.value }))}
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                      />
+                    </div>
+                  )}
+                </div>
+                {profileError && <p className="text-sm text-red-600 mt-3">{profileError}</p>}
+                <div className="flex gap-2 mt-4">
+                  <button
+                    onClick={saveProfileEdit}
+                    disabled={profileSaving}
+                    className="bg-blue-600 text-white rounded-lg px-4 py-1.5 text-xs font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors"
+                  >
+                    {profileSaving ? 'Сохранение…' : 'Сохранить'}
+                  </button>
+                  <button
+                    onClick={() => setEditingProfile(false)}
+                    disabled={profileSaving}
+                    className="border border-gray-200 rounded-lg px-4 py-1.5 text-xs text-gray-600 hover:border-gray-300 transition-colors"
+                  >
+                    Отмена
+                  </button>
+                </div>
+              </div>
+            )}
             <dl className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
               <div>
                 <dt className="text-gray-400 text-xs">Телефон</dt>
