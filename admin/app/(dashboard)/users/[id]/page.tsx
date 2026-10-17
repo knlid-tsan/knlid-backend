@@ -569,6 +569,15 @@ export default function UserDetailPage() {
                 <dd className="text-gray-900 mt-0.5">{user.city}</dd>
               </div>
               <div>
+                <dt className="text-gray-400 text-xs">Специализация</dt>
+                <dd className="text-gray-900 mt-0.5">
+                  {SPEC_LABEL[user.specialization] ?? user.specialization ?? '—'}
+                  {user.specialization === 'other' && user.specialization_other && (
+                    <span className="text-gray-500"> · {user.specialization_other}</span>
+                  )}
+                </dd>
+              </div>
+              <div>
                 <dt className="text-gray-400 text-xs">Дата регистрации</dt>
                 <dd className="text-gray-900 mt-0.5">{fmtDate(user.created_at)}</dd>
               </div>
