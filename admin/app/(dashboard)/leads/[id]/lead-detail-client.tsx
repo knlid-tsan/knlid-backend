@@ -47,13 +47,26 @@ interface Candidate {
   company_name: string | null;
 }
 
+interface OtherSpecialist extends Candidate {
+  status: string;
+  reasons: string[];
+}
+
 interface CandidatesResponse {
   lead_id: string;
   lead_city: string;
   required_specialization: string;
   required_specialization_label: string;
   candidates: Candidate[];
+  others: OtherSpecialist[];
 }
+
+const REASON_LABELS: Record<string, string> = {
+  not_verified: 'Не верифицирован',
+  blocked: 'Заблокирован',
+  wrong_city: 'Другой город',
+  wrong_specialization: 'Другая специализация',
+};
 
 interface LeadDetail {
   id: string;
@@ -172,6 +185,8 @@ export default function LeadDetailClient({ id }: { id: string }) {
   const [candidatesError, setCandidatesError] = useState('');
   const [assigning, setAssigning] = useState<string | null>(null);
   const [assignError, setAssignError] = useState('');
+  // Подтверждение ручного назначения неподходящего специалиста
+  const [confirmAssign, setConfirmAssign] = useState<OtherSpecialist | null>(null);
 
   const fetchLead = useCallback(() => {
     return api
@@ -494,55 +509,147 @@ export default function LeadDetailClient({ id }: { id: string }) {
             <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-700">
               {candidatesError}
             </div>
-          ) : candidatesData && candidatesData.candidates.length === 0 ? (
-            <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 text-sm text-amber-800">
-              В городе <span className="font-semibold">{candidatesData.lead_city}</span> нет доступных верифицированных специалистов
-              по специализации <span className="font-semibold">{candidatesData.required_specialization_label}</span>.
-              Лид остаётся в очереди.
+          ) : candidatesData ? (
+            <div className="space-y-5">
+              {/* Подтверждение ручного назначения неподходящего специалиста */}
+              {confirmAssign && (
+                <div className="rounded-lg bg-amber-50 border border-amber-300 p-4 space-y-2">
+                  <p className="text-sm text-amber-800">
+                    <span className="font-semibold">{confirmAssign.full_name}</span> не подходит по подбору:{' '}
+                    {confirmAssign.reasons.map((r) => REASON_LABELS[r] ?? r).join(', ').toLowerCase()}.
+                    Назначить всё равно? Это будет записано в журнал.
+                  </p>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => { const id = confirmAssign.id; setConfirmAssign(null); doAssign(id); }}
+                      disabled={assigning !== null}
+                      className="text-xs font-medium text-white bg-amber-600 hover:bg-amber-700 rounded-lg px-3 py-1.5 disabled:opacity-50 transition-colors"
+                    >
+                      Назначить
+                    </button>
+                    <button onClick={() => setConfirmAssign(null)} className="text-xs text-gray-500 hover:text-gray-700">
+                      Отмена
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {candidatesData.candidates.length === 0 ? (
+                <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 text-sm text-amber-800">
+                  В городе <span className="font-semibold">{candidatesData.lead_city}</span> нет доступных верифицированных специалистов
+                  по специализации <span className="font-semibold">{candidatesData.required_specialization_label}</span>.
+                  Можно назначить вручную из списка ниже.
+                </div>
+              ) : (
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-gray-100 bg-gray-50/70">
+                      <th className="text-left px-3 py-2 text-xs font-medium text-gray-500">Специалист</th>
+                      <th className="text-left px-3 py-2 text-xs font-medium text-gray-500">Телефон</th>
+                      <th className="text-left px-3 py-2 text-xs font-medium text-gray-500">Город</th>
+                      <th className="text-left px-3 py-2 text-xs font-medium text-gray-500">Рейтинг</th>
+                      <th className="text-left px-3 py-2 text-xs font-medium text-gray-500">Закрыто лидов</th>
+                      <th />
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-50">
+                    {candidatesData.candidates.map((c) => (
+                      <tr key={c.id} className="hover:bg-gray-50/50">
+                        <td className="px-3 py-2.5 text-gray-900 font-medium">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span>{c.full_name}</span>
+                            {c.company_name && (
+                              <span className="inline-flex items-center rounded-full bg-blue-50 border border-blue-200 text-blue-700 text-xs font-medium px-2 py-0.5 whitespace-nowrap">
+                                Гарант: {c.company_name}
+                              </span>
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-3 py-2.5 text-gray-500">{formatPhone(c.phone)}</td>
+                        <td className="px-3 py-2.5 text-gray-600">{c.city}</td>
+                        <td className="px-3 py-2.5 text-gray-600">{Number(c.rating).toFixed(1)}</td>
+                        <td className="px-3 py-2.5 text-gray-600">{c.leads_closed}</td>
+                        <td className="px-3 py-2.5 text-right">
+                          <button
+                            onClick={() => doAssign(c.id)}
+                            disabled={assigning !== null}
+                            className="bg-slate-800 text-white rounded-lg px-3 py-1.5 text-xs font-medium hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                          >
+                            {assigning === c.id ? 'Назначение...' : 'Назначить'}
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+
+              {/* Остальные специалисты — с причинами, почему не в подборе */}
+              {candidatesData.others.length > 0 && (
+                <div>
+                  <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+                    Остальные специалисты
+                  </h3>
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-gray-100 bg-gray-50/70">
+                        <th className="text-left px-3 py-2 text-xs font-medium text-gray-500">Специалист</th>
+                        <th className="text-left px-3 py-2 text-xs font-medium text-gray-500">Город</th>
+                        <th className="text-left px-3 py-2 text-xs font-medium text-gray-500">Специализация</th>
+                        <th className="text-left px-3 py-2 text-xs font-medium text-gray-500">Почему не в подборе</th>
+                        <th />
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-50">
+                      {candidatesData.others.map((c) => {
+                        const unassignable =
+                          c.reasons.includes('not_verified') || c.reasons.includes('blocked');
+                        return (
+                          <tr key={c.id} className="hover:bg-gray-50/50">
+                            <td className="px-3 py-2.5 text-gray-900 font-medium">{c.full_name}</td>
+                            <td className="px-3 py-2.5 text-gray-600">{c.city ?? '—'}</td>
+                            <td className="px-3 py-2.5 text-gray-600">
+                              {SPEC_LABELS[c.specialization] ?? c.specialization ?? '—'}
+                            </td>
+                            <td className="px-3 py-2.5">
+                              <div className="flex gap-1 flex-wrap">
+                                {c.reasons.map((r) => (
+                                  <span
+                                    key={r}
+                                    className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
+                                      r === 'not_verified' || r === 'blocked'
+                                        ? 'bg-red-50 border border-red-200 text-red-700'
+                                        : 'bg-amber-50 border border-amber-200 text-amber-700'
+                                    }`}
+                                  >
+                                    {REASON_LABELS[r] ?? r}
+                                  </span>
+                                ))}
+                              </div>
+                            </td>
+                            <td className="px-3 py-2.5 text-right">
+                              <button
+                                onClick={() => setConfirmAssign(c)}
+                                disabled={assigning !== null || unassignable}
+                                title={
+                                  unassignable
+                                    ? 'Сначала верифицируйте/разблокируйте пользователя в его карточке'
+                                    : undefined
+                                }
+                                className="border border-slate-300 text-slate-700 rounded-lg px-3 py-1.5 text-xs font-medium hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                              >
+                                {assigning === c.id ? 'Назначение...' : 'Назначить вручную'}
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
-          ) : (
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-gray-100 bg-gray-50/70">
-                  <th className="text-left px-3 py-2 text-xs font-medium text-gray-500">Специалист</th>
-                  <th className="text-left px-3 py-2 text-xs font-medium text-gray-500">Телефон</th>
-                  <th className="text-left px-3 py-2 text-xs font-medium text-gray-500">Город</th>
-                  <th className="text-left px-3 py-2 text-xs font-medium text-gray-500">Рейтинг</th>
-                  <th className="text-left px-3 py-2 text-xs font-medium text-gray-500">Закрыто лидов</th>
-                  <th />
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-50">
-                {candidatesData?.candidates.map((c) => (
-                  <tr key={c.id} className="hover:bg-gray-50/50">
-                    <td className="px-3 py-2.5 text-gray-900 font-medium">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span>{c.full_name}</span>
-                        {c.company_name && (
-                          <span className="inline-flex items-center rounded-full bg-blue-50 border border-blue-200 text-blue-700 text-xs font-medium px-2 py-0.5 whitespace-nowrap">
-                            Гарант: {c.company_name}
-                          </span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-3 py-2.5 text-gray-500">{formatPhone(c.phone)}</td>
-                    <td className="px-3 py-2.5 text-gray-600">{c.city}</td>
-                    <td className="px-3 py-2.5 text-gray-600">{Number(c.rating).toFixed(1)}</td>
-                    <td className="px-3 py-2.5 text-gray-600">{c.leads_closed}</td>
-                    <td className="px-3 py-2.5 text-right">
-                      <button
-                        onClick={() => doAssign(c.id)}
-                        disabled={assigning !== null}
-                        className="bg-slate-800 text-white rounded-lg px-3 py-1.5 text-xs font-medium hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                      >
-                        {assigning === c.id ? 'Назначение...' : 'Назначить'}
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
+          ) : null}
         </Section>
       )}
 

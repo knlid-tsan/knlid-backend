@@ -86,6 +86,21 @@ export class UsersService {
     return this.usersRepository.findBy({ id: In(ids) });
   }
 
+  // Все специалисты (role=user, кроме архивных) — для админского подбора
+  // исполнителя со списком «не подходит, потому что…»
+  findAllSpecialists(excludeUserId?: string): Promise<User[]> {
+    const qb = this.usersRepository
+      .createQueryBuilder('user')
+      .where('user.role = :role', { role: UserRole.USER })
+      .andWhere('user.status != :archived', { archived: UserStatus.ARCHIVED })
+      .orderBy('user.rating', 'DESC')
+      .addOrderBy('user.full_name', 'ASC');
+    if (excludeUserId) {
+      qb.andWhere('user.id != :excludeId', { excludeId: excludeUserId });
+    }
+    return qb.getMany();
+  }
+
   findCandidates(specialization: string, city: string, excludeUserId?: string): Promise<User[]> {
     const qb = this.usersRepository
       .createQueryBuilder('user')

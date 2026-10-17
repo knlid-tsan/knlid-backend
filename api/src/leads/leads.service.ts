@@ -1131,6 +1131,36 @@ export class LeadsService {
       }
     }
 
+    // Остальные специалисты — с причинами, почему не попали в подбор.
+    // Админ может назначить вручную (кроме неверифицированных/заблокированных)
+    const candidateIds = new Set(candidates.map((u) => u.id));
+    const allSpecialists = await this.usersService.findAllSpecialists(
+      lead.author_id,
+    );
+    const others = allSpecialists
+      .filter((u) => !candidateIds.has(u.id))
+      .map((u) => {
+        const reasons: string[] = [];
+        if (u.status === UserStatus.BLOCKED) reasons.push('blocked');
+        else if (u.status !== UserStatus.ACTIVE) reasons.push('not_verified');
+        if (u.specialization !== requiredSpec) reasons.push('wrong_specialization');
+        if ((u.city ?? '').toLowerCase() !== (lead.city ?? '').toLowerCase()) {
+          reasons.push('wrong_city');
+        }
+        return {
+          id: u.id,
+          full_name: u.full_name,
+          phone: u.phone,
+          city: u.city,
+          specialization: u.specialization,
+          rating: u.rating,
+          leads_closed: u.leads_closed,
+          company_name: null as string | null,
+          status: u.status,
+          reasons,
+        };
+      });
+
     return {
       lead_id: lead.id,
       lead_city: lead.city,
@@ -1146,6 +1176,7 @@ export class LeadsService {
         leads_closed: u.leads_closed,
         company_name: companyNameByUserId.get(u.id) ?? null,
       })),
+      others,
     };
   }
 
